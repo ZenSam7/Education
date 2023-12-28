@@ -1,0 +1,38 @@
+∅ Чтобы создать postgresql:
+$ docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
+
+∅ Чтобы остановить контейнер:
+$ docker stop postgres16
+
+∅ Увидеть работающий контейнеры:
+$ docker ps
+
+
+∅ Подключение к бд:
+$ docker exec -it postgres16 psql -U root habr2
+[exec] Означает: выполнить команду внутри контейнера
+[-it postgres16] Означает: имя контейнера
+[psql -U root] Означает: сама команда
+
+∅ Создать бд
+$ docker exec -it postgres16 createdb --username=root --owner=root habr2
+∅ Удалить бд
+$ docker exec -it postgres16 dropdb habr2
+
+∅ Отключиться от бд:
+$ \q
+
+
+МИГРАЦИИ (используется библиотека golang-migrate)
+∅ Создать:
+$ migrate create -ext sql -dir migration -seq init_schema
+[-ext sql] Означает: создать файлы с расширением .sql
+[-dir migration] Означает: куда сохранить миграции
+[-seq] Означает: создать последовательный номер миграции
+[init_schema] Означает: имя миграции
+
+
+
+
+∅ В WSL моя папка находитсмя тут:
+∅ /mnt/c/Users/samki/GoProjects/Education
