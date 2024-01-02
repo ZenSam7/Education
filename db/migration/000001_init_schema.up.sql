@@ -2,7 +2,7 @@ CREATE TABLE "users" (
   "id" bigserial PRIMARY KEY,
   "created_at" timestamptz DEFAULT (now()),
   "name" varchar NOT NULL,
-  "description" text,
+  "description" varchar,
   "email" varchar,
   "karma" integer DEFAULT 0
 );
@@ -25,11 +25,11 @@ CREATE TABLE "comments" (
   "evaluation" integer DEFAULT 0
 );
 
-CREATE INDEX ON "users" ("name");
+CREATE INDEX name_ind ON "users" ("name");
 
-CREATE INDEX ON "articles" ("title");
+CREATE INDEX title_ind ON "articles" ("title");
 
-CREATE INDEX ON "articles" ("from_user");
+CREATE INDEX from_user_ind ON "articles" ("from_user");
 
 ALTER TABLE "articles" ADD FOREIGN KEY ("comments") REFERENCES "comments"("id");
 

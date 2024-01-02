@@ -14,16 +14,14 @@
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="0a2eda3d-4323-4d10-8012-d9d2fdd318e7">
       <console name="postgres12" type="STANDARD" schema="public" session="Main"><![CDATA[select * from users;]]></console>
-      <console name="postgres16" type="STANDARD" schema="public" session="Main"><![CDATA[select * from ;]]></console>
+      <console name="postgres16" type="STANDARD" schema="public" session="Main"><![CDATA[select * from "users";]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="0a2eda3d-4323-4d10-8012-d9d2fdd318e7" object-ref="consoles/postgres16" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />

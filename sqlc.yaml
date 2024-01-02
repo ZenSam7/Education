@@ -1,0 +1,17 @@
+version: "2"
+
+sql:
+  - engine: "postgresql"
+    schema: "./db/migration"
+    queries: "./db/query"
+    database:
+      uri: "postgres://root@localhost:5432/education?sslmode=disable&user=root&password=root"
+    gen:
+      go:
+        package: "db"
+        out: "./db/sqlc"
+        sql_package: "pgx/v5"
+
+plugins: []
+rules: []
+options: {}
