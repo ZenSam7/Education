@@ -29,10 +29,10 @@ CREATE INDEX ON "users" ("name");
 
 CREATE INDEX ON "articles" ("title");
 
-CREATE INDEX  ON "articles" ("from_user");
+CREATE INDEX ON "articles" ("from_user");
 
-ALTER TABLE "articles" ADD FOREIGN KEY "comments" REFERENCES "comments" "id";
+ALTER TABLE "articles" ADD FOREIGN KEY ("comments") REFERENCES "comments"("id");
 
-ALTER TABLE "articles" ADD FOREIGN KEY "from_user") REFERENCES "users" "id";
+ALTER TABLE "articles" ADD FOREIGN KEY ("from_user") REFERENCES "users"("id");
 
-ALTER TABLE "comments" ADD FOREIGN KEY "from_user" REFERENCES "users" "id";
+ALTER TABLE "comments" ADD FOREIGN KEY ("from_user") REFERENCES "users"("id");

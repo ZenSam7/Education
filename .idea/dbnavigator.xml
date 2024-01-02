@@ -13,44 +13,8 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="0a2eda3d-4323-4d10-8012-d9d2fdd318e7">
-      <console name="postgres12" type="STANDARD" schema="public" session="Main"><![CDATA[CREATE TABLE "users" (
-  "id" bigserial PRIMARY KEY,
-  "created_at" timestamptz DEFAULT (now()),
-  "name" varchar NOT NULL,
-  "description" text,
-  "email" varchar,
-  "karma" integer DEFAULT 0
-);
-
-CREATE TABLE "articles" (
-  "id" bigserial PRIMARY KEY,
-  "created_at" timestamptz DEFAULT (now()),
-  "title" varchar NOT NULL,
-  "text" text NOT NULL,
-  "comments" bigserial,
-  "from_user" bigserial,
-  "evaluation" integer DEFAULT 0
-);
-
-CREATE TABLE "comments" (
-  "id" bigserial PRIMARY KEY,
-  "created_at" timestamptz DEFAULT (now()),
-  "text" text NOT NULL,
-  "from_user" bigserial,
-  "evaluation" integer DEFAULT 0
-);
-
-CREATE INDEX ON "users" ("name");
-
-CREATE INDEX ON "articles" ("title");
-
-CREATE INDEX  ON "articles" ("from_user");
-
-ALTER TABLE "articles" ADD FOREIGN KEY "comments" REFERENCES "comments" "id";
-
-ALTER TABLE "articles" ADD FOREIGN KEY "from_user") REFERENCES "users" "id";
-
-ALTER TABLE "comments" ADD FOREIGN KEY "from_user" REFERENCES "users" "id";]]></console>
+      <console name="postgres12" type="STANDARD" schema="public" session="Main"><![CDATA[select * from users;]]></console>
+      <console name="postgres16" type="STANDARD" schema="public" session="Main"><![CDATA[select * from ;]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
@@ -58,11 +22,19 @@ ALTER TABLE "comments" ADD FOREIGN KEY "from_user" REFERENCES "users" "id";]]></
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
     <open-files>
-      <object connection-id="0a2eda3d-4323-4d10-8012-d9d2fdd318e7" object-ref="consoles/postgres12" />
+      <object connection-id="0a2eda3d-4323-4d10-8012-d9d2fdd318e7" object-ref="consoles/postgres16" />
     </open-files>
   </component>
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />
+  </component>
+  <component name="DBNavigator.Project.MethodExecutionManager">
+    <method-browser />
+    <execution-history>
+      <group-entries value="true" />
+      <execution-inputs />
+    </execution-history>
+    <argument-values-cache />
   </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />
@@ -77,7 +49,7 @@ ALTER TABLE "comments" ADD FOREIGN KEY "from_user" REFERENCES "users" "id";]]></
     <connections>
       <connection id="0a2eda3d-4323-4d10-8012-d9d2fdd318e7" active="true" signed="true">
         <database>
-          <name value="postgres12" />
+          <name value="postgres16" />
           <description value="Бд для обучения" />
           <database-type value="POSTGRES" />
           <config-type value="BASIC" />
