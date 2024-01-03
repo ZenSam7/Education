@@ -6,10 +6,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ForDB struct {
+}
+
 var DataBase db.DBTX
 
 func main() {
-	query := db.Queries{Db: DataBase}
+	query := db.New(DataBase)
 
 	ctx := context.Background()
 
@@ -22,5 +25,4 @@ func main() {
 	if _, err := query.CreateUser(ctx, newUserInfo); err != nil {
 		return
 	}
-
 }

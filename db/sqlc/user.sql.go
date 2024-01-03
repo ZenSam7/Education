@@ -28,7 +28,7 @@ type CreateUserParams struct {
 
 // CreateUser Создаём одного пользователя
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.Db.QueryRow(ctx, createUser, arg.Name, arg.Description, arg.Email)
+	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Description, arg.Email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -47,7 +47,7 @@ DELETE FROM users WHERE name = $1
 
 // DeleteUser Удаляем пользователя по имени
 func (q *Queries) DeleteUser(ctx context.Context, name string) error {
-	_, err := q.Db.Exec(ctx, deleteUser, name)
+	_, err := q.db.Exec(ctx, deleteUser, name)
 	return err
 }
 
@@ -65,7 +65,7 @@ type GetManyUsersParams struct {
 
 // GetManyUsers Возвращаем слайс пользователей (сортируем по дате создания)
 func (q *Queries) GetManyUsers(ctx context.Context, arg GetManyUsersParams) ([]User, error) {
-	rows, err := q.Db.Query(ctx, getManyUsers, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getManyUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -93,12 +93,12 @@ func (q *Queries) GetManyUsers(ctx context.Context, arg GetManyUsersParams) ([]U
 
 const getUser = `-- name: GetUser :one
 SELECT id, created_at, name, description, email, karma FROM users
-WHERE id = $1
+WHERE name = $1
 `
 
-// GetUser Возвращаем пользователя по его id
-func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
-	row := q.Db.QueryRow(ctx, getUser, id)
+// GetUser Возвращаем пользователя по его имени (т.к. индекс у нас на имени)
+func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, name)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -111,6 +111,19 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	return i, err
 }
 
+const getUserID = `-- name: GetUserID :one
+SELECT id FROM users
+WHERE name = $1
+`
+
+// GetUserID Возвращаем id пользователя по его имени (т.к. индекс у нас на имени)
+func (q *Queries) GetUserID(ctx context.Context, name string) (int32, error) {
+	row := q.db.QueryRow(ctx, getUserID, name)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const updateUserName = `-- name: UpdateUserName :exec
 UPDATE users
 SET name = $2
@@ -118,12 +131,12 @@ WHERE id = $1
 `
 
 type UpdateUserNameParams struct {
-	ID   int64
+	ID   int32
 	Name string
 }
 
 // UpdateUserName Обновляем имя пользователя по его id
 func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) error {
-	_, err := q.Db.Exec(ctx, updateUserName, arg.ID, arg.Name)
+	_, err := q.db.Exec(ctx, updateUserName, arg.ID, arg.Name)
 	return err
 }

@@ -9,25 +9,28 @@ import (
 )
 
 type Article struct {
-	ID         int64
-	CreatedAt  pgtype.Timestamptz
-	Title      string
-	Text       string
-	Comments   pgtype.Int8
-	FromUser   pgtype.Int8
+	ID        int32
+	CreatedAt pgtype.Timestamptz
+	Title     string
+	Text      string
+	Comments  []int32
+	// from_user nil = пользователь удалён
+	FromUsers  []string
 	Evaluation pgtype.Int4
 }
 
 type Comment struct {
-	ID         int64
-	CreatedAt  pgtype.Timestamptz
-	Text       string
-	FromUser   pgtype.Int8
+	ID        int32
+	CreatedAt pgtype.Timestamptz
+	Text      string
+	// from_user nil = пользователь удалён
+	FromUser   pgtype.Text
 	Evaluation pgtype.Int4
+	Edited     pgtype.Bool
 }
 
 type User struct {
-	ID          int64
+	ID          int32
 	CreatedAt   pgtype.Timestamptz
 	Name        string
 	Description pgtype.Text

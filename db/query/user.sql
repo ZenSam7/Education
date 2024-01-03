@@ -7,10 +7,10 @@ INSERT INTO users (
 )
 RETURNING *;
 
--- GetUser Возвращаем пользователя по его id
+-- GetUser Возвращаем пользователя по его имени (т.к. индекс у нас на имени)
 -- name: GetUser :one
 SELECT * FROM users
-WHERE id = $1 ;
+WHERE name = $1;
 
 -- GetManyUsers Возвращаем слайс пользователей (сортируем по дате создания)
 -- name: GetManyUsers :many
@@ -28,3 +28,8 @@ WHERE id = $1;
 -- DeleteUser Удаляем пользователя по имени
 -- name: DeleteUser :exec
 DELETE FROM users WHERE name = $1;
+
+-- GetUserID Возвращаем id пользователя по его имени (т.к. индекс у нас на имени)
+-- name: GetUserID :one
+SELECT id FROM users
+WHERE name = $1;
