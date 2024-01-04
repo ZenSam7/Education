@@ -1,0 +1,70 @@
+
+:::ПОДКЛЮЧЕНИЕ К БД:::
+∅ Чтобы создать новый postgresql:
+$ docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
+
+∅ Подключение к бд:
+$ docker exec -it postgres16 psql -U root habr2
+[exec] Выполнить команду внутри контейнера
+[-it postgres16] Имя контейнера
+[psql -U root habr2] Сама команда
+
+∅ Отключиться от бд:
+$ \q
+
+∅ Создать бд
+$ docker exec -it postgres16 createdb --username=root --owner=root habr2
+∅ Удалить бд
+$ docker exec -it postgres16 dropdb habr2
+
+
+:::SQLC:::
+При помощи sqlc мы генерируем готовый код на какие-либо операции из разряда CRUD для нашей бд
+Введя make sqlc создаём готовый код (в ./db/sqlc) для создания запроса к бд уже через Go
+(т.е. как бы конвертируем код из SQL в Go)
+
+В файле ./sqlc.yaml находятся настройки sqlc
+
+В папке query мы создаём файлы с SQL-запросами к базе данных
+В папке sqlc готовый пакет с нужными методами
+(при каждом make sqlc все файлы (db.go, models.go и <все файлы из ./db/query>.go) ГЕНЕРИРУЮТСЯ ЗАНОВО,
+с если в них внест какие-либо изменения то при повторном make sqlc изменения пропадут,
+поэтому для дополнительного функционала надо создавать и отдельные файлы!)
+
+
+
+
+:::МИГРАЦИИ (используется библиотека golang-migrate):::
+∅ Создать миграцию:
+$ migrate create -ext sql -dir migration -seq init_schema
+[-ext sql] Создать файлы с расширением .sql
+[-dir migration] Куда сохранить миграции
+[-seq] Создать последовательный номер миграции
+[init_schema] Имя миграции
+
+∅ Запустить миграцию:
+$ migrate -path /mnt/c/Users/samki/GoProjects/Education/db/migration/ -database "postgresql://root:root@localhost:5432/habr2?sslmode=disable" up
+[migrate] Программа для миграций на Golang ("Golang Migration")
+[-path /mnt/c/Users/samki/GoProjects/Education/db/migration/] Путь к папке миграций
+[-database "postgresql://root:root@localhost:5432/habr2?sslmode=disable"] Полный URL путь к нашей бд
+[[?sslmode=disable] Означает что мы не используем ssl протокол (т.к. docker по умолчанию его не поддерживает)]
+[up] Поднимаем миграции (т.е. идём от первой миграции до текущей верси бд)
+
+
+
+:::ВСЯКИЕ КОМАНДЫ DOCKER:::
+$ docker run -d --rm --name <имя_контейнера> <имя_образа>
+[run] Создать новый контейнер и запустить его
+[-d] Запустить контейнер на заднем фоне
+[--rm] Запустить контейнер с автоудалением при остановке
+[--name] Имя контейнера
+
+∅ Чтобы запустить существующий контейнер:
+$ docker start <container_id или container_name>
+∅ Чтобы остановить контейнер:
+$ docker stop postgres16
+∅ Увидеть работающий контейнеры:
+$ docker ps
+
+∅ Просмотреть все открытые порты и ip
+$ netstat -tulpen

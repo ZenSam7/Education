@@ -3,26 +3,20 @@ package main
 import (
 	"context"
 	"github.com/ZenSam7/Education/db/sqlc"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ForDB struct {
-}
-
-var DataBase db.DBTX
-
 func main() {
-	query := db.New(DataBase)
+	query := db.New(?)
 
 	ctx := context.Background()
 
 	newUserInfo := db.CreateUserParams{
 		Name:        "ZenSam7",
-		Description: pgtype.Text{String: "pass", Valid: true},
-		Email:       pgtype.Text{String: "abc@abc.abc", Valid: true},
+		Description: "pass",
+		Email:       "abc@abc.abc",
 	}
 
-	if _, err := query.CreateUser(ctx, newUserInfo); err != nil {
+	if err := query.CreateUser(ctx, newUserInfo); err != nil {
 		return
 	}
 }

@@ -1,38 +1,37 @@
 -- Крч между varchar и text разницы нет
 
 CREATE TABLE "users" (
-  "id"          serial PRIMARY KEY,
-  "created_at"  timestamptz DEFAULT (now()),
-  "name"        varchar NOT NULL,
-  "description" varchar,
-  "email"       varchar,
-  "karma"       integer DEFAULT 0
+  id_user       serial PRIMARY KEY,
+  created_at    timestamptz DEFAULT now(),
+  name          varchar NOT NULL,
+  description   text NOT NULL,
+  email         text NOT NULL,
+  karma         integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE "articles" (
-  "id"          serial PRIMARY KEY,
-  "created_at"  timestamptz DEFAULT (now()),
-  "title"       varchar NOT NULL,
-  "text"        varchar NOT NULL,
-  "comments"    integer[],
-  "from_users"  varchar[],
-  "evaluation"  integer DEFAULT 0
+  id_article    serial PRIMARY KEY,
+  created_at    timestamptz DEFAULT now(),
+  edited_at     timestamptz DEFAULT NULL,
+  title         varchar NOT NULL,
+  text          text NOT NULL,
+  comments      integer[],
+  authors       integer[] NOT NULL,
+  evaluation    integer NOT NULL DEFAULT 0
 );
-COMMENT ON COLUMN articles.from_users IS 'from_user nil = пользователь удалён';
 
 CREATE TABLE "comments" (
-  "id"          serial PRIMARY KEY,
-  "created_at"  timestamptz DEFAULT (now()),
-  "text"        varchar NOT NULL,
-  "from_user"   varchar,
-  "evaluation"  integer DEFAULT 0,
-  "edited"      boolean DEFAULT false
+  id_comment    serial PRIMARY KEY,
+  created_at    timestamptz DEFAULT now(),
+  edited_at     timestamptz DEFAULT NULL,
+  text          text NOT NULL,
+  from_user     integer NOT NULL,
+  evaluation    integer NOT NULL DEFAULT 0
 );
-COMMENT ON COLUMN comments.from_user IS 'from_user nil = пользователь удалён';
 
 
-CREATE INDEX name_ind ON "users" ("name");
+CREATE INDEX user_indx ON "users" ("id_user");
 
-CREATE INDEX title_ind ON "articles" ("title");
+CREATE INDEX article_indx ON "articles" ("id_article");
 
-CREATE INDEX from_user_ind ON "articles" ("from_users");
+CREATE INDEX comment_indx ON "comments" ("id_comment");
