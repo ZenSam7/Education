@@ -9,118 +9,104 @@ import (
 	"context"
 )
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, description, email)
-VALUES ($1, $2, $3)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (name, description)
+VALUES ($1::text, $2::text)
+RETURNING id_user, created_at, name, description, karma
 `
 
 type CreateUserParams struct {
 	Name        string
 	Description string
-	Email       string
 }
 
 // CreateUser Создаём пользователя
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.Exec(ctx, createUser, arg.Name, arg.Description, arg.Email)
-	return err
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Description)
+	var i User
+	err := row.Scan(
+		&i.IDUser,
+		&i.CreatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Karma,
+	)
+	return i, err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
 WHERE id_user = $1
+RETURNING id_user, created_at, name, description, karma
 `
 
 // DeleteUser Удаляем пользователя
-func (q *Queries) DeleteUser(ctx context.Context, idUser int32) error {
-	_, err := q.db.Exec(ctx, deleteUser, idUser)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
+	row := q.db.QueryRow(ctx, deleteUser, idUser)
+	var i User
+	err := row.Scan(
+		&i.IDUser,
+		&i.CreatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Karma,
+	)
+	return i, err
 }
 
-const editUserDescription = `-- name: EditUserDescription :exec
+const editUserParam = `-- name: EditUserParam :one
 UPDATE users
-SET description = $2
-WHERE id_user = $1
+SET
+  name = COALESCE($1::text, name),
+  description = COALESCE($2::text, description),
+  karma = COALESCE($3::integer, karma)
+WHERE id_user = $4::integer
+RETURNING id_user, created_at, name, description, karma
 `
 
-type EditUserDescriptionParams struct {
-	IDUser      int32
+type EditUserParamParams struct {
+	Name        string
 	Description string
+	Karma       int32
+	IDUser      int32
 }
 
-// EditUserDescription Изменяем описание пользователя
-func (q *Queries) EditUserDescription(ctx context.Context, arg EditUserDescriptionParams) error {
-	_, err := q.db.Exec(ctx, editUserDescription, arg.IDUser, arg.Description)
-	return err
-}
-
-const editUserEmail = `-- name: EditUserEmail :exec
-UPDATE users
-SET email = $2
-WHERE id_user = $1
-`
-
-type EditUserEmailParams struct {
-	IDUser int32
-	Email  string
-}
-
-// EditUserEmail Изменяем почту пользователя
-func (q *Queries) EditUserEmail(ctx context.Context, arg EditUserEmailParams) error {
-	_, err := q.db.Exec(ctx, editUserEmail, arg.IDUser, arg.Email)
-	return err
-}
-
-const editUserKarma = `-- name: EditUserKarma :exec
-UPDATE users
-SET karma = $2
-WHERE id_user = $1
-`
-
-type EditUserKarmaParams struct {
-	IDUser int32
-	Karma  int32
-}
-
-// EditUserKarma Изменяем карму пользователя
-func (q *Queries) EditUserKarma(ctx context.Context, arg EditUserKarmaParams) error {
-	_, err := q.db.Exec(ctx, editUserKarma, arg.IDUser, arg.Karma)
-	return err
-}
-
-const editUserName = `-- name: EditUserName :exec
-UPDATE users
-SET name = $2
-WHERE id_user = $1
-`
-
-type EditUserNameParams struct {
-	IDUser int32
-	Name   string
-}
-
-// EditUserName Изменяем имя пользователя
-func (q *Queries) EditUserName(ctx context.Context, arg EditUserNameParams) error {
-	_, err := q.db.Exec(ctx, editUserName, arg.IDUser, arg.Name)
-	return err
+// EditUserParam Изменяем параметр(ы) пользователя
+func (q *Queries) EditUserParam(ctx context.Context, arg EditUserParamParams) (User, error) {
+	row := q.db.QueryRow(ctx, editUserParam,
+		arg.Name,
+		arg.Description,
+		arg.Karma,
+		arg.IDUser,
+	)
+	var i User
+	err := row.Scan(
+		&i.IDUser,
+		&i.CreatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Karma,
+	)
+	return i, err
 }
 
 const getManyUsers = `-- name: GetManyUsers :many
-SELECT id_user, created_at, name, description, email, karma FROM users
-ORDER BY $1::text
-LIMIT $2
-OFFSET $3
+SELECT id_user, created_at, name, description, karma FROM users
+ORDER BY $3::text
+LIMIT $1
+OFFSET $2
 `
 
 type GetManyUsersParams struct {
-	Column1 string
-	Limit   int64
-	Offset  int64
+	Limit     int64
+	Offset    int64
+	Attribute string
 }
 
-// GetManyUsers Возвращаем слайс пользователей отсортированных по параметру Column1
+// GetManyUsers Возвращаем слайс пользователей отсортированных по параметру attribute
+// (можно поставить: id_user, и сортировки не будет)
 func (q *Queries) GetManyUsers(ctx context.Context, arg GetManyUsersParams) ([]User, error) {
-	rows, err := q.db.Query(ctx, getManyUsers, arg.Column1, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getManyUsers, arg.Limit, arg.Offset, arg.Attribute)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +119,6 @@ func (q *Queries) GetManyUsers(ctx context.Context, arg GetManyUsersParams) ([]U
 			&i.CreatedAt,
 			&i.Name,
 			&i.Description,
-			&i.Email,
 			&i.Karma,
 		); err != nil {
 			return nil, err
@@ -147,7 +132,7 @@ func (q *Queries) GetManyUsers(ctx context.Context, arg GetManyUsersParams) ([]U
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id_user, created_at, name, description, email, karma FROM users
+SELECT id_user, created_at, name, description, karma FROM users
 WHERE id_user = $1
 `
 
@@ -160,7 +145,6 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 		&i.CreatedAt,
 		&i.Name,
 		&i.Description,
-		&i.Email,
 		&i.Karma,
 	)
 	return i, err

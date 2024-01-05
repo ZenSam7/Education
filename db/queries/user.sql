@@ -1,46 +1,35 @@
 -- CreateUser Создаём пользователя
--- name: CreateUser :exec
-INSERT INTO users (name, description, email)
-VALUES ($1, $2, $3);
+-- name: CreateUser :one
+INSERT INTO users (name, description)
+VALUES (sqlc.arg(name)::text, sqlc.arg(description)::text)
+RETURNING *;
 
 -- DeleteUser Удаляем пользователя
--- name: DeleteUser :exec
+-- name: DeleteUser :one
 DELETE FROM users
-WHERE id_user = $1;
+WHERE id_user = $1
+RETURNING *;
 
 -- GetUser Возвращаем пользователя
 -- name: GetUser :one
 SELECT * FROM users
 WHERE id_user = $1;
 
--- GetManyUsers Возвращаем слайс пользователей отсортированных по параметру Column1
+-- GetManyUsers Возвращаем слайс пользователей отсортированных по параметру attribute
+-- (можно поставить: id_user, и сортировки не будет)
 -- name: GetManyUsers :many
 SELECT * FROM users
-ORDER BY $1::text
-LIMIT $2
-OFFSET $3;
+ORDER BY sqlc.arg(attribute)::text
+LIMIT $1
+OFFSET $2;
 
 
--- EditUserName Изменяем имя пользователя
--- name: EditUserName :exec
+-- EditUserParam Изменяем параметр(ы) пользователя
+-- name: EditUserParam :one
 UPDATE users
-SET name = $2
-WHERE id_user = $1;
-
--- EditUserDescription Изменяем описание пользователя
--- name: EditUserDescription :exec
-UPDATE users
-SET description = $2
-WHERE id_user = $1;
-
--- EditUserEmail Изменяем почту пользователя
--- name: EditUserEmail :exec
-UPDATE users
-SET email = $2
-WHERE id_user = $1;
-
--- EditUserKarma Изменяем карму пользователя
--- name: EditUserKarma :exec
-UPDATE users
-SET karma = $2
-WHERE id_user = $1;
+SET
+  name = COALESCE(sqlc.arg(name)::text, name),
+  description = COALESCE(sqlc.arg(description)::text, description),
+  karma = COALESCE(sqlc.arg(karma)::integer, karma)
+WHERE id_user = sqlc.arg(id_user)::integer
+RETURNING *;

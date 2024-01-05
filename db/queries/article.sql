@@ -1,60 +1,45 @@
 -- CreateArticle Создаём статью
 -- name: CreateArticle :exec
 INSERT INTO articles (title, text, authors)
-VALUES ($1, $2, $3);
+VALUES ($1, $2, $3)
+RETURNING *;
 
 -- GetArticle Возвращаем статью по id
 -- name: GetArticle :one
 SELECT * FROM articles
 WHERE id_article = $1;
 
--- GetArticlesWithTitle Возвращаем много статей взятых по названию
--- name: GetArticlesWithTitle :many
+-- GetArticlesWithAttribute Возвращаем много статей взятых по признаку attribute
+-- name: GetArticlesWithAttribute :many
 SELECT * FROM articles
-WHERE title = $1
-LIMIT $2
-OFFSET $3;
+WHERE sqlc.arg(attribute)::text = sqlc.arg(attribute_value)::text
+LIMIT $1
+OFFSET $2;
 
--- GetArticlesWithEvalution Возвращаем много статей взятых по оценке
--- name: GetArticlesWithEvalution :many
-SELECT * FROM articles
-WHERE evaluation = $1
-LIMIT $2
-OFFSET $3;
-
--- GetManySortedArticles Возвращаем много статей отсортированных по признаку Column1
+-- GetManySortedArticles Возвращаем много статей отсортированных по признаку attribute
 -- name: GetManySortedArticles :many
 SELECT * FROM articles
-ORDER BY $1::text
-LIMIT $2
-OFFSET $3;
+ORDER BY sqlc.arg(sorted_at)::text
+LIMIT $1
+OFFSET $2;
 
+-- GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку attridute отсортированных по признаку sortedAt
+-- name: GetManySortedArticlesWithAttribute :many
+SELECT * FROM articles
+WHERE sqlc.arg(attribute)::text = sqlc.arg(attribute_value)::text
+ORDER BY sqlc.arg(sorted_at)::text
+LIMIT $1
+OFFSET $2;
 
--- EditArticleText Изменяем текст статьи и обновляем время изменения статьи (Column1 = id_article, Column2 = text)
--- name: EditArticleText :exec
-WITH update_time AS (
-    UPDATE articles
-    SET edited_at = now()
-    WHERE id_article = $1::integer
-)
+-- EditArticleParam Изменяем параметр(ы) статьи
+-- name: EditArticleParam :one
 UPDATE articles
-SET text = $2::text
-WHERE id_article = $1::integer;
-
--- EditArticleTitle Изменяем заголовок статьи
--- name: EditArticleTitle :exec
-UPDATE articles
-SET title = $2
-WHERE id_article = $1;
-
--- AddArticleAuthors Добавляем автора статьи
--- name: AddArticleAuthors :exec
-UPDATE articles
-SET authors = array_append(authors, $2)
-WHERE id_article = $1;
-
--- DeleteArticleAuthors Удаляем автора статьи
--- name: DeleteArticleAuthors :exec
-UPDATE articles
-SET authors = array_remove(authors, $2)
-WHERE id_article = $1;
+SET
+  edited_at = COALESCE(sqlc.arg(edited_at)::timestamp , edited_at),
+  title = COALESCE(sqlc.arg(title)::text, title),
+  text = COALESCE(sqlc.arg(text), text),
+  comments = COALESCE(sqlc.arg(comments), comments),
+  authors = COALESCE(sqlc.arg(authors), authors),
+  evaluation = COALESCE(sqlc.arg(evaluation), evaluation)
+WHERE id_article = sqlc.arg(id_article)
+RETURNING *;

@@ -7,28 +7,14 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
-
-const addArticleAuthors = `-- name: AddArticleAuthors :exec
-UPDATE articles
-SET authors = array_append(authors, $2)
-WHERE id_article = $1
-`
-
-type AddArticleAuthorsParams struct {
-	IDArticle   int32
-	ArrayAppend int32
-}
-
-// AddArticleAuthors Добавляем автора статьи
-func (q *Queries) AddArticleAuthors(ctx context.Context, arg AddArticleAuthorsParams) error {
-	_, err := q.db.Exec(ctx, addArticleAuthors, arg.IDArticle, arg.ArrayAppend)
-	return err
-}
 
 const createArticle = `-- name: CreateArticle :exec
 INSERT INTO articles (title, text, authors)
 VALUES ($1, $2, $3)
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
 type CreateArticleParams struct {
@@ -43,60 +29,52 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) er
 	return err
 }
 
-const deleteArticleAuthors = `-- name: DeleteArticleAuthors :exec
+const editArticleParam = `-- name: EditArticleParam :one
 UPDATE articles
-SET authors = array_remove(authors, $2)
-WHERE id_article = $1
+SET
+  edited_at = COALESCE($1::timestamp , edited_at),
+  title = COALESCE($2::text, title),
+  text = COALESCE($3, text),
+  comments = COALESCE($4, comments),
+  authors = COALESCE($5, authors),
+  evaluation = COALESCE($6, evaluation)
+WHERE id_article = $7
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
-type DeleteArticleAuthorsParams struct {
-	IDArticle   int32
-	ArrayRemove int32
+type EditArticleParamParams struct {
+	EditedAt   pgtype.Timestamp
+	Title      string
+	Text       string
+	Comments   []int32
+	Authors    []int32
+	Evaluation int32
+	IDArticle  int32
 }
 
-// DeleteArticleAuthors Удаляем автора статьи
-func (q *Queries) DeleteArticleAuthors(ctx context.Context, arg DeleteArticleAuthorsParams) error {
-	_, err := q.db.Exec(ctx, deleteArticleAuthors, arg.IDArticle, arg.ArrayRemove)
-	return err
-}
-
-const editArticleText = `-- name: EditArticleText :exec
-WITH update_time AS (
-    UPDATE articles
-    SET edited_at = now()
-    WHERE id_article = $1::integer
-)
-UPDATE articles
-SET text = $2::text
-WHERE id_article = $1::integer
-`
-
-type EditArticleTextParams struct {
-	Column1 int32
-	Column2 string
-}
-
-// EditArticleText Изменяем текст статьи и обновляем время изменения статьи (Column1 = id_article, Column2 = text)
-func (q *Queries) EditArticleText(ctx context.Context, arg EditArticleTextParams) error {
-	_, err := q.db.Exec(ctx, editArticleText, arg.Column1, arg.Column2)
-	return err
-}
-
-const editArticleTitle = `-- name: EditArticleTitle :exec
-UPDATE articles
-SET title = $2
-WHERE id_article = $1
-`
-
-type EditArticleTitleParams struct {
-	IDArticle int32
-	Title     string
-}
-
-// EditArticleTitle Изменяем заголовок статьи
-func (q *Queries) EditArticleTitle(ctx context.Context, arg EditArticleTitleParams) error {
-	_, err := q.db.Exec(ctx, editArticleTitle, arg.IDArticle, arg.Title)
-	return err
+// EditArticleParam Изменяем параметр(ы) статьи
+func (q *Queries) EditArticleParam(ctx context.Context, arg EditArticleParamParams) (Article, error) {
+	row := q.db.QueryRow(ctx, editArticleParam,
+		arg.EditedAt,
+		arg.Title,
+		arg.Text,
+		arg.Comments,
+		arg.Authors,
+		arg.Evaluation,
+		arg.IDArticle,
+	)
+	var i Article
+	err := row.Scan(
+		&i.IDArticle,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Title,
+		&i.Text,
+		&i.Comments,
+		&i.Authors,
+		&i.Evaluation,
+	)
+	return i, err
 }
 
 const getArticle = `-- name: GetArticle :one
@@ -121,65 +99,28 @@ func (q *Queries) GetArticle(ctx context.Context, idArticle int32) (Article, err
 	return i, err
 }
 
-const getArticlesWithEvalution = `-- name: GetArticlesWithEvalution :many
+const getArticlesWithAttribute = `-- name: GetArticlesWithAttribute :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-WHERE evaluation = $1
-LIMIT $2
-OFFSET $3
+WHERE $3::text = $4::text
+LIMIT $1
+OFFSET $2
 `
 
-type GetArticlesWithEvalutionParams struct {
-	Evaluation int32
-	Limit      int64
-	Offset     int64
+type GetArticlesWithAttributeParams struct {
+	Limit          int64
+	Offset         int64
+	Attribute      string
+	AttributeValue string
 }
 
-// GetArticlesWithEvalution Возвращаем много статей взятых по оценке
-func (q *Queries) GetArticlesWithEvalution(ctx context.Context, arg GetArticlesWithEvalutionParams) ([]Article, error) {
-	rows, err := q.db.Query(ctx, getArticlesWithEvalution, arg.Evaluation, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Article
-	for rows.Next() {
-		var i Article
-		if err := rows.Scan(
-			&i.IDArticle,
-			&i.CreatedAt,
-			&i.EditedAt,
-			&i.Title,
-			&i.Text,
-			&i.Comments,
-			&i.Authors,
-			&i.Evaluation,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getArticlesWithTitle = `-- name: GetArticlesWithTitle :many
-SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-WHERE title = $1
-LIMIT $2
-OFFSET $3
-`
-
-type GetArticlesWithTitleParams struct {
-	Title  string
-	Limit  int64
-	Offset int64
-}
-
-// GetArticlesWithTitle Возвращаем много статей взятых по названию
-func (q *Queries) GetArticlesWithTitle(ctx context.Context, arg GetArticlesWithTitleParams) ([]Article, error) {
-	rows, err := q.db.Query(ctx, getArticlesWithTitle, arg.Title, arg.Limit, arg.Offset)
+// GetArticlesWithAttribute Возвращаем много статей взятых по признаку attribute
+func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error) {
+	rows, err := q.db.Query(ctx, getArticlesWithAttribute,
+		arg.Limit,
+		arg.Offset,
+		arg.Attribute,
+		arg.AttributeValue,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -209,20 +150,72 @@ func (q *Queries) GetArticlesWithTitle(ctx context.Context, arg GetArticlesWithT
 
 const getManySortedArticles = `-- name: GetManySortedArticles :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-ORDER BY $1::text
-LIMIT $2
-OFFSET $3
+ORDER BY $3::text
+LIMIT $1
+OFFSET $2
 `
 
 type GetManySortedArticlesParams struct {
-	Column1 string
-	Limit   int64
-	Offset  int64
+	Limit    int64
+	Offset   int64
+	SortedAt string
 }
 
-// GetManySortedArticles Возвращаем много статей отсортированных по признаку Column1
+// GetManySortedArticles Возвращаем много статей отсортированных по признаку attribute
 func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error) {
-	rows, err := q.db.Query(ctx, getManySortedArticles, arg.Column1, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getManySortedArticles, arg.Limit, arg.Offset, arg.SortedAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Article
+	for rows.Next() {
+		var i Article
+		if err := rows.Scan(
+			&i.IDArticle,
+			&i.CreatedAt,
+			&i.EditedAt,
+			&i.Title,
+			&i.Text,
+			&i.Comments,
+			&i.Authors,
+			&i.Evaluation,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getManySortedArticlesWithAttribute = `-- name: GetManySortedArticlesWithAttribute :many
+SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
+WHERE $3::text = $4::text
+ORDER BY $5::text
+LIMIT $1
+OFFSET $2
+`
+
+type GetManySortedArticlesWithAttributeParams struct {
+	Limit          int64
+	Offset         int64
+	Attribute      string
+	AttributeValue string
+	SortedAt       string
+}
+
+// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку attridute отсортированных по признаку sortedAt
+func (q *Queries) GetManySortedArticlesWithAttribute(ctx context.Context, arg GetManySortedArticlesWithAttributeParams) ([]Article, error) {
+	rows, err := q.db.Query(ctx, getManySortedArticlesWithAttribute,
+		arg.Limit,
+		arg.Offset,
+		arg.Attribute,
+		arg.AttributeValue,
+		arg.SortedAt,
+	)
 	if err != nil {
 		return nil, err
 	}

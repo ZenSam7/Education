@@ -1,4 +1,5 @@
 
+
 :::ПОДКЛЮЧЕНИЕ К БД:::
 ∅ Чтобы создать новый postgresql:
 $ docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
@@ -31,6 +32,11 @@ $ docker exec -it postgres16 dropdb habr2
 с если в них внест какие-либо изменения то при повторном make sqlc изменения пропадут,
 поэтому для дополнительного функционала надо создавать и отдельные файлы!)
 
+
+:::UNIT-ТЕСТЫ:::
+Все тесты находятся в папке в запросами (./db/sqlc/*_test.go)
+∅ Запустить тесты:
+$ make test
 
 
 

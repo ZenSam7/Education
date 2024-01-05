@@ -26,8 +26,12 @@ connect:
 refreshdb:
 	sudo make dropdb && sudo make createdb && sudo make migrateup
 
-# Создаём запросы через sqlc
+# Создаём код для запросов через sqlc
 sqlc:
 	sqlc generate
 
-.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb
+# Запускаем все тесты с подробным описанием и проверкой на полное покрытие тестов
+test:
+	go test -cover ./db/sqlc
+
+.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb test

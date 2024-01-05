@@ -5,7 +5,6 @@ CREATE TABLE "users" (
   created_at    timestamptz DEFAULT now(),
   name          varchar NOT NULL,
   description   text NOT NULL,
-  email         text NOT NULL,
   karma         integer DEFAULT 0 NOT NULL
 );
 

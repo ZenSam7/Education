@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createComment = `-- name: CreateComment :exec
@@ -34,44 +36,62 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) er
 const deleteComment = `-- name: DeleteComment :exec
 WITH deleted_comment_id AS (
     DELETE FROM comments
-    WHERE id_comment = $2
+    WHERE id_comment = $2::integer
 )
 UPDATE articles
-SET comments = array_remove(comments, $2)
+SET comments = array_remove(comments, $2::integer)
 WHERE id_article = $1
 `
 
 type DeleteCommentParams struct {
-	IDArticle   int32
-	ArrayRemove int32
+	IDArticle int32
+	IDComment int32
 }
 
 // DeleteComment Удаляем комментарий к статье
 func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) error {
-	_, err := q.db.Exec(ctx, deleteComment, arg.IDArticle, arg.ArrayRemove)
+	_, err := q.db.Exec(ctx, deleteComment, arg.IDArticle, arg.IDComment)
 	return err
 }
 
-const editCommentText = `-- name: EditCommentText :exec
-WITH update_time AS (
-    UPDATE comments
-    SET edited_at = now()
-    WHERE id_comment = $1::integer
-)
+const editCommentParam = `-- name: EditCommentParam :one
 UPDATE comments
-SET text = $2::text
-WHERE id_comment = $1::integer
+SET
+  edited_at = COALESCE($1::timestamp, edited_at),
+  text = COALESCE($2::text, text),
+  from_user = COALESCE($3::integer, from_user),
+  evaluation = COALESCE($4::integer, evaluation)
+WHERE id_comment = $5::integer
+RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
 `
 
-type EditCommentTextParams struct {
-	Column1 int32
-	Column2 string
+type EditCommentParamParams struct {
+	EditedAt   pgtype.Timestamp
+	Text       string
+	FromUser   int32
+	Evaluation int32
+	IDComment  int32
 }
 
-// EditCommentText Изменяем текст комментария и обновляем время изменения комментария (Column1 = id_comment, Column1 = text)
-func (q *Queries) EditCommentText(ctx context.Context, arg EditCommentTextParams) error {
-	_, err := q.db.Exec(ctx, editCommentText, arg.Column1, arg.Column2)
-	return err
+// EditCommentParam Изменяем параметр(ы) пользователя
+func (q *Queries) EditCommentParam(ctx context.Context, arg EditCommentParamParams) (Comment, error) {
+	row := q.db.QueryRow(ctx, editCommentParam,
+		arg.EditedAt,
+		arg.Text,
+		arg.FromUser,
+		arg.Evaluation,
+		arg.IDComment,
+	)
+	var i Comment
+	err := row.Scan(
+		&i.IDComment,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Text,
+		&i.FromUser,
+		&i.Evaluation,
+	)
+	return i, err
 }
 
 const getComment = `-- name: GetComment :exec

@@ -33,6 +33,5 @@ type User struct {
 	CreatedAt   pgtype.Timestamptz
 	Name        string
 	Description string
-	Email       string
 	Karma       int32
 }
