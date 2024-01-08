@@ -34,4 +34,7 @@ sqlc:
 test:
 	go test -cover ./db/sqlc
 
-.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb test
+RESET:
+	docker restart postgres16 && sudo make refreshdb && sudo make sqlc
+
+.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb sqlc test RESET

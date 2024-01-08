@@ -5,6 +5,10 @@ import (
 )
 
 func main() {
-	_, c := db.GetQueries()
-	defer c()
+	_, closeConn := db.GetQueries()
+	defer closeConn()
+
+	type a struct {
+		a string
+	}
 }

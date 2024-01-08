@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func getRandomString() string {
+func GetRandomString() string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	str := make([]byte, rand.Intn(len(letters)))
@@ -20,8 +20,8 @@ func getRandomString() string {
 	return string(str)
 }
 
-// getRandomInt Число может быть отрицательным
-func getRandomInt() int32 {
+// GetRandomInt Число может быть отрицательным
+func GetRandomInt() int32 {
 	return rand.Int31() * int32(1-2*rand.Intn(2))
 }
 
@@ -31,8 +31,8 @@ func createRandomUser(t *testing.T) (User, *Queries, func()) {
 	queries, closeConn := GetQueries()
 
 	arg := CreateUserParams{
-		Name:        getRandomString(),
-		Description: getRandomString(),
+		Name:        GetRandomString(),
+		Description: GetRandomString(),
 	}
 
 	newUser, err := queries.CreateUser(context.Background(), arg)
@@ -62,48 +62,47 @@ func TestEditUserParam(t *testing.T) {
 
 	// Изменяем Имя
 	agr := EditUserParamParams{
-		Name:        getRandomString(),
-		Description: user.Description,
-		Karma:       user.Karma,
-		IDUser:      user.IDUser,
+		Name:   GetRandomString(),
+		IDUser: user.IDUser,
 	}
 
 	editedUser, err := queries.EditUserParam(context.Background(), agr)
 	require.NoError(t, err)
+	require.NotEmpty(t, editedUser)
 
 	require.NotEqual(t, editedUser.Name, user.Name)
 
 	require.Equal(t, editedUser.IDUser, user.IDUser)
 	require.Equal(t, editedUser.Karma, user.Karma)
 	require.Equal(t, editedUser.Description, user.Description)
+	user = editedUser // Обновляем пользователя с которым сравниваем
 
 	// Изменяем Описание
 	agr = EditUserParamParams{
-		Name:        user.Name,
-		Description: getRandomString(),
-		Karma:       user.Karma,
+		Description: GetRandomString(),
 		IDUser:      user.IDUser,
 	}
 
 	editedUser, err = queries.EditUserParam(context.Background(), agr)
 	require.NoError(t, err)
+	require.NotEmpty(t, editedUser)
 
 	require.NotEqual(t, editedUser.Description, user.Description)
 
 	require.Equal(t, editedUser.IDUser, user.IDUser)
 	require.Equal(t, editedUser.Karma, user.Karma)
 	require.Equal(t, editedUser.Name, user.Name)
+	user = editedUser // Обновляем пользователя с которым сравниваем
 
 	// Изменяем Карму
 	agr = EditUserParamParams{
-		Name:        user.Name,
-		Description: user.Description,
-		Karma:       getRandomInt(),
-		IDUser:      user.IDUser,
+		Karma:  GetRandomInt(),
+		IDUser: user.IDUser,
 	}
 
 	editedUser, err = queries.EditUserParam(context.Background(), agr)
 	require.NoError(t, err)
+	require.NotEmpty(t, editedUser)
 
 	require.NotEqual(t, editedUser.Karma, user.Karma)
 
@@ -119,6 +118,7 @@ func TestGetUser(t *testing.T) {
 
 	findedUser, err := queries.GetUser(context.Background(), user.IDUser)
 	require.NoError(t, err)
+	require.NotEmpty(t, findedUser)
 
 	require.Equal(t, findedUser.IDUser, user.IDUser)
 	require.Equal(t, findedUser.Description, user.Description)
@@ -127,37 +127,34 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, findedUser.CreatedAt, user.CreatedAt)
 }
 
+// TODO: Переделать тест TestGetManyUsers и запрос как у TestGetArticlesWithAttribute
 func TestGetManyUsers(t *testing.T) {
 	_, queries, closeConn := createRandomUser(t)
 	// Не забываем закрыть соединение
 	defer closeConn()
 
-	// Создаём 10 тестовых пользователя
-	var listCreatedUsers []User
-	var topUserId int64 // Id оследнего пользователя
-	for i := 0; i < 10; i++ {
-		usr, _, cC := createRandomUser(t)
-		cC() // Закрываем лишние соединения
-
-		topUserId = int64(usr.IDUser)
-		listCreatedUsers = append(listCreatedUsers, usr)
+	var listUsers [6]User
+	for i := 0; i < 6; i++ {
+		listUsers[i], _ = queries.GetUser(context.Background(), int32(i+1))
 	}
 
-	arg := GetManyUsersParams{
-		Limit:     4,
-		Offset:    topUserId,
-		Attribute: "id_user",
+	arg := GetManySortedUsersParams{
+		Attribute: "name",
+		Offset:    0,
+		Limit:     1,
 	}
 
-	listFindedUsers, err := queries.GetManyUsers(context.Background(), arg)
+	listFindedUsers, err := queries.GetManySortedUsers(context.Background(), arg)
 	require.NoError(t, err)
+	require.NotEmpty(t, listFindedUsers)
 
 	for i, usr := range listFindedUsers {
-		require.Equal(t, usr.IDUser, listCreatedUsers[i].IDUser)
-		require.Equal(t, usr.Description, listCreatedUsers[i].Description)
-		require.Equal(t, usr.Karma, listCreatedUsers[i].Karma)
-		require.Equal(t, usr.Name, listCreatedUsers[i].Name)
-		require.Equal(t, usr.CreatedAt, listCreatedUsers[i].CreatedAt)
+		ind := i + int(arg.Offset)
+		require.Equal(t, usr.IDUser, listUsers[ind].IDUser)
+		require.Equal(t, usr.Description, listUsers[ind].Description)
+		require.Equal(t, usr.Karma, listUsers[ind].Karma)
+		require.Equal(t, usr.Name, listUsers[ind].Name)
+		require.Equal(t, usr.CreatedAt, listUsers[ind].CreatedAt)
 	}
 }
 
@@ -168,6 +165,7 @@ func TestDeleteUser(t *testing.T) {
 
 	deletedUser, err := queries.DeleteUser(context.Background(), user.IDUser)
 	require.NoError(t, err)
+	require.NotEmpty(t, deletedUser)
 
 	require.Equal(t, deletedUser.IDUser, user.IDUser)
 	require.Equal(t, deletedUser.Description, user.Description)
@@ -180,6 +178,4 @@ func TestDeleteUser(t *testing.T) {
 	require.EqualError(t, err, pgx.ErrNoRows.Error())
 
 	require.Empty(t, findedUser)
-
-	// Если функция удаления пользователей работает, то значит
 }

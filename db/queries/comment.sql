@@ -1,6 +1,6 @@
 -- CreateComment Создаём комментарий к статье
 -- name: CreateComment :exec
-WITH add_comment AS (
+WITH add_comment AS ( -- Объединяем 2 запроса в 1
     INSERT INTO comments (text, from_user)
     VALUES ($3, $2)
 )
@@ -10,7 +10,7 @@ WHERE id_article = $1;
 
 -- DeleteComment Удаляем комментарий к статье
 -- name: DeleteComment :exec
-WITH deleted_comment_id AS (
+WITH deleted_comment_id AS ( -- Объединяем 2 запроса в 1
     DELETE FROM comments
     WHERE id_comment = sqlc.arg(id_comment)::integer
 )
@@ -28,7 +28,10 @@ WHERE id_comment = $1;
 UPDATE comments
 SET
   edited_at = COALESCE(sqlc.arg(edited_at)::timestamp, edited_at),
-  text = COALESCE(sqlc.arg(text)::text, text),
+
+  -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+  -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  text = CASE WHEN sqlc.arg(text)::text <> '' THEN sqlc.arg(text)::text ELSE text END,
   from_user = COALESCE(sqlc.arg(from_user)::integer, from_user),
   evaluation = COALESCE(sqlc.arg(evaluation)::integer, evaluation)
 WHERE id_comment = sqlc.arg(id_comment)::integer

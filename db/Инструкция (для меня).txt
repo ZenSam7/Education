@@ -1,22 +1,21 @@
 
-
 :::ПОДКЛЮЧЕНИЕ К БД:::
 ∅ Чтобы создать новый postgresql:
 $ docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
 
 ∅ Подключение к бд:
-$ docker exec -it postgres16 psql -U root habr2
+$ docker exec -it postgres16 psql -U root education
 [exec] Выполнить команду внутри контейнера
 [-it postgres16] Имя контейнера
-[psql -U root habr2] Сама команда
+[psql -U root education] Сама команда
 
 ∅ Отключиться от бд:
 $ \q
 
 ∅ Создать бд
-$ docker exec -it postgres16 createdb --username=root --owner=root habr2
+$ docker exec -it postgres16 createdb --username=root --owner=root education
 ∅ Удалить бд
-$ docker exec -it postgres16 dropdb habr2
+$ docker exec -it postgres16 dropdb education
 
 
 :::SQLC:::
@@ -49,10 +48,10 @@ $ migrate create -ext sql -dir migration -seq init_schema
 [init_schema] Имя миграции
 
 ∅ Запустить миграцию:
-$ migrate -path /mnt/c/Users/samki/GoProjects/Education/db/migration/ -database "postgresql://root:root@localhost:5432/habr2?sslmode=disable" up
+$ migrate -path /mnt/c/Users/samki/GoProjects/Education/db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up
 [migrate] Программа для миграций на Golang ("Golang Migration")
 [-path /mnt/c/Users/samki/GoProjects/Education/db/migration/] Путь к папке миграций
-[-database "postgresql://root:root@localhost:5432/habr2?sslmode=disable"] Полный URL путь к нашей бд
+[-database "postgresql://root:root@localhost:5432/education?sslmode=disable"] Полный URL путь к нашей бд
 [[?sslmode=disable] Означает что мы не используем ssl протокол (т.к. docker по умолчанию его не поддерживает)]
 [up] Поднимаем миграции (т.е. идём от первой миграции до текущей верси бд)
 

@@ -40,7 +40,7 @@ WHERE id_user = $1
 RETURNING id_user, created_at, name, description, karma
 `
 
-// DeleteUser Удаляем пользователя
+// DeleteUser Удаляем пользователя и сдвигаем id
 func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 	row := q.db.QueryRow(ctx, deleteUser, idUser)
 	var i User
@@ -57,8 +57,10 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 const editUserParam = `-- name: EditUserParam :one
 UPDATE users
 SET
-  name = COALESCE($1::text, name),
-  description = COALESCE($2::text, description),
+  -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+  -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  name = CASE WHEN $1::text <> '' THEN $1::text ELSE name END,
+  description = CASE WHEN $2::text <> '' THEN $2::text ELSE description END,
   karma = COALESCE($3::integer, karma)
 WHERE id_user = $4::integer
 RETURNING id_user, created_at, name, description, karma
@@ -90,23 +92,23 @@ func (q *Queries) EditUserParam(ctx context.Context, arg EditUserParamParams) (U
 	return i, err
 }
 
-const getManyUsers = `-- name: GetManyUsers :many
+const getManySortedUsers = `-- name: GetManySortedUsers :many
 SELECT id_user, created_at, name, description, karma FROM users
-ORDER BY $3::text
-LIMIT $1
-OFFSET $2
+ORDER BY $1::text
+LIMIT $3::integer
+OFFSET $2::integer
 `
 
-type GetManyUsersParams struct {
-	Limit     int64
-	Offset    int64
+type GetManySortedUsersParams struct {
 	Attribute string
+	Offset    int32
+	Limit     int32
 }
 
-// GetManyUsers Возвращаем слайс пользователей отсортированных по параметру attribute
+// GetManySortedUsers Возвращаем слайс пользователей отсортированных по параметру attribute
 // (можно поставить: id_user, и сортировки не будет)
-func (q *Queries) GetManyUsers(ctx context.Context, arg GetManyUsersParams) ([]User, error) {
-	rows, err := q.db.Query(ctx, getManyUsers, arg.Limit, arg.Offset, arg.Attribute)
+func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, getManySortedUsers, arg.Attribute, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

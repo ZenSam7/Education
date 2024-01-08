@@ -12,7 +12,7 @@ import (
 )
 
 const createComment = `-- name: CreateComment :exec
-WITH add_comment AS (
+WITH add_comment AS ( -- Объединяем 2 запроса в 1
     INSERT INTO comments (text, from_user)
     VALUES ($3, $2)
 )
@@ -34,7 +34,7 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) er
 }
 
 const deleteComment = `-- name: DeleteComment :exec
-WITH deleted_comment_id AS (
+WITH deleted_comment_id AS ( -- Объединяем 2 запроса в 1
     DELETE FROM comments
     WHERE id_comment = $2::integer
 )
@@ -58,7 +58,10 @@ const editCommentParam = `-- name: EditCommentParam :one
 UPDATE comments
 SET
   edited_at = COALESCE($1::timestamp, edited_at),
-  text = COALESCE($2::text, text),
+
+  -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+  -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  text = CASE WHEN $2::text <> '' THEN $2::text ELSE text END,
   from_user = COALESCE($3::integer, from_user),
   evaluation = COALESCE($4::integer, evaluation)
 WHERE id_comment = $5::integer

@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createArticle = `-- name: CreateArticle :exec
+const createArticle = `-- name: CreateArticle :one
 INSERT INTO articles (title, text, authors)
 VALUES ($1, $2, $3)
 RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
@@ -24,17 +24,31 @@ type CreateArticleParams struct {
 }
 
 // CreateArticle Создаём статью
-func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) error {
-	_, err := q.db.Exec(ctx, createArticle, arg.Title, arg.Text, arg.Authors)
-	return err
+func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (Article, error) {
+	row := q.db.QueryRow(ctx, createArticle, arg.Title, arg.Text, arg.Authors)
+	var i Article
+	err := row.Scan(
+		&i.IDArticle,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Title,
+		&i.Text,
+		&i.Comments,
+		&i.Authors,
+		&i.Evaluation,
+	)
+	return i, err
 }
 
 const editArticleParam = `-- name: EditArticleParam :one
 UPDATE articles
 SET
   edited_at = COALESCE($1::timestamp , edited_at),
-  title = COALESCE($2::text, title),
-  text = COALESCE($3, text),
+  -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+  -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
+  title = CASE WHEN $2::text <> '' THEN $2::text ELSE title END,
+  text = CASE WHEN $3::text <> '' THEN $3::text ELSE text END,
   comments = COALESCE($4, comments),
   authors = COALESCE($5, authors),
   evaluation = COALESCE($6, evaluation)
@@ -101,25 +115,47 @@ func (q *Queries) GetArticle(ctx context.Context, idArticle int32) (Article, err
 
 const getArticlesWithAttribute = `-- name: GetArticlesWithAttribute :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-WHERE $3::text = $4::text
-LIMIT $1
-OFFSET $2
+WHERE
+    (NULLIF(edited_at, COALESCE($1::timestamp , edited_at)) IS NULL) AND
+
+    -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+    -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+    (title = (CASE WHEN ($2::text <> '' AND $2 <> NULL)
+        THEN $2::text
+        ELSE title END)) AND
+    (text = (CASE WHEN ($3::text <> '' AND $2 <> NULL)
+        THEN $3::text
+        ELSE text END)) AND
+
+    (NULLIF(comments, COALESCE($4, comments)) IS NULL) AND
+    (NULLIF(authors, COALESCE($5, authors)) IS NULL) AND
+    (NULLIF(evaluation, COALESCE($6, evaluation)) IS NULL)
+LIMIT $8::integer
+OFFSET $7::integer
 `
 
 type GetArticlesWithAttributeParams struct {
-	Limit          int64
-	Offset         int64
-	Attribute      string
-	AttributeValue string
+	EditedAt   pgtype.Timestamp
+	Title      string
+	Text       string
+	Comments   []int32
+	Authors    []int32
+	Evaluation int32
+	Offset     int32
+	Limit      int32
 }
 
-// GetArticlesWithAttribute Возвращаем много статей взятых по признаку attribute
+// GetArticlesWithAttribute Возвращаем много статей взятых по какому-то признаку(ам)
 func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error) {
 	rows, err := q.db.Query(ctx, getArticlesWithAttribute,
-		arg.Limit,
+		arg.EditedAt,
+		arg.Title,
+		arg.Text,
+		arg.Comments,
+		arg.Authors,
+		arg.Evaluation,
 		arg.Offset,
-		arg.Attribute,
-		arg.AttributeValue,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err
@@ -150,20 +186,20 @@ func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesW
 
 const getManySortedArticles = `-- name: GetManySortedArticles :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-ORDER BY $3::text
-LIMIT $1
-OFFSET $2
+ORDER BY $1::text
+LIMIT $3::integer
+OFFSET $2::integer
 `
 
 type GetManySortedArticlesParams struct {
-	Limit    int64
-	Offset   int64
 	SortedAt string
+	Offset   int32
+	Limit    int32
 }
 
-// GetManySortedArticles Возвращаем много статей отсортированных по признаку attribute
+// GetManySortedArticles Возвращаем много статей отсортированных по признаку sorted_at
 func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error) {
-	rows, err := q.db.Query(ctx, getManySortedArticles, arg.Limit, arg.Offset, arg.SortedAt)
+	rows, err := q.db.Query(ctx, getManySortedArticles, arg.SortedAt, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -193,28 +229,47 @@ func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedAr
 
 const getManySortedArticlesWithAttribute = `-- name: GetManySortedArticlesWithAttribute :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-WHERE $3::text = $4::text
-ORDER BY $5::text
-LIMIT $1
-OFFSET $2
+WHERE
+    edited_at = COALESCE($1::timestamp , edited_at) AND
+
+    -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+    -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+    title = CASE WHEN $2::text <> '' THEN $2::text ELSE title END AND
+    text = CASE WHEN $3::text <> '' THEN $3::text ELSE text END     AND
+
+    comments = COALESCE($4, comments)                AND
+    authors = COALESCE($5, authors)                   AND
+    evaluation = COALESCE($6, evaluation)
+ORDER BY $7::text
+LIMIT $9::integer
+OFFSET $8::integer
 `
 
 type GetManySortedArticlesWithAttributeParams struct {
-	Limit          int64
-	Offset         int64
-	Attribute      string
-	AttributeValue string
-	SortedAt       string
+	EditedAt   pgtype.Timestamp
+	Title      string
+	Text       string
+	Comments   []int32
+	Authors    []int32
+	Evaluation int32
+	SortedAt   string
+	Offset     int32
+	Limit      int32
 }
 
-// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку attridute отсортированных по признаку sortedAt
+// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
+// какому-то признаку(ам) отсортированных по признаку sortedAt
 func (q *Queries) GetManySortedArticlesWithAttribute(ctx context.Context, arg GetManySortedArticlesWithAttributeParams) ([]Article, error) {
 	rows, err := q.db.Query(ctx, getManySortedArticlesWithAttribute,
-		arg.Limit,
-		arg.Offset,
-		arg.Attribute,
-		arg.AttributeValue,
+		arg.EditedAt,
+		arg.Title,
+		arg.Text,
+		arg.Comments,
+		arg.Authors,
+		arg.Evaluation,
 		arg.SortedAt,
+		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err
