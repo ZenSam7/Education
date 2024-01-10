@@ -71,3 +71,14 @@ SET
   evaluation = COALESCE(sqlc.arg(evaluation), evaluation)
 WHERE id_article = sqlc.arg(id_article)
 RETURNING *;
+
+-- DeleteArticle Удаляем статью и комментарии к ней
+-- name: DeleteArticle :one
+WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
+    DELETE FROM comments
+    WHERE id_comment = ANY ((SELECT comments FROM articles
+                            WHERE id_article = sqlc.arg(id_article)::integer)::text::integer[])
+)
+DELETE FROM articles
+WHERE id_article = sqlc.arg(id_article)::integer
+RETURNING *;

@@ -6,8 +6,13 @@ RETURNING *;
 
 -- DeleteUser Удаляем пользователя и сдвигаем id
 -- name: DeleteUser :one
+WITH update_id AS (
+    UPDATE users
+    SET id_user = id_user - 1
+    WHERE id_user > sqlc.arg(id_user)::integer
+)
 DELETE FROM users
-WHERE id_user = $1
+WHERE id_user = sqlc.arg(id_user)::integer
 RETURNING *;
 
 -- GetUser Возвращаем пользователя
@@ -15,11 +20,15 @@ RETURNING *;
 SELECT * FROM users
 WHERE id_user = $1;
 
--- GetManySortedUsers Возвращаем слайс пользователей отсортированных по параметру attribute
+-- GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 -- (можно поставить: id_user, и сортировки не будет)
 -- name: GetManySortedUsers :many
 SELECT * FROM users
-ORDER BY sqlc.arg(attribute)::text
+ORDER BY CASE WHEN sqlc.arg(name)::boolean THEN name
+            WHEN sqlc.arg(id_user)::boolean THEN id_user::text
+            WHEN sqlc.arg(description)::boolean THEN description
+            WHEN sqlc.arg(karma)::boolean THEN karma::text
+            ELSE id_user::text END
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 

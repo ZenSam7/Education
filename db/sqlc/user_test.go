@@ -127,37 +127,6 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, findedUser.CreatedAt, user.CreatedAt)
 }
 
-// TODO: Переделать тест TestGetManyUsers и запрос как у TestGetArticlesWithAttribute
-func TestGetManyUsers(t *testing.T) {
-	_, queries, closeConn := createRandomUser(t)
-	// Не забываем закрыть соединение
-	defer closeConn()
-
-	var listUsers [6]User
-	for i := 0; i < 6; i++ {
-		listUsers[i], _ = queries.GetUser(context.Background(), int32(i+1))
-	}
-
-	arg := GetManySortedUsersParams{
-		Attribute: "name",
-		Offset:    0,
-		Limit:     1,
-	}
-
-	listFindedUsers, err := queries.GetManySortedUsers(context.Background(), arg)
-	require.NoError(t, err)
-	require.NotEmpty(t, listFindedUsers)
-
-	for i, usr := range listFindedUsers {
-		ind := i + int(arg.Offset)
-		require.Equal(t, usr.IDUser, listUsers[ind].IDUser)
-		require.Equal(t, usr.Description, listUsers[ind].Description)
-		require.Equal(t, usr.Karma, listUsers[ind].Karma)
-		require.Equal(t, usr.Name, listUsers[ind].Name)
-		require.Equal(t, usr.CreatedAt, listUsers[ind].CreatedAt)
-	}
-}
-
 func TestDeleteUser(t *testing.T) {
 	user, queries, closeConn := createRandomUser(t)
 	// Не забываем закрыть соединение
@@ -178,4 +147,36 @@ func TestDeleteUser(t *testing.T) {
 	require.EqualError(t, err, pgx.ErrNoRows.Error())
 
 	require.Empty(t, findedUser)
+}
+
+func TestGetManySortedUsers(t *testing.T) {
+	_, queries, closeConn := createRandomUser(t)
+	// Не забываем закрыть соединение
+	defer closeConn()
+
+	// Создаём 10 пользователей
+	var createdUsers [10]User
+	for i := 0; i < 10; i++ {
+		usr, _, cC := createRandomUser(t)
+		cC() // Закрываем лишние соединения
+
+		createdUsers[i] = usr
+	}
+
+	arg := GetManySortedUsersParams{
+		Offset: 0,
+		Limit:  10,
+		IDUser: true,
+	}
+
+	user, err := queries.GetManySortedUsers(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, user)
+
+	for _, usr := range user {
+		require.NotEmpty(t, usr.IDUser)
+		require.NotEmpty(t, usr.CreatedAt)
+		require.NotEmpty(t, usr.Name)
+		require.NotEmpty(t, usr.Description)
+	}
 }

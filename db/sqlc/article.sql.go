@@ -40,6 +40,34 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 	return i, err
 }
 
+const deleteArticle = `-- name: DeleteArticle :one
+WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
+    DELETE FROM comments
+    WHERE id_comment = ANY ((SELECT comments FROM articles
+                            WHERE id_article = $1::integer)::text::integer[])
+)
+DELETE FROM articles
+WHERE id_article = $1::integer
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
+`
+
+// DeleteArticle Удаляем статью и комментарии к ней
+func (q *Queries) DeleteArticle(ctx context.Context, idArticle int32) (Article, error) {
+	row := q.db.QueryRow(ctx, deleteArticle, idArticle)
+	var i Article
+	err := row.Scan(
+		&i.IDArticle,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Title,
+		&i.Text,
+		&i.Comments,
+		&i.Authors,
+		&i.Evaluation,
+	)
+	return i, err
+}
+
 const editArticleParam = `-- name: EditArticleParam :one
 UPDATE articles
 SET

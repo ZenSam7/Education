@@ -35,8 +35,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteUser = `-- name: DeleteUser :one
+WITH update_id AS (
+    UPDATE users
+    SET id_user = id_user - 1
+    WHERE id_user > $1::integer
+)
 DELETE FROM users
-WHERE id_user = $1
+WHERE id_user = $1::integer
 RETURNING id_user, created_at, name, description, karma
 `
 
@@ -94,21 +99,35 @@ func (q *Queries) EditUserParam(ctx context.Context, arg EditUserParamParams) (U
 
 const getManySortedUsers = `-- name: GetManySortedUsers :many
 SELECT id_user, created_at, name, description, karma FROM users
-ORDER BY $1::text
-LIMIT $3::integer
-OFFSET $2::integer
+ORDER BY CASE WHEN $1::boolean THEN name
+            WHEN $2::boolean THEN id_user::text
+            WHEN $3::boolean THEN description
+            WHEN $4::boolean THEN karma::text
+            ELSE id_user::text END
+LIMIT $6::integer
+OFFSET $5::integer
 `
 
 type GetManySortedUsersParams struct {
-	Attribute string
-	Offset    int32
-	Limit     int32
+	Name        bool
+	IDUser      bool
+	Description bool
+	Karma       bool
+	Offset      int32
+	Limit       int32
 }
 
-// GetManySortedUsers Возвращаем слайс пользователей отсортированных по параметру attribute
+// GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 // (можно поставить: id_user, и сортировки не будет)
 func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsersParams) ([]User, error) {
-	rows, err := q.db.Query(ctx, getManySortedUsers, arg.Attribute, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, getManySortedUsers,
+		arg.Name,
+		arg.IDUser,
+		arg.Description,
+		arg.Karma,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

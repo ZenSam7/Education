@@ -2,7 +2,7 @@
 // Тут написано как этот модуль называется в github'е и какая версия golang
 module github.com/ZenSam7/Education
 
-go 1.21.5
+go 1.21.3
 
 require (
 	github.com/jackc/pgx/v5 v5.5.1

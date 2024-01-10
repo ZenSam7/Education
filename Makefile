@@ -25,7 +25,6 @@ connect:
 # Удаляем и создаём новую бд со всеми миграциями
 refreshdb:
 	sudo make dropdb && sudo make createdb && sudo make migrateup
-
 # Создаём код для запросов через sqlc
 sqlc:
 	sqlc generate
