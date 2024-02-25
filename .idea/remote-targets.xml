@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RemoteTargetsManager">
+    <option name="projectDefaultTargetUuid" value="fe7eb471-6c79-4687-af74-10f17412cae4" />
     <targets>
       <target name="WSL - Ubuntu" type="wsl" uuid="fe7eb471-6c79-4687-af74-10f17412cae4">
         <config>
@@ -13,6 +14,9 @@
             <option name="goRoot" value="/usr/bin/go" />
             <option name="goVersion" value="go1.18.1 linux/amd64" />
           </config>
+        </ContributedStateBase>
+        <ContributedStateBase type="GoLanguageRuntime">
+          <config />
         </ContributedStateBase>
         <ContributedStateBase type="GoLanguageRuntime">
           <config />

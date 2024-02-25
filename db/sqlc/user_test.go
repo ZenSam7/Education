@@ -11,9 +11,10 @@ import (
 )
 
 func GetRandomString() string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	const letters = " abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-	str := make([]byte, rand.Intn(len(letters)))
+	// Минимальная длина: 2
+	str := make([]byte, rand.Intn(len(letters)-2)+2)
 	for i := range str {
 		str[i] = letters[rand.Intn(len(letters))]
 	}
@@ -27,8 +28,21 @@ func GetRandomInt() int32 {
 
 // createRandomUser Создаём случайного пользователя (заодно тестируем его),
 // queries для отправки запросов, функцию для закрытия соединения и возвращаем всё это
-func createRandomUser(t *testing.T) (User, *Queries, func()) {
+func createRandomUser() (User, *Queries, func()) {
 	queries, closeConn := GetQueries()
+
+	arg := CreateUserParams{
+		Name:        GetRandomString(),
+		Description: GetRandomString(),
+	}
+	newUser, _ := queries.CreateUser(context.Background(), arg)
+
+	return newUser, queries, closeConn
+}
+
+func TestCreateUser(t *testing.T) {
+	queries, closeConn := GetQueries()
+	defer closeConn()
 
 	arg := CreateUserParams{
 		Name:        GetRandomString(),
@@ -45,18 +59,10 @@ func createRandomUser(t *testing.T) (User, *Queries, func()) {
 
 	require.NotZero(t, newUser.IDUser)
 	require.NotZero(t, newUser.CreatedAt)
-
-	return newUser, queries, closeConn
-}
-
-func TestCreateUser(t *testing.T) {
-	_, _, closeConn := createRandomUser(t)
-	// Не забываем закрыть соединение
-	defer closeConn()
 }
 
 func TestEditUserParam(t *testing.T) {
-	user, queries, closeConn := createRandomUser(t)
+	user, queries, closeConn := createRandomUser()
 	// Не забываем закрыть соединение
 	defer closeConn()
 
@@ -112,7 +118,7 @@ func TestEditUserParam(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
-	user, queries, closeConn := createRandomUser(t)
+	user, queries, closeConn := createRandomUser()
 	// Не забываем закрыть соединение
 	defer closeConn()
 
@@ -128,7 +134,7 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	user, queries, closeConn := createRandomUser(t)
+	user, queries, closeConn := createRandomUser()
 	// Не забываем закрыть соединение
 	defer closeConn()
 
@@ -150,14 +156,14 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestGetManySortedUsers(t *testing.T) {
-	_, queries, closeConn := createRandomUser(t)
+	_, queries, closeConn := createRandomUser()
 	// Не забываем закрыть соединение
 	defer closeConn()
 
 	// Создаём 10 пользователей
 	var createdUsers [10]User
 	for i := 0; i < 10; i++ {
-		usr, _, cC := createRandomUser(t)
+		usr, _, cC := createRandomUser()
 		cC() // Закрываем лишние соединения
 
 		createdUsers[i] = usr

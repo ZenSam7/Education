@@ -15,10 +15,10 @@ dropdb:
 	sudo docker exec -it postgres16 dropdb education
 # Поднимаем миграции (т.е. переходим к текущей версии бд)
 migrateup:
-	migrate -path /mnt/c/Users/samki/GoProjects/Education/db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up
+	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up
 # Опускаем миграции (т.е. переходим к прошлой версии бд)
 migratedown:
-	migrate -path /mnt/c/Users/samki/GoProjects/Education/db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" down
+	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" down
 # Подключаемся к бд
 connect:
 	sudo docker exec -it postgres16 psql -U root education

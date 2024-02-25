@@ -1,16 +1,16 @@
 -- CreateComment Создаём комментарий к статье
 -- name: CreateComment :exec
-WITH add_comment AS ( -- Объединяем 2 запроса в 1
-    INSERT INTO comments (text, from_user)
-    VALUES ($3, $2)
+WITH add_comment AS ( -- Я знаю что есть тразнакции
+    UPDATE articles
+    SET comments = array_append(comments, lastval())
+    WHERE id_article = $1
 )
-UPDATE articles
-SET comments = array_append(comments, currval(pg_get_serial_sequence('comments','id_comment')))
-WHERE id_article = $1;
+INSERT INTO comments (text, from_user)
+VALUES ($3, $2);
 
 -- DeleteComment Удаляем комментарий к статье
 -- name: DeleteComment :exec
-WITH deleted_comment_id AS ( -- Объединяем 2 запроса в 1
+WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
     DELETE FROM comments
     WHERE id_comment = sqlc.arg(id_comment)::integer
 )

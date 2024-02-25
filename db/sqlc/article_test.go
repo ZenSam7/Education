@@ -8,8 +8,22 @@ import (
 )
 
 // createRandomArticle Создаём случайную статью (заодно тестируем её) и возвращаем её
-func createRandomArticle(t *testing.T) (Article, *Queries, func()) {
+func createRandomArticle() (Article, *Queries, func()) {
 	queries, closeConn := GetQueries()
+
+	arg := CreateArticleParams{
+		Title:   GetRandomString(),
+		Text:    GetRandomString(),
+		Authors: []int32{GetRandomInt()},
+	}
+	newArticle, _ := queries.CreateArticle(context.Background(), arg)
+
+	return newArticle, queries, closeConn
+}
+
+func TestCreateArticle(t *testing.T) {
+	queries, closeConn := GetQueries()
+	defer closeConn()
 
 	arg := CreateArticleParams{
 		Title:   GetRandomString(),
@@ -29,17 +43,10 @@ func createRandomArticle(t *testing.T) (Article, *Queries, func()) {
 	require.Nil(t, newArticle.Comments)
 	require.Equal(t, newArticle.Authors, arg.Authors)
 	require.Zero(t, newArticle.Evaluation)
-
-	return newArticle, queries, closeConn
-}
-
-func TestCreateArticle(t *testing.T) {
-	_, _, closeConn := createRandomArticle(t)
-	defer closeConn()
 }
 
 func TestGetArticle(t *testing.T) {
-	article, queries, closeConn := createRandomArticle(t)
+	article, queries, closeConn := createRandomArticle()
 	defer closeConn() // Не забываем закрыть соединение
 
 	findedArticle, err := queries.GetArticle(context.Background(), article.IDArticle)
@@ -56,7 +63,7 @@ func TestGetArticle(t *testing.T) {
 }
 
 func TestEditArticleParam(t *testing.T) {
-	article, queries, closeConn := createRandomArticle(t)
+	article, queries, closeConn := createRandomArticle()
 	defer closeConn() // Не забываем закрыть соединение
 
 	// Измяняем Заголовок
@@ -99,16 +106,14 @@ func TestEditArticleParam(t *testing.T) {
 	require.NotEqual(t, editedArticle.Evaluation, article.Evaluation)
 }
 
-// GetArticlesWithAttribute ЕСЛИ ТЕСТЬ НЕ ПРОЙДЕН, ТО ПРОЁДИТЕ ТЕСТ ЕЩЁ РАЗ
-// (должно заработать)
 func TestGetArticlesWithAttribute(t *testing.T) {
-	_, queries, closeConn := createRandomArticle(t)
+	_, queries, closeConn := createRandomArticle()
 	defer closeConn() // Не забываем закрыть соединение
 
 	// Создаём 10 статей с оценкой 0
 	var createdArticles [10]Article
 	for i := 0; i < 10; i++ {
-		art, _, cC := createRandomArticle(t)
+		art, _, cC := createRandomArticle()
 		cC() // Закрываем лишние соединения
 
 		createdArticles[i] = art
