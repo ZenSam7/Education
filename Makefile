@@ -9,10 +9,10 @@ postgres:
 	sudo docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
 # Создаём новую бд
 createdb:
-	sudo docker exec -it postgres16 createdb --username=root --owner=root education
+	sudo docker exec postgres16 createdb --username=root --owner=root education
 # Удаляем бд
 dropdb:
-	sudo docker exec -it postgres16 dropdb education
+	sudo docker exec postgres16 dropdb education
 # Поднимаем миграции (т.е. переходим к текущей версии бд)
 migrateup:
 	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up

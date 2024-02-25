@@ -1,8 +1,9 @@
+# Настройки SQLC
 version: "2"
 
 sql:
   - engine: "postgresql"
-    schema: "./db/migration"
+    schema: "./db/migration/000001_init_schema.up.sql"
     queries: "./db/queries"
     database:
       uri: "postgres://root@localhost:5432/education?sslmode=disable&user=root&password=root"
