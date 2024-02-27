@@ -44,14 +44,12 @@ jobs:
       run: |
         curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
         sudo mv migrate /usr/bin/migrate
-        docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
-        docker ps -a
+        docker run --rm -v $(pwd):/src -w /src kjconroy/sqlc generate
 
     - name: Create database
       run: |
         sudo make createdb 
         sudo make migrateup
-        sudo make sqlc
 
     - name: Testing
       run: sudo make test
