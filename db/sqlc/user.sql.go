@@ -99,20 +99,21 @@ func (q *Queries) EditUserParam(ctx context.Context, arg EditUserParamParams) (U
 
 const getManySortedUsers = `-- name: GetManySortedUsers :many
 SELECT id_user, created_at, name, description, karma FROM users
-ORDER BY CASE WHEN $1::boolean THEN name
-            WHEN $2::boolean THEN id_user::text
-            WHEN $3::boolean THEN description
-            WHEN $4::boolean THEN karma::text
-            ELSE id_user::text END
+ORDER BY
+        CASE WHEN $1::boolean THEN id_user::integer
+             WHEN $2::boolean THEN karma::integer END
+        , -- запятая
+        CASE WHEN $3::boolean THEN name::text
+             WHEN $4::boolean THEN description::text END
 LIMIT $6::integer
 OFFSET $5::integer
 `
 
 type GetManySortedUsersParams struct {
-	Name        bool  `json:"name"`
 	IDUser      bool  `json:"id_user"`
-	Description bool  `json:"description"`
 	Karma       bool  `json:"karma"`
+	Name        bool  `json:"name"`
+	Description bool  `json:"description"`
 	Offset      int32 `json:"Offset"`
 	Limit       int32 `json:"Limit"`
 }
@@ -121,10 +122,10 @@ type GetManySortedUsersParams struct {
 // (можно поставить: id_user, и сортировки не будет)
 func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsersParams) ([]User, error) {
 	rows, err := q.db.Query(ctx, getManySortedUsers,
-		arg.Name,
 		arg.IDUser,
-		arg.Description,
 		arg.Karma,
+		arg.Name,
+		arg.Description,
 		arg.Offset,
 		arg.Limit,
 	)

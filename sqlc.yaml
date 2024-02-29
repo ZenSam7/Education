@@ -13,5 +13,10 @@ sql:
         out: "./db/sqlc"
         sql_package: "pgx/v5"
 
+        # По большей части это используется для API
+        emit_json_tags: true
+        emit_interface: true
+        emit_empty_slices: true
+
 plugins: []
 rules: []

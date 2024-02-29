@@ -22,7 +22,7 @@ func NewProcess(queries *db.Queries) *Process {
 	router := gin.Default()
 
 	router.POST("/user", proc.createUser)
-	// ":id" Даём gin понять что нам нужен парамерт URI id
+	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
 	router.GET("/user/:id_user", proc.getUser)
 	router.GET("/user", proc.getManyUsers)
 

@@ -27,13 +27,20 @@ refreshdb:
 	sudo make dropdb && sudo make createdb && sudo make migrateup
 # Создаём код для запросов через sqlc
 sqlc:
-	sqlc generate
+	sudo sqlc generate
+# Перезапускаем нахер всё
+RESET:
+	sudo docker restart postgres16 && sudo make refreshdb && sudo make sqlc
+# Как RESET только ещё и сервер запускаем
+RESTART:
+	make RESET && make server
 
 # Запускаем все тесты с подробным описанием и проверкой на полное покрытие тестов
 test:
-	go test -cover ./db/sqlc
+	sudo go test -cover ./db/sqlc
 
-RESET:
-	docker restart postgres16 && sudo make refreshdb && sudo make sqlc
+# Запускаем cервер
+server:
+	sudo go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb sqlc test RESET
+.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb sqlc test RESET server

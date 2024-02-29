@@ -24,11 +24,12 @@ WHERE id_user = $1;
 -- (можно поставить: id_user, и сортировки не будет)
 -- name: GetManySortedUsers :many
 SELECT * FROM users
-ORDER BY CASE WHEN sqlc.arg(name)::boolean THEN name
-            WHEN sqlc.arg(id_user)::boolean THEN id_user::text
-            WHEN sqlc.arg(description)::boolean THEN description
-            WHEN sqlc.arg(karma)::boolean THEN karma::text
-            ELSE id_user::text END
+ORDER BY
+        CASE WHEN sqlc.arg(id_user)::boolean THEN id_user::integer
+             WHEN sqlc.arg(karma)::boolean THEN karma::integer END
+        , -- запятая
+        CASE WHEN sqlc.arg(name)::boolean THEN name::text
+             WHEN sqlc.arg(description)::boolean THEN description::text END
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
