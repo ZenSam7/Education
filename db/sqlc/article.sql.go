@@ -18,9 +18,9 @@ RETURNING id_article, created_at, edited_at, title, text, comments, authors, eva
 `
 
 type CreateArticleParams struct {
-	Title   string
-	Text    string
-	Authors []int32
+	Title   string  `json:"title"`
+	Text    string  `json:"text"`
+	Authors []int32 `json:"authors"`
 }
 
 // CreateArticle Создаём статью
@@ -85,13 +85,13 @@ RETURNING id_article, created_at, edited_at, title, text, comments, authors, eva
 `
 
 type EditArticleParamParams struct {
-	EditedAt   pgtype.Timestamp
-	Title      string
-	Text       string
-	Comments   []int32
-	Authors    []int32
-	Evaluation int32
-	IDArticle  int32
+	EditedAt   pgtype.Timestamp `json:"edited_at"`
+	Title      string           `json:"title"`
+	Text       string           `json:"text"`
+	Comments   []int32          `json:"comments"`
+	Authors    []int32          `json:"authors"`
+	Evaluation int32            `json:"evaluation"`
+	IDArticle  int32            `json:"id_article"`
 }
 
 // EditArticleParam Изменяем параметр(ы) статьи
@@ -163,14 +163,14 @@ OFFSET $7::integer
 `
 
 type GetArticlesWithAttributeParams struct {
-	EditedAt   pgtype.Timestamp
-	Title      string
-	Text       string
-	Comments   []int32
-	Authors    []int32
-	Evaluation int32
-	Offset     int32
-	Limit      int32
+	EditedAt   pgtype.Timestamp `json:"edited_at"`
+	Title      string           `json:"title"`
+	Text       string           `json:"text"`
+	Comments   []int32          `json:"comments"`
+	Authors    []int32          `json:"authors"`
+	Evaluation int32            `json:"evaluation"`
+	Offset     int32            `json:"Offset"`
+	Limit      int32            `json:"Limit"`
 }
 
 // GetArticlesWithAttribute Возвращаем много статей взятых по какому-то признаку(ам)
@@ -189,7 +189,7 @@ func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesW
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Article
+	items := []Article{}
 	for rows.Next() {
 		var i Article
 		if err := rows.Scan(
@@ -220,9 +220,9 @@ OFFSET $2::integer
 `
 
 type GetManySortedArticlesParams struct {
-	SortedAt string
-	Offset   int32
-	Limit    int32
+	SortedAt string `json:"sorted_at"`
+	Offset   int32  `json:"Offset"`
+	Limit    int32  `json:"Limit"`
 }
 
 // GetManySortedArticles Возвращаем много статей отсортированных по признаку sorted_at
@@ -232,7 +232,7 @@ func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedAr
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Article
+	items := []Article{}
 	for rows.Next() {
 		var i Article
 		if err := rows.Scan(
@@ -274,15 +274,15 @@ OFFSET $8::integer
 `
 
 type GetManySortedArticlesWithAttributeParams struct {
-	EditedAt   pgtype.Timestamp
-	Title      string
-	Text       string
-	Comments   []int32
-	Authors    []int32
-	Evaluation int32
-	SortedAt   string
-	Offset     int32
-	Limit      int32
+	EditedAt   pgtype.Timestamp `json:"edited_at"`
+	Title      string           `json:"title"`
+	Text       string           `json:"text"`
+	Comments   []int32          `json:"comments"`
+	Authors    []int32          `json:"authors"`
+	Evaluation int32            `json:"evaluation"`
+	SortedAt   string           `json:"sorted_at"`
+	Offset     int32            `json:"Offset"`
+	Limit      int32            `json:"Limit"`
 }
 
 // GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
@@ -303,7 +303,7 @@ func (q *Queries) GetManySortedArticlesWithAttribute(ctx context.Context, arg Ge
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Article
+	items := []Article{}
 	for rows.Next() {
 		var i Article
 		if err := rows.Scan(

@@ -22,9 +22,9 @@ VALUES ($3, $2)
 `
 
 type CreateCommentParams struct {
-	IDArticle int32
-	FromUser  int32
-	Text      string
+	IDArticle int32  `json:"id_article"`
+	FromUser  int32  `json:"from_user"`
+	Text      string `json:"text"`
 }
 
 // CreateComment Создаём комментарий к статье
@@ -44,8 +44,8 @@ WHERE id_article = $1
 `
 
 type DeleteCommentParams struct {
-	IDArticle int32
-	IDComment int32
+	IDArticle int32 `json:"id_article"`
+	IDComment int32 `json:"id_comment"`
 }
 
 // DeleteComment Удаляем комментарий к статье
@@ -69,11 +69,11 @@ RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
 `
 
 type EditCommentParamParams struct {
-	EditedAt   pgtype.Timestamp
-	Text       string
-	FromUser   int32
-	Evaluation int32
-	IDComment  int32
+	EditedAt   pgtype.Timestamp `json:"edited_at"`
+	Text       string           `json:"text"`
+	FromUser   int32            `json:"from_user"`
+	Evaluation int32            `json:"evaluation"`
+	IDComment  int32            `json:"id_comment"`
 }
 
 // EditCommentParam Изменяем параметр(ы) пользователя

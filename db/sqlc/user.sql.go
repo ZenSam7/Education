@@ -16,8 +16,8 @@ RETURNING id_user, created_at, name, description, karma
 `
 
 type CreateUserParams struct {
-	Name        string
-	Description string
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // CreateUser Создаём пользователя
@@ -72,10 +72,10 @@ RETURNING id_user, created_at, name, description, karma
 `
 
 type EditUserParamParams struct {
-	Name        string
-	Description string
-	Karma       int32
-	IDUser      int32
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Karma       int32  `json:"karma"`
+	IDUser      int32  `json:"id_user"`
 }
 
 // EditUserParam Изменяем параметр(ы) пользователя
@@ -109,12 +109,12 @@ OFFSET $5::integer
 `
 
 type GetManySortedUsersParams struct {
-	Name        bool
-	IDUser      bool
-	Description bool
-	Karma       bool
-	Offset      int32
-	Limit       int32
+	Name        bool  `json:"name"`
+	IDUser      bool  `json:"id_user"`
+	Description bool  `json:"description"`
+	Karma       bool  `json:"karma"`
+	Offset      int32 `json:"Offset"`
+	Limit       int32 `json:"Limit"`
 }
 
 // GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
@@ -132,7 +132,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	items := []User{}
 	for rows.Next() {
 		var i User
 		if err := rows.Scan(

@@ -9,29 +9,29 @@ import (
 )
 
 type Article struct {
-	IDArticle  int32
-	CreatedAt  pgtype.Timestamptz
-	EditedAt   pgtype.Timestamptz
-	Title      string
-	Text       string
-	Comments   []int32
-	Authors    []int32
-	Evaluation int32
+	IDArticle  int32              `json:"id_article"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	EditedAt   pgtype.Timestamptz `json:"edited_at"`
+	Title      string             `json:"title"`
+	Text       string             `json:"text"`
+	Comments   []int32            `json:"comments"`
+	Authors    []int32            `json:"authors"`
+	Evaluation int32              `json:"evaluation"`
 }
 
 type Comment struct {
-	IDComment  int32
-	CreatedAt  pgtype.Timestamptz
-	EditedAt   pgtype.Timestamptz
-	Text       string
-	FromUser   int32
-	Evaluation int32
+	IDComment  int32              `json:"id_comment"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	EditedAt   pgtype.Timestamptz `json:"edited_at"`
+	Text       string             `json:"text"`
+	FromUser   int32              `json:"from_user"`
+	Evaluation int32              `json:"evaluation"`
 }
 
 type User struct {
-	IDUser      int32
-	CreatedAt   pgtype.Timestamptz
-	Name        string
-	Description string
-	Karma       int32
+	IDUser      int32              `json:"id_user"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Karma       int32              `json:"karma"`
 }
