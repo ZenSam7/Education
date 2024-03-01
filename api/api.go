@@ -1,5 +1,7 @@
 package api
 
+// Что должно делать наже API при каки-либо обращениях к нему
+
 import (
 	db "github.com/ZenSam7/Education/db/sqlc"
 	"github.com/gin-gonic/gin"
@@ -16,7 +18,8 @@ func (proc *Process) Run(address string) error {
 	return proc.router.Run(address)
 }
 
-// NewProcess Новый HTTP процесс для обработки и роутер
+// NewProcess Новый HTTP процесс для обработки запросов и роутер (который просто
+// вызывает определёную функцию при каком-либо запросе на конкретный URI)
 func NewProcess(queries *db.Queries) *Process {
 	proc := &Process{queries: queries}
 	router := gin.Default()

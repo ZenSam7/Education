@@ -4,27 +4,11 @@ package db
 
 import (
 	"context"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
-	"math/rand"
 	"testing"
 )
-
-func GetRandomString() string {
-	const letters = " abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	// Минимальная длина: 2
-	str := make([]byte, rand.Intn(len(letters)-2)+2)
-	for i := range str {
-		str[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(str)
-}
-
-// GetRandomInt Число может быть отрицательным
-func GetRandomInt() int32 {
-	return rand.Int31() * int32(1-2*rand.Intn(2))
-}
 
 // createRandomUser Создаём случайного пользователя (заодно тестируем его),
 // queries для отправки запросов, функцию для закрытия соединения и возвращаем всё это
@@ -32,8 +16,8 @@ func createRandomUser() (User, *Queries, func()) {
 	queries, closeConn := GetQueries()
 
 	arg := CreateUserParams{
-		Name:        GetRandomString(),
-		Description: GetRandomString(),
+		Name:        tools.GetRandomString(),
+		Description: tools.GetRandomString(),
 	}
 	newUser, _ := queries.CreateUser(context.Background(), arg)
 
@@ -45,8 +29,8 @@ func TestCreateUser(t *testing.T) {
 	defer closeConn()
 
 	arg := CreateUserParams{
-		Name:        GetRandomString(),
-		Description: GetRandomString(),
+		Name:        tools.GetRandomString(),
+		Description: tools.GetRandomString(),
 	}
 
 	newUser, err := queries.CreateUser(context.Background(), arg)
@@ -68,7 +52,7 @@ func TestEditUserParam(t *testing.T) {
 
 	// Изменяем Имя
 	agr := EditUserParamParams{
-		Name:   GetRandomString(),
+		Name:   tools.GetRandomString(),
 		IDUser: user.IDUser,
 	}
 
@@ -85,7 +69,7 @@ func TestEditUserParam(t *testing.T) {
 
 	// Изменяем Описание
 	agr = EditUserParamParams{
-		Description: GetRandomString(),
+		Description: tools.GetRandomString(),
 		IDUser:      user.IDUser,
 	}
 
@@ -102,7 +86,7 @@ func TestEditUserParam(t *testing.T) {
 
 	// Изменяем Карму
 	agr = EditUserParamParams{
-		Karma:  GetRandomInt(),
+		Karma:  tools.GetRandomInt(),
 		IDUser: user.IDUser,
 	}
 

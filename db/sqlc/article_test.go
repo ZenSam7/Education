@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -12,9 +13,9 @@ func createRandomArticle() (Article, *Queries, func()) {
 	queries, closeConn := GetQueries()
 
 	arg := CreateArticleParams{
-		Title:   GetRandomString(),
-		Text:    GetRandomString(),
-		Authors: []int32{GetRandomInt()},
+		Title:   tools.GetRandomString(),
+		Text:    tools.GetRandomString(),
+		Authors: []int32{tools.GetRandomInt()},
 	}
 	newArticle, _ := queries.CreateArticle(context.Background(), arg)
 
@@ -26,9 +27,9 @@ func TestCreateArticle(t *testing.T) {
 	defer closeConn()
 
 	arg := CreateArticleParams{
-		Title:   GetRandomString(),
-		Text:    GetRandomString(),
-		Authors: []int32{GetRandomInt()},
+		Title:   tools.GetRandomString(),
+		Text:    tools.GetRandomString(),
+		Authors: []int32{tools.GetRandomInt()},
 	}
 
 	newArticle, err := queries.CreateArticle(context.Background(), arg)
@@ -69,7 +70,7 @@ func TestEditArticleParam(t *testing.T) {
 	// Измяняем Заголовок
 	arg := EditArticleParamParams{
 		IDArticle: article.IDArticle,
-		Title:     GetRandomString(),
+		Title:     tools.GetRandomString(),
 	}
 
 	editedArticle, err := queries.EditArticleParam(context.Background(), arg)
@@ -89,7 +90,7 @@ func TestEditArticleParam(t *testing.T) {
 	// Измяняем Оценку
 	arg = EditArticleParamParams{
 		IDArticle:  article.IDArticle,
-		Evaluation: GetRandomInt(),
+		Evaluation: tools.GetRandomInt(),
 	}
 
 	editedArticle, err = queries.EditArticleParam(context.Background(), arg)

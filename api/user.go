@@ -24,10 +24,10 @@ func (proc *Process) createUser(ctx *gin.Context) {
 		return
 	}
 
-	//// Если нету описания, то добавляем всё сами
-	//if req.Description == "" {
-	//	req.Description = "Education is the cool site"
-	//}
+	// Если нету описания, то добавляем всё сами
+	if req.Description == "" {
+		req.Description = "Education is the cool site"
+	}
 
 	// Создаём пользователя
 	arg := db.CreateUserParams{
