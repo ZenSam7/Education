@@ -214,20 +214,49 @@ func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesW
 
 const getManySortedArticles = `-- name: GetManySortedArticles :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
-ORDER BY $1::text
-LIMIT $3::integer
-OFFSET $2::integer
+ORDER BY
+        CASE WHEN $1::boolean THEN id_article::integer
+             WHEN $2::boolean THEN evaluation::integer END
+        , -- запятая
+        CASE WHEN $3::boolean THEN comments::integer[]
+             WHEN $4::boolean THEN authors::integer[] END
+        , -- запятая
+        CASE WHEN $5::boolean THEN title::text
+             WHEN $6::boolean THEN text::text END
+        , -- запятая
+        CASE WHEN $7::boolean THEN edited_at::timestamp
+             WHEN $8::boolean THEN created_at::timestamp END
+LIMIT $10::integer
+OFFSET $9::integer
 `
 
 type GetManySortedArticlesParams struct {
-	SortedAt string `json:"sorted_at"`
-	Offset   int32  `json:"Offset"`
-	Limit    int32  `json:"Limit"`
+	IDArticle  bool  `json:"id_article"`
+	Evaluation bool  `json:"evaluation"`
+	Comments   bool  `json:"comments"`
+	Authors    bool  `json:"authors"`
+	Title      bool  `json:"title"`
+	Text       bool  `json:"text"`
+	EditedAt   bool  `json:"edited_at"`
+	CreatedAt  bool  `json:"created_at"`
+	Offset     int32 `json:"Offset"`
+	Limit      int32 `json:"Limit"`
 }
 
-// GetManySortedArticles Возвращаем много статей отсортированных по признаку sorted_at
+// GetManySortedArticles Возвращаем много отсортированных статей
 func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error) {
-	rows, err := q.db.Query(ctx, getManySortedArticles, arg.SortedAt, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, getManySortedArticles,
+		arg.IDArticle,
+		arg.Evaluation,
+		arg.Comments,
+		arg.Authors,
+		arg.Title,
+		arg.Text,
+		arg.EditedAt,
+		arg.CreatedAt,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -268,34 +297,61 @@ WHERE
     comments = COALESCE($4, comments)                AND
     authors = COALESCE($5, authors)                   AND
     evaluation = COALESCE($6, evaluation)
-ORDER BY $7::text
-LIMIT $9::integer
-OFFSET $8::integer
+
+ORDER BY
+        CASE WHEN $7::boolean THEN id_article::integer
+             WHEN $8::boolean THEN evaluation::integer END
+        , -- запятая
+        CASE WHEN $9::boolean THEN comments::integer[]
+             WHEN $10::boolean THEN authors::integer[] END
+        , -- запятая
+        CASE WHEN $11::boolean THEN title::text
+             WHEN $12::boolean THEN text::text END
+        , -- запятая
+        CASE WHEN $13::boolean THEN edited_at::timestamp
+             WHEN $14::boolean THEN created_at::timestamp END
+
+LIMIT $16::integer
+OFFSET $15::integer
 `
 
 type GetManySortedArticlesWithAttributeParams struct {
-	EditedAt   pgtype.Timestamp `json:"edited_at"`
-	Title      string           `json:"title"`
-	Text       string           `json:"text"`
-	Comments   []int32          `json:"comments"`
-	Authors    []int32          `json:"authors"`
-	Evaluation int32            `json:"evaluation"`
-	SortedAt   string           `json:"sorted_at"`
-	Offset     int32            `json:"Offset"`
-	Limit      int32            `json:"Limit"`
+	SelectByEditedAt   pgtype.Timestamp `json:"select_by_edited_at"`
+	SelectByTitle      string           `json:"select_by_title"`
+	SelectByText       string           `json:"select_by_text"`
+	SelectByComments   []int32          `json:"select_by_comments"`
+	SelectByAuthors    []int32          `json:"select_by_authors"`
+	SelectByEvaluation int32            `json:"select_by_evaluation"`
+	SortedByIDArticle  bool             `json:"sorted_by_id_article"`
+	SortedByEvaluation bool             `json:"sorted_by_evaluation"`
+	SortedByComments   bool             `json:"sorted_by_comments"`
+	SortedByAuthors    bool             `json:"sorted_by_authors"`
+	SortedByTitle      bool             `json:"sorted_by_title"`
+	SortedByText       bool             `json:"sorted_by_text"`
+	SortedByEditedAt   bool             `json:"sorted_by_edited_at"`
+	SortedByCreatedAt  bool             `json:"sorted_by_created_at"`
+	Offset             int32            `json:"Offset"`
+	Limit              int32            `json:"Limit"`
 }
 
 // GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
-// какому-то признаку(ам) отсортированных по признаку sortedAt
+// какому-то признаку(ам) отсортированных по признаку
 func (q *Queries) GetManySortedArticlesWithAttribute(ctx context.Context, arg GetManySortedArticlesWithAttributeParams) ([]Article, error) {
 	rows, err := q.db.Query(ctx, getManySortedArticlesWithAttribute,
-		arg.EditedAt,
-		arg.Title,
-		arg.Text,
-		arg.Comments,
-		arg.Authors,
-		arg.Evaluation,
-		arg.SortedAt,
+		arg.SelectByEditedAt,
+		arg.SelectByTitle,
+		arg.SelectByText,
+		arg.SelectByComments,
+		arg.SelectByAuthors,
+		arg.SelectByEvaluation,
+		arg.SortedByIDArticle,
+		arg.SortedByEvaluation,
+		arg.SortedByComments,
+		arg.SortedByAuthors,
+		arg.SortedByTitle,
+		arg.SortedByText,
+		arg.SortedByEditedAt,
+		arg.SortedByCreatedAt,
 		arg.Offset,
 		arg.Limit,
 	)

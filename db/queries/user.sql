@@ -6,7 +6,7 @@ RETURNING *;
 
 -- DeleteUser Удаляем пользователя и сдвигаем id
 -- name: DeleteUser :one
-WITH update_id AS (
+WITH update_id AS ( -- Объединяем 2 запроса в 1
     UPDATE users
     SET id_user = id_user - 1
     WHERE id_user > sqlc.arg(id_user)::integer

@@ -24,10 +24,21 @@ func NewProcess(queries *db.Queries) *Process {
 	proc := &Process{queries: queries}
 	router := gin.Default()
 
-	router.POST("/user", proc.createUser)
+	// Как обрабатываем запросы для действий с пользователями:
+	router.PUT("/user", proc.createUser)
 	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
 	router.GET("/user/:id_user", proc.getUser)
 	router.GET("/user", proc.getManyUsers)
+	router.PATCH("/user/:id_user", proc.editUserParam)
+	router.DELETE("/user/:id_user", proc.deleteUser)
+
+	// Как обрабатываем запросы для действий со статьями:
+	router.POST("/article", proc.createArticle)
+	router.DELETE("/article/:id_article", proc.deleteArticle)
+	router.GET("/article/:id_article", proc.getArticle)
+	router.GET("/article", proc.getManySortedArticles)
+	router.PATCH("/article/:id_article", proc.editArticle)
+	router.GET("/article/sorted", proc.getManySortedArticlesWithAttributes)
 
 	proc.router = router
 	return proc

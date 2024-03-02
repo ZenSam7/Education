@@ -35,7 +35,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteUser = `-- name: DeleteUser :one
-WITH update_id AS (
+WITH update_id AS ( -- Объединяем 2 запроса в 1
     UPDATE users
     SET id_user = id_user - 1
     WHERE id_user > $1::integer

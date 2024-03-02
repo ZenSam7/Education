@@ -8,7 +8,8 @@ import (
 	"net/http"
 )
 
-// createUserRequest Поле Name обязательно, а Description заполним сами в createUser
+// createUserRequest Поле Name обязательно (required), а Description заполним сами в createUser
+// (json == что логично, берём данные из json'а в теле запроса)
 type createUserRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
@@ -44,6 +45,7 @@ func (proc *Process) createUser(ctx *gin.Context) {
 }
 
 // createUserRequest Нам нужен парамерт URI id_user который >= 1
+// (uri == берём данные из uri (типа: user/42))
 type getUserRequest struct {
 	IDUser int32 `uri:"id_user" binding:"required,min=1"`
 }
@@ -74,6 +76,7 @@ func (proc *Process) getUser(ctx *gin.Context) {
 }
 
 // getManyUsersRequest Сколько пользователей на страничке
+// (form == берём данные из uri, которые идут после "?" (типа: /user?page_size=20&page_num=1))
 type getManyUsersRequest struct {
 	IDUser      bool  `form:"id_user"`
 	Name        bool  `form:"name"`
@@ -92,7 +95,7 @@ func (proc *Process) getManyUsers(ctx *gin.Context) {
 		return
 	}
 
-	// Получаем пользователя
+	// Получаем пользователей
 	arg := db.GetManySortedUsersParams{
 		IDUser:      req.IDUser,
 		Name:        req.Name,
@@ -113,4 +116,68 @@ func (proc *Process) getManyUsers(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, users)
+}
+
+// Надо разделить данные которые получаем с url и данные которые получаем с uri
+type editUserParamRequest struct {
+	Name        string `form:"name"`
+	Description string `form:"description"`
+	Karma       int32  `form:"karma"`
+}
+type editedUserRequest struct {
+	IDUser int32 `uri:"id_user" binding:"required,min=1"`
+}
+
+func (proc *Process) editUserParam(ctx *gin.Context) {
+	var req editUserParamRequest
+	var usrID editedUserRequest
+
+	// Проверяем чтобы все теги соответствовали
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	if err := ctx.ShouldBindUri(&usrID); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// Изменяем параметр(ы) пользователя
+	arg := db.EditUserParamParams{
+		IDUser:      usrID.IDUser,
+		Name:        req.Name,
+		Description: req.Description,
+		Karma:       req.Karma,
+	}
+
+	editedUser, err := proc.queries.EditUserParam(context.Background(), arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, editedUser)
+}
+
+type deleteUserRequest struct {
+	IDUser int32 `uri:"id_user" binding:"required"`
+}
+
+func (proc *Process) deleteUser(ctx *gin.Context) {
+	var req deleteUserRequest
+
+	// Проверяем чтобы все теги соответствовали
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// Удаляем пользователя
+	deletedUser, err := proc.queries.DeleteUser(context.Background(), req.IDUser)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, deletedUser)
 }

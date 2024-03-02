@@ -1,22 +1,24 @@
 -- CreateComment Создаём комментарий к статье
--- name: CreateComment :exec
+-- name: CreateComment :one
 WITH add_comment AS ( -- Я знаю что есть тразнакции
     UPDATE articles
     SET comments = array_append(comments, lastval())
     WHERE id_article = $1
 )
 INSERT INTO comments (text, from_user)
-VALUES ($3, $2);
+VALUES ($3, $2)
+RETURNING *;
 
 -- DeleteComment Удаляем комментарий к статье
--- name: DeleteComment :exec
+-- name: DeleteComment :one
 WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
     DELETE FROM comments
     WHERE id_comment = sqlc.arg(id_comment)::integer
 )
 UPDATE articles
 SET comments = array_remove(comments, sqlc.arg(id_comment)::integer)
-WHERE id_article = $1;
+WHERE id_article = $1
+RETURNING *;
 
 -- GetComment Возвращаем комментарий
 -- name: GetComment :exec

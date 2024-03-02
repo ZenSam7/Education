@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createComment = `-- name: CreateComment :exec
+const createComment = `-- name: CreateComment :one
 WITH add_comment AS ( -- Я знаю что есть тразнакции
     UPDATE articles
     SET comments = array_append(comments, lastval())
@@ -19,6 +19,7 @@ WITH add_comment AS ( -- Я знаю что есть тразнакции
 )
 INSERT INTO comments (text, from_user)
 VALUES ($3, $2)
+RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
 `
 
 type CreateCommentParams struct {
@@ -28,12 +29,21 @@ type CreateCommentParams struct {
 }
 
 // CreateComment Создаём комментарий к статье
-func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) error {
-	_, err := q.db.Exec(ctx, createComment, arg.IDArticle, arg.FromUser, arg.Text)
-	return err
+func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
+	row := q.db.QueryRow(ctx, createComment, arg.IDArticle, arg.FromUser, arg.Text)
+	var i Comment
+	err := row.Scan(
+		&i.IDComment,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Text,
+		&i.FromUser,
+		&i.Evaluation,
+	)
+	return i, err
 }
 
-const deleteComment = `-- name: DeleteComment :exec
+const deleteComment = `-- name: DeleteComment :one
 WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
     DELETE FROM comments
     WHERE id_comment = $2::integer
@@ -41,6 +51,7 @@ WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
 UPDATE articles
 SET comments = array_remove(comments, $2::integer)
 WHERE id_article = $1
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
 type DeleteCommentParams struct {
@@ -49,9 +60,20 @@ type DeleteCommentParams struct {
 }
 
 // DeleteComment Удаляем комментарий к статье
-func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) error {
-	_, err := q.db.Exec(ctx, deleteComment, arg.IDArticle, arg.IDComment)
-	return err
+func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) (Article, error) {
+	row := q.db.QueryRow(ctx, deleteComment, arg.IDArticle, arg.IDComment)
+	var i Article
+	err := row.Scan(
+		&i.IDArticle,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Title,
+		&i.Text,
+		&i.Comments,
+		&i.Authors,
+		&i.Evaluation,
+	)
+	return i, err
 }
 
 const editCommentParam = `-- name: EditCommentParam :one

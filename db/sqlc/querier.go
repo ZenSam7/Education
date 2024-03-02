@@ -12,13 +12,13 @@ type Querier interface {
 	// CreateArticle Создаём статью
 	CreateArticle(ctx context.Context, arg CreateArticleParams) (Article, error)
 	// CreateComment Создаём комментарий к статье
-	CreateComment(ctx context.Context, arg CreateCommentParams) error
+	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	// CreateUser Создаём пользователя
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// DeleteArticle Удаляем статью и комментарии к ней
 	DeleteArticle(ctx context.Context, idArticle int32) (Article, error)
 	// DeleteComment Удаляем комментарий к статье
-	DeleteComment(ctx context.Context, arg DeleteCommentParams) error
+	DeleteComment(ctx context.Context, arg DeleteCommentParams) (Article, error)
 	// DeleteUser Удаляем пользователя и сдвигаем id
 	DeleteUser(ctx context.Context, idUser int32) (User, error)
 	// EditArticleParam Изменяем параметр(ы) статьи
@@ -33,10 +33,10 @@ type Querier interface {
 	GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error)
 	// GetComment Возвращаем комментарий
 	GetComment(ctx context.Context, idComment int32) error
-	// GetManySortedArticles Возвращаем много статей отсортированных по признаку sorted_at
+	// GetManySortedArticles Возвращаем много отсортированных статей
 	GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error)
 	// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
-	// какому-то признаку(ам) отсортированных по признаку sortedAt
+	// какому-то признаку(ам) отсортированных по признаку
 	GetManySortedArticlesWithAttribute(ctx context.Context, arg GetManySortedArticlesWithAttributeParams) ([]Article, error)
 	// GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 	// (можно поставить: id_user, и сортировки не будет)

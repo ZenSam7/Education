@@ -30,29 +30,53 @@ WHERE
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
--- GetManySortedArticles Возвращаем много статей отсортированных по признаку sorted_at
+-- GetManySortedArticles Возвращаем много отсортированных статей
 -- name: GetManySortedArticles :many
 SELECT * FROM articles
-ORDER BY sqlc.arg(sorted_at)::text
+ORDER BY
+        CASE WHEN sqlc.arg(id_article)::boolean THEN id_article::integer
+             WHEN sqlc.arg(evaluation)::boolean THEN evaluation::integer END
+        , -- запятая
+        CASE WHEN sqlc.arg(comments)::boolean THEN comments::integer[]
+             WHEN sqlc.arg(authors)::boolean THEN authors::integer[] END
+        , -- запятая
+        CASE WHEN sqlc.arg(title)::boolean THEN title::text
+             WHEN sqlc.arg(text)::boolean THEN text::text END
+        , -- запятая
+        CASE WHEN sqlc.arg(edited_at)::boolean THEN edited_at::timestamp
+             WHEN sqlc.arg(created_at)::boolean THEN created_at::timestamp END
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
 -- GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
--- какому-то признаку(ам) отсортированных по признаку sortedAt
+-- какому-то признаку(ам) отсортированных по признаку
 -- name: GetManySortedArticlesWithAttribute :many
 SELECT * FROM articles
 WHERE
-    edited_at = COALESCE(sqlc.arg(edited_at)::timestamp , edited_at) AND
+    edited_at = COALESCE(sqlc.arg(select_by_edited_at)::timestamp , edited_at) AND
 
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
-    title = CASE WHEN sqlc.arg(title)::text <> '' THEN sqlc.arg(title)::text ELSE title END AND
-    text = CASE WHEN sqlc.arg(text)::text <> '' THEN sqlc.arg(text)::text ELSE text END     AND
+    title = CASE WHEN sqlc.arg(select_by_title)::text <> '' THEN sqlc.arg(select_by_title)::text ELSE title END AND
+    text = CASE WHEN sqlc.arg(select_by_text)::text <> '' THEN sqlc.arg(select_by_text)::text ELSE text END     AND
 
-    comments = COALESCE(sqlc.arg(comments), comments)                AND
-    authors = COALESCE(sqlc.arg(authors), authors)                   AND
-    evaluation = COALESCE(sqlc.arg(evaluation), evaluation)
-ORDER BY sqlc.arg(sorted_at)::text
+    comments = COALESCE(sqlc.arg(select_by_comments), comments)                AND
+    authors = COALESCE(sqlc.arg(select_by_authors), authors)                   AND
+    evaluation = COALESCE(sqlc.arg(select_by_evaluation), evaluation)
+
+ORDER BY
+        CASE WHEN sqlc.arg(sorted_by_id_article)::boolean THEN id_article::integer
+             WHEN sqlc.arg(sorted_by_evaluation)::boolean THEN evaluation::integer END
+        , -- запятая
+        CASE WHEN sqlc.arg(sorted_by_comments)::boolean THEN comments::integer[]
+             WHEN sqlc.arg(sorted_by_authors)::boolean THEN authors::integer[] END
+        , -- запятая
+        CASE WHEN sqlc.arg(sorted_by_title)::boolean THEN title::text
+             WHEN sqlc.arg(sorted_by_text)::boolean THEN text::text END
+        , -- запятая
+        CASE WHEN sqlc.arg(sorted_by_edited_at)::boolean THEN edited_at::timestamp
+             WHEN sqlc.arg(sorted_by_created_at)::boolean THEN created_at::timestamp END
+
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
