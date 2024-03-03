@@ -86,23 +86,23 @@ func (proc *Process) getArticle(ctx *gin.Context) {
 
 // Да громоздко.
 type getManyArticlesRequest struct {
-	IDArticle  bool  `form:"id_article"`
-	Evaluation bool  `form:"evaluation"`
-	Comments   bool  `form:"comments"`
-	Authors    bool  `form:"authors"`
-	Title      bool  `form:"title"`
-	Text       bool  `form:"text"`
-	EditedAt   bool  `form:"edited_at"`
-	CreatedAt  bool  `form:"created_at"`
-	PageNum    int32 `form:"Offset" binding:"required,min=1"`
-	PageSize   int32 `form:"Limit" binding:"required,min=1"`
+	IDArticle  bool  `json:"id_article"`
+	Evaluation bool  `json:"evaluation"`
+	Comments   bool  `json:"comments"`
+	Authors    bool  `json:"authors"`
+	Title      bool  `json:"title"`
+	Text       bool  `json:"text"`
+	EditedAt   bool  `json:"edited_at"`
+	CreatedAt  bool  `json:"created_at"`
+	PageNum    int32 `json:"page_num" binding:"required,min=1"`
+	PageSize   int32 `json:"page_size" binding:"required,min=1"`
 }
 
 func (proc *Process) getManySortedArticles(ctx *gin.Context) {
 	var req getManyArticlesRequest
 
 	// Проверяем теги
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -131,51 +131,48 @@ func (proc *Process) getManySortedArticles(ctx *gin.Context) {
 
 // Про прошлое "громоздко" я пошутил...
 type getManySortedArticlesWithAttributesRequest struct {
-	SelectByEditedAt   pgtype.Timestamp `form:"select_by_edited_at"`
-	SelectByTitle      string           `form:"select_by_title"`
-	SelectByText       string           `form:"select_by_text"`
-	SelectByComments   []int32          `form:"select_by_comments"`
-	SelectByAuthors    []int32          `form:"select_by_authors"`
-	SelectByEvaluation int32            `form:"select_by_evaluation"`
-	SortedByIDArticle  bool             `form:"sorted_by_id_article"`
-	SortedByEvaluation bool             `form:"sorted_by_evaluation"`
-	SortedByComments   bool             `form:"sorted_by_comments"`
-	SortedByAuthors    bool             `form:"sorted_by_authors"`
-	SortedByTitle      bool             `form:"sorted_by_title"`
-	SortedByText       bool             `form:"sorted_by_text"`
-	SortedByEditedAt   bool             `form:"sorted_by_edited_at"`
-	SortedByCreatedAt  bool             `form:"sorted_by_created_at"`
-	Offset             int32            `form:"Offset"`
-	Limit              int32            `form:"Limit"`
+	SelectEditedAt   pgtype.Timestamp `json:"select_edited_at"`
+	SelectTitle      string           `json:"select_title"`
+	SelectText       string           `json:"select_text"`
+	SelectComments   []int32          `json:"select_comments"`
+	SelectAuthors    []int32          `json:"select_authors"`
+	SelectEvaluation int32            `json:"select_evaluation"`
+	SortedIDArticle  bool             `json:"sorted_id_article"`
+	SortedEvaluation bool             `json:"sorted_evaluation"`
+	SortedComments   bool             `json:"sorted_comments"`
+	SortedAuthors    bool             `json:"sorted_authors"`
+	SortedTitle      bool             `json:"sorted_title"`
+	SortedText       bool             `json:"sorted_text"`
+	SortedEditedAt   bool             `json:"sorted_edited_at"`
+	SortedCreatedAt  bool             `json:"sorted_created_at"`
+	PageNum          int32            `json:"page_num" binding:"required,min=1"`
+	PageSize         int32            `json:"page_size" binding:"required,min=1"`
 }
 
 func (proc *Process) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 	var req getManySortedArticlesWithAttributesRequest
 
 	// Проверяем теги
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	// Получаем статьи
 	arg := db.GetManySortedArticlesWithAttributeParams{
-		SelectByEditedAt:   req.SelectByEditedAt,
-		SelectByTitle:      req.SelectByTitle,
-		SelectByText:       req.SelectByText,
-		SelectByComments:   req.SelectByComments,
-		SelectByAuthors:    req.SelectByAuthors,
-		SelectByEvaluation: req.SelectByEvaluation,
-		SortedByIDArticle:  req.SortedByIDArticle,
-		SortedByEvaluation: req.SortedByEvaluation,
-		SortedByComments:   req.SortedByComments,
-		SortedByAuthors:    req.SortedByAuthors,
-		SortedByTitle:      req.SortedByTitle,
-		SortedByText:       req.SortedByText,
-		SortedByEditedAt:   req.SortedByEditedAt,
-		SortedByCreatedAt:  req.SortedByCreatedAt,
-		Offset:             req.Offset,
-		Limit:              req.Limit,
+		SelectTitle:      req.SelectTitle,
+		SelectText:       req.SelectText,
+		SelectEvaluation: req.SelectEvaluation,
+		SortedIDArticle:  req.SortedIDArticle,
+		SortedEvaluation: req.SortedEvaluation,
+		SortedComments:   req.SortedComments,
+		SortedAuthors:    req.SortedAuthors,
+		SortedTitle:      req.SortedTitle,
+		SortedText:       req.SortedText,
+		SortedEditedAt:   req.SortedEditedAt,
+		SortedCreatedAt:  req.SortedCreatedAt,
+		Limit:            req.PageSize,
+		Offset:           (req.PageNum - 1) * req.PageSize,
 	}
 	articles, err := proc.queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
 	if err != nil {
@@ -187,28 +184,20 @@ func (proc *Process) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 }
 
 // Надо разделить данные которые получаем с url и данные которые получаем с uri
-type idEditArticleRequest struct {
-	IDArticle int32 `form:"id_article" binding:"required"`
-}
 type editArticleRequest struct {
-	Title      string           `form:"title"`
-	Text       string           `form:"text"`
-	Comments   []int32          `form:"comments"`
-	Authors    []int32          `form:"authors"`
-	Evaluation int32            `form:"evaluation"`
-	EditedAt   pgtype.Timestamp `form:"edited_at"`
+	IDArticle  int32            `json:"id_article" binding:"required"`
+	Title      string           `json:"title"`
+	Text       string           `json:"text"`
+	Comments   []int32          `json:"comments"`
+	Authors    []int32          `json:"authors"`
+	Evaluation int32            `json:"evaluation"`
+	EditedAt   pgtype.Timestamp `json:"edited_at"`
 }
 
 func (proc *Process) editArticle(ctx *gin.Context) {
-	var artID idEditArticleRequest
 	var req editArticleRequest
 
 	// Проверяем теги
-	if err := ctx.ShouldBindUri(&artID); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -216,7 +205,7 @@ func (proc *Process) editArticle(ctx *gin.Context) {
 
 	// Изменяем статью
 	arg := db.EditArticleParamParams{
-		IDArticle:  artID.IDArticle,
+		IDArticle:  req.IDArticle,
 		Title:      req.Title,
 		Text:       req.Text,
 		Comments:   req.Comments,

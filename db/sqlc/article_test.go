@@ -120,24 +120,76 @@ func TestGetArticlesWithAttribute(t *testing.T) {
 		createdArticles[i] = art
 	}
 
+	// По сути просто берём 1 статью
 	arg := GetArticlesWithAttributeParams{
-		Evaluation: 0,
-		Offset:     0,
-		Limit:      10,
+		Title:  createdArticles[0].Title,
+		Offset: 0,
+		Limit:  10000000,
 	}
 
-	articles, err := queries.GetArticlesWithAttribute(context.Background(), arg)
+	article, err := queries.GetArticlesWithAttribute(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, articles)
+	require.NotEmpty(t, article)
 
-	for _, article := range articles {
-		require.Zero(t, article.Evaluation)
-		require.Equal(t, article.EditedAt.Time, time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
-		require.NotEmpty(t, article.Authors)
-		require.Empty(t, article.Comments)
-		require.NotEmpty(t, article.Text)
-		require.NotEmpty(t, article.Title)
-	}
+	require.Equal(t, createdArticles[0].EditedAt.Time,
+		time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
+	require.Equal(t, createdArticles[0].Evaluation, article[0].Evaluation)
+	require.Equal(t, createdArticles[0].Authors, article[0].Authors)
+	require.Equal(t, createdArticles[0].Comments, article[0].Comments)
+	require.Equal(t, createdArticles[0].Text, article[0].Text)
+	require.Equal(t, createdArticles[0].Title, article[0].Title)
 }
 
-// TODO: Доделать все тесты для article
+func TestGetManySortedArticlesWithAttribute(t *testing.T) {
+	_, queries, closeConn := createRandomArticle()
+	defer closeConn() // Не забываем закрыть соединение
+
+	// Создаём 10 статей с оценкой 0
+	var createdArticles [10]Article
+	for i := 0; i < 10; i++ {
+		art, _, cC := createRandomArticle()
+		cC() // Закрываем лишние соединения
+
+		createdArticles[i] = art
+	}
+
+	arg := GetManySortedArticlesWithAttributeParams{
+		SelectTitle:     createdArticles[0].Title,
+		SortedIDArticle: true,
+		Offset:          0,
+		Limit:           10000000,
+	}
+
+	article, err := queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, article)
+
+	require.Equal(t, createdArticles[0].EditedAt.Time,
+		time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
+	require.Equal(t, createdArticles[0].Evaluation, article[0].Evaluation)
+	require.Equal(t, createdArticles[0].Authors, article[0].Authors)
+	require.Equal(t, createdArticles[0].Comments, article[0].Comments)
+	require.Equal(t, createdArticles[0].Text, article[0].Text)
+	require.Equal(t, createdArticles[0].Title, article[0].Title)
+
+	// Сортируем статьи по ID
+	arg = GetManySortedArticlesWithAttributeParams{
+		SortedIDArticle: true,
+		Offset:          0,
+		Limit:           10,
+	}
+
+	article, err = queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, article)
+
+	for ind, art := range article[:9] {
+		require.Equal(t, art.EditedAt.Time, time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
+		require.True(t, article[ind].IDArticle < article[ind+1].IDArticle)
+		require.NotEmpty(t, art.Title)
+		require.NotEmpty(t, art.Text)
+		require.NotEmpty(t, art.Authors)
+		require.Zero(t, art.Evaluation)
+		require.Empty(t, art.Comments)
+	}
+}

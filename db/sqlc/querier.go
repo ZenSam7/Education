@@ -36,7 +36,7 @@ type Querier interface {
 	// GetManySortedArticles Возвращаем много отсортированных статей
 	GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error)
 	// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
-	// какому-то признаку(ам) отсортированных по признаку
+	// какому-то признаку(ам) и отсортированных по другому признаку(ам)
 	GetManySortedArticlesWithAttribute(ctx context.Context, arg GetManySortedArticlesWithAttributeParams) ([]Article, error)
 	// GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 	// (можно поставить: id_user, и сортировки не будет)

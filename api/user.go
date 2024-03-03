@@ -78,19 +78,19 @@ func (proc *Process) getUser(ctx *gin.Context) {
 // getManyUsersRequest Сколько пользователей на страничке
 // (form == берём данные из uri, которые идут после "?" (типа: /user?page_size=20&page_num=1))
 type getManyUsersRequest struct {
-	IDUser      bool  `form:"id_user"`
-	Name        bool  `form:"name"`
-	Description bool  `form:"description"`
-	Karma       bool  `form:"karma"`
-	PageSize    int32 `form:"page_size" binding:"required,min=1"`
-	PageNum     int32 `form:"page_num" binding:"required,min=1"`
+	IDUser      bool  `json:"id_user"`
+	Name        bool  `json:"name"`
+	Description bool  `json:"description"`
+	Karma       bool  `json:"karma"`
+	PageSize    int32 `json:"page_size" binding:"required,min=1"`
+	PageNum     int32 `json:"page_num" binding:"required,min=1"`
 }
 
 func (proc *Process) getManyUsers(ctx *gin.Context) {
 	var req getManyUsersRequest
 
 	// Проверяем чтобы все теги соответсвовали
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -120,31 +120,24 @@ func (proc *Process) getManyUsers(ctx *gin.Context) {
 
 // Надо разделить данные которые получаем с url и данные которые получаем с uri
 type editUserParamRequest struct {
-	Name        string `form:"name"`
-	Description string `form:"description"`
-	Karma       int32  `form:"karma"`
-}
-type editedUserRequest struct {
-	IDUser int32 `uri:"id_user" binding:"required,min=1"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Karma       int32  `json:"karma"`
+	IDUser      int32  `json:"id_user" binding:"required,min=1"`
 }
 
 func (proc *Process) editUserParam(ctx *gin.Context) {
 	var req editUserParamRequest
-	var usrID editedUserRequest
 
 	// Проверяем чтобы все теги соответствовали
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-	if err := ctx.ShouldBindUri(&usrID); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	// Изменяем параметр(ы) пользователя
 	arg := db.EditUserParamParams{
-		IDUser:      usrID.IDUser,
+		IDUser:      req.IDUser,
 		Name:        req.Name,
 		Description: req.Description,
 		Karma:       req.Karma,

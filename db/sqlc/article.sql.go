@@ -45,6 +45,10 @@ WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
     DELETE FROM comments
     WHERE id_comment = ANY ((SELECT comments FROM articles
                             WHERE id_article = $1::integer)::text::integer[])
+), update_id AS ( -- Объединяем 3 запроса в 1
+    UPDATE articles
+    SET id_article = id_article - 1
+    WHERE id_article > $1::integer
 )
 DELETE FROM articles
 WHERE id_article = $1::integer
@@ -77,10 +81,10 @@ SET
   -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
   title = CASE WHEN $2::text <> '' THEN $2::text ELSE title END,
   text = CASE WHEN $3::text <> '' THEN $3::text ELSE text END,
-  comments = COALESCE($4, comments),
-  authors = COALESCE($5, authors),
-  evaluation = COALESCE($6, evaluation)
-WHERE id_article = $7
+  evaluation = CASE WHEN $4::integer <> 0 THEN $4::integer ELSE evaluation END,
+  comments = COALESCE($5, comments),
+  authors = COALESCE($6, authors)
+WHERE id_article = $7::integer
 RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
@@ -88,9 +92,9 @@ type EditArticleParamParams struct {
 	EditedAt   pgtype.Timestamp `json:"edited_at"`
 	Title      string           `json:"title"`
 	Text       string           `json:"text"`
+	Evaluation int32            `json:"evaluation"`
 	Comments   []int32          `json:"comments"`
 	Authors    []int32          `json:"authors"`
-	Evaluation int32            `json:"evaluation"`
 	IDArticle  int32            `json:"id_article"`
 }
 
@@ -100,9 +104,9 @@ func (q *Queries) EditArticleParam(ctx context.Context, arg EditArticleParamPara
 		arg.EditedAt,
 		arg.Title,
 		arg.Text,
+		arg.Evaluation,
 		arg.Comments,
 		arg.Authors,
-		arg.Evaluation,
 		arg.IDArticle,
 	)
 	var i Article
@@ -144,43 +148,35 @@ func (q *Queries) GetArticle(ctx context.Context, idArticle int32) (Article, err
 const getArticlesWithAttribute = `-- name: GetArticlesWithAttribute :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
 WHERE
-    (NULLIF(edited_at, COALESCE($1::timestamp , edited_at)) IS NULL) AND
-
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
-    (title = (CASE WHEN ($2::text <> '' AND $2 <> NULL)
+    -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
+    title = CASE WHEN ($1::text <> '') AND ($1::text IS NOT NULL)
+        THEN $1::text
+        ELSE title END AND
+    text = CASE WHEN ($2::text <> '') AND ($2::text IS NOT NULL)
         THEN $2::text
-        ELSE title END)) AND
-    (text = (CASE WHEN ($3::text <> '' AND $2 <> NULL)
-        THEN $3::text
-        ELSE text END)) AND
-
-    (NULLIF(comments, COALESCE($4, comments)) IS NULL) AND
-    (NULLIF(authors, COALESCE($5, authors)) IS NULL) AND
-    (NULLIF(evaluation, COALESCE($6, evaluation)) IS NULL)
-LIMIT $8::integer
-OFFSET $7::integer
+        ELSE text END AND
+    evaluation = CASE WHEN $3::integer <> evaluation
+        THEN $3::integer
+        ELSE evaluation END
+LIMIT $5::integer
+OFFSET $4::integer
 `
 
 type GetArticlesWithAttributeParams struct {
-	EditedAt   pgtype.Timestamp `json:"edited_at"`
-	Title      string           `json:"title"`
-	Text       string           `json:"text"`
-	Comments   []int32          `json:"comments"`
-	Authors    []int32          `json:"authors"`
-	Evaluation int32            `json:"evaluation"`
-	Offset     int32            `json:"Offset"`
-	Limit      int32            `json:"Limit"`
+	Title      string `json:"title"`
+	Text       string `json:"text"`
+	Evaluation int32  `json:"evaluation"`
+	Offset     int32  `json:"Offset"`
+	Limit      int32  `json:"Limit"`
 }
 
 // GetArticlesWithAttribute Возвращаем много статей взятых по какому-то признаку(ам)
 func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error) {
 	rows, err := q.db.Query(ctx, getArticlesWithAttribute,
-		arg.EditedAt,
 		arg.Title,
 		arg.Text,
-		arg.Comments,
-		arg.Authors,
 		arg.Evaluation,
 		arg.Offset,
 		arg.Limit,
@@ -287,71 +283,66 @@ func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedAr
 const getManySortedArticlesWithAttribute = `-- name: GetManySortedArticlesWithAttribute :many
 SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
 WHERE
-    edited_at = COALESCE($1::timestamp , edited_at) AND
-
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
-    title = CASE WHEN $2::text <> '' THEN $2::text ELSE title END AND
-    text = CASE WHEN $3::text <> '' THEN $3::text ELSE text END     AND
-
-    comments = COALESCE($4, comments)                AND
-    authors = COALESCE($5, authors)                   AND
-    evaluation = COALESCE($6, evaluation)
-
+    -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
+    title = CASE WHEN ($1::text <> '') AND ($1::text IS NOT NULL)
+        THEN $1::text
+        ELSE title END AND
+    text = CASE WHEN ($2::text <> '') AND ($2::text IS NOT NULL)
+        THEN $2::text
+        ELSE text END AND
+    evaluation = CASE WHEN $3::integer <> evaluation
+        THEN $3::integer
+        ELSE evaluation END
 ORDER BY
-        CASE WHEN $7::boolean THEN id_article::integer
-             WHEN $8::boolean THEN evaluation::integer END
+        CASE WHEN $4::boolean THEN id_article::integer
+             WHEN $5::boolean THEN evaluation::integer END
         , -- запятая
-        CASE WHEN $9::boolean THEN comments::integer[]
-             WHEN $10::boolean THEN authors::integer[] END
+        CASE WHEN $6::boolean THEN comments::integer[]
+             WHEN $7::boolean THEN authors::integer[] END
         , -- запятая
-        CASE WHEN $11::boolean THEN title::text
-             WHEN $12::boolean THEN text::text END
+        CASE WHEN $8::boolean THEN title::text
+             WHEN $9::boolean THEN text::text END
         , -- запятая
-        CASE WHEN $13::boolean THEN edited_at::timestamp
-             WHEN $14::boolean THEN created_at::timestamp END
+        CASE WHEN $10::boolean THEN edited_at::timestamp
+             WHEN $11::boolean THEN created_at::timestamp END
 
-LIMIT $16::integer
-OFFSET $15::integer
+LIMIT $13::integer
+OFFSET $12::integer
 `
 
 type GetManySortedArticlesWithAttributeParams struct {
-	SelectByEditedAt   pgtype.Timestamp `json:"select_by_edited_at"`
-	SelectByTitle      string           `json:"select_by_title"`
-	SelectByText       string           `json:"select_by_text"`
-	SelectByComments   []int32          `json:"select_by_comments"`
-	SelectByAuthors    []int32          `json:"select_by_authors"`
-	SelectByEvaluation int32            `json:"select_by_evaluation"`
-	SortedByIDArticle  bool             `json:"sorted_by_id_article"`
-	SortedByEvaluation bool             `json:"sorted_by_evaluation"`
-	SortedByComments   bool             `json:"sorted_by_comments"`
-	SortedByAuthors    bool             `json:"sorted_by_authors"`
-	SortedByTitle      bool             `json:"sorted_by_title"`
-	SortedByText       bool             `json:"sorted_by_text"`
-	SortedByEditedAt   bool             `json:"sorted_by_edited_at"`
-	SortedByCreatedAt  bool             `json:"sorted_by_created_at"`
-	Offset             int32            `json:"Offset"`
-	Limit              int32            `json:"Limit"`
+	SelectTitle      string `json:"select_title"`
+	SelectText       string `json:"select_text"`
+	SelectEvaluation int32  `json:"select_evaluation"`
+	SortedIDArticle  bool   `json:"sorted_id_article"`
+	SortedEvaluation bool   `json:"sorted_evaluation"`
+	SortedComments   bool   `json:"sorted_comments"`
+	SortedAuthors    bool   `json:"sorted_authors"`
+	SortedTitle      bool   `json:"sorted_title"`
+	SortedText       bool   `json:"sorted_text"`
+	SortedEditedAt   bool   `json:"sorted_edited_at"`
+	SortedCreatedAt  bool   `json:"sorted_created_at"`
+	Offset           int32  `json:"Offset"`
+	Limit            int32  `json:"Limit"`
 }
 
 // GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
-// какому-то признаку(ам) отсортированных по признаку
+// какому-то признаку(ам) и отсортированных по другому признаку(ам)
 func (q *Queries) GetManySortedArticlesWithAttribute(ctx context.Context, arg GetManySortedArticlesWithAttributeParams) ([]Article, error) {
 	rows, err := q.db.Query(ctx, getManySortedArticlesWithAttribute,
-		arg.SelectByEditedAt,
-		arg.SelectByTitle,
-		arg.SelectByText,
-		arg.SelectByComments,
-		arg.SelectByAuthors,
-		arg.SelectByEvaluation,
-		arg.SortedByIDArticle,
-		arg.SortedByEvaluation,
-		arg.SortedByComments,
-		arg.SortedByAuthors,
-		arg.SortedByTitle,
-		arg.SortedByText,
-		arg.SortedByEditedAt,
-		arg.SortedByCreatedAt,
+		arg.SelectTitle,
+		arg.SelectText,
+		arg.SelectEvaluation,
+		arg.SortedIDArticle,
+		arg.SortedEvaluation,
+		arg.SortedComments,
+		arg.SortedAuthors,
+		arg.SortedTitle,
+		arg.SortedText,
+		arg.SortedEditedAt,
+		arg.SortedCreatedAt,
 		arg.Offset,
 		arg.Limit,
 	)
