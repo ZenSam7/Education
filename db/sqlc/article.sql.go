@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createArticle = `-- name: CreateArticle :one
@@ -75,35 +73,37 @@ func (q *Queries) DeleteArticle(ctx context.Context, idArticle int32) (Article, 
 const editArticleParam = `-- name: EditArticleParam :one
 UPDATE articles
 SET
-  edited_at = COALESCE($1::timestamp , edited_at),
+  -- Если изменили текст или заголовок то обновляем время изменения
+  edited_at = CASE WHEN ($1::text <> '') THEN NOW()
+                   WHEN ($2::text <> '') THEN NOW()
+                   ELSE edited_at END,
+
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
   -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
   title = CASE WHEN $2::text <> '' THEN $2::text ELSE title END,
-  text = CASE WHEN $3::text <> '' THEN $3::text ELSE text END,
-  evaluation = CASE WHEN $4::integer <> 0 THEN $4::integer ELSE evaluation END,
-  comments = COALESCE($5, comments),
-  authors = COALESCE($6, authors)
-WHERE id_article = $7::integer
+  text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
+  evaluation = CASE WHEN $3::integer <> 0 THEN $3::integer ELSE evaluation END,
+  comments = COALESCE($4, comments),
+  authors = COALESCE($5, authors)
+WHERE id_article = $6::integer
 RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
 type EditArticleParamParams struct {
-	EditedAt   pgtype.Timestamp `json:"edited_at"`
-	Title      string           `json:"title"`
-	Text       string           `json:"text"`
-	Evaluation int32            `json:"evaluation"`
-	Comments   []int32          `json:"comments"`
-	Authors    []int32          `json:"authors"`
-	IDArticle  int32            `json:"id_article"`
+	Text       string  `json:"text"`
+	Title      string  `json:"title"`
+	Evaluation int32   `json:"evaluation"`
+	Comments   []int32 `json:"comments"`
+	Authors    []int32 `json:"authors"`
+	IDArticle  int32   `json:"id_article"`
 }
 
 // EditArticleParam Изменяем параметр(ы) статьи
 func (q *Queries) EditArticleParam(ctx context.Context, arg EditArticleParamParams) (Article, error) {
 	row := q.db.QueryRow(ctx, editArticleParam,
-		arg.EditedAt,
-		arg.Title,
 		arg.Text,
+		arg.Title,
 		arg.Evaluation,
 		arg.Comments,
 		arg.Authors,

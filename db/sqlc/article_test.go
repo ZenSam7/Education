@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-// createRandomArticle Создаём случайную статью (заодно тестируем её) и возвращаем её
+// createRandomArticle Создаём случайную статью и возвращаем её
 func createRandomArticle() (Article, *Queries, func()) {
 	queries, closeConn := GetQueries()
 
 	arg := CreateArticleParams{
 		Title:   tools.GetRandomString(),
 		Text:    tools.GetRandomString(),
-		Authors: []int32{tools.GetRandomInt()},
+		Authors: []int32{tools.GetRandomUint()},
 	}
 	newArticle, _ := queries.CreateArticle(context.Background(), arg)
 
@@ -29,7 +29,7 @@ func TestCreateArticle(t *testing.T) {
 	arg := CreateArticleParams{
 		Title:   tools.GetRandomString(),
 		Text:    tools.GetRandomString(),
-		Authors: []int32{tools.GetRandomInt()},
+		Authors: []int32{tools.GetRandomUint()},
 	}
 
 	newArticle, err := queries.CreateArticle(context.Background(), arg)
@@ -79,7 +79,7 @@ func TestEditArticleParam(t *testing.T) {
 
 	require.Equal(t, editedArticle.IDArticle, article.IDArticle)
 	require.Equal(t, editedArticle.CreatedAt, article.CreatedAt)
-	require.Equal(t, editedArticle.EditedAt, article.EditedAt)
+	require.WithinDuration(t, editedArticle.EditedAt.Time, time.Now(), time.Second)
 	require.NotEqual(t, editedArticle.Title, article.Title)
 	require.Equal(t, editedArticle.Text, article.Text)
 	require.Equal(t, editedArticle.Comments, article.Comments)
@@ -105,6 +105,7 @@ func TestEditArticleParam(t *testing.T) {
 	require.Equal(t, editedArticle.Comments, article.Comments)
 	require.Equal(t, editedArticle.Authors, article.Authors)
 	require.NotEqual(t, editedArticle.Evaluation, article.Evaluation)
+	require.WithinDuration(t, editedArticle.EditedAt.Time, time.Now(), time.Second)
 }
 
 func TestGetArticlesWithAttribute(t *testing.T) {

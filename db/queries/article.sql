@@ -83,7 +83,11 @@ OFFSET sqlc.arg('Offset')::integer;
 -- name: EditArticleParam :one
 UPDATE articles
 SET
-  edited_at = COALESCE(sqlc.arg(edited_at)::timestamp , edited_at),
+  -- Если изменили текст или заголовок то обновляем время изменения
+  edited_at = CASE WHEN (sqlc.arg(text)::text <> '') THEN NOW()
+                   WHEN (sqlc.arg(title)::text <> '') THEN NOW()
+                   ELSE edited_at END,
+
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
   -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)

@@ -17,3 +17,8 @@ func GetRandomString() string {
 func GetRandomInt() int32 {
 	return rand.Int31() * int32(1-2*rand.Intn(2))
 }
+
+// GetRandomUint Число не может быть отрицательным
+func GetRandomUint() int32 {
+	return rand.Int31() + 1
+}

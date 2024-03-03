@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/ZenSam7/Education/api"
-	"github.com/ZenSam7/Education/db/sqlc"
+	db "github.com/ZenSam7/Education/db/sqlc"
 	"github.com/ZenSam7/Education/tools"
 	"log"
 )

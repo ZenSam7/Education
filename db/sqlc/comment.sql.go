@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createComment = `-- name: CreateComment :one
@@ -46,22 +44,17 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 const deleteComment = `-- name: DeleteComment :one
 WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
     DELETE FROM comments
-    WHERE id_comment = $2::integer
+    WHERE id_comment = $1::integer
 )
 UPDATE articles
-SET comments = array_remove(comments, $2::integer)
-WHERE id_article = $1
+SET comments = array_remove(comments, $1::integer)
+WHERE $1::integer = ANY(comments)
 RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
-type DeleteCommentParams struct {
-	IDArticle int32 `json:"id_article"`
-	IDComment int32 `json:"id_comment"`
-}
-
 // DeleteComment Удаляем комментарий к статье
-func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) (Article, error) {
-	row := q.db.QueryRow(ctx, deleteComment, arg.IDArticle, arg.IDComment)
+func (q *Queries) DeleteComment(ctx context.Context, idComment int32) (Article, error) {
+	row := q.db.QueryRow(ctx, deleteComment, idComment)
 	var i Article
 	err := row.Scan(
 		&i.IDArticle,
@@ -79,29 +72,34 @@ func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) (A
 const editCommentParam = `-- name: EditCommentParam :one
 UPDATE comments
 SET
-  edited_at = COALESCE($1::timestamp, edited_at),
+    -- Если изменили текст или автора польщователя то обновляем его
+    edited_at = CASE WHEN $1::text <> '' THEN NOW()
+                     WHEN $2::integer <> from_user THEN NOW()
+                     ELSE edited_at END,
 
-  -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
-  -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
-  text = CASE WHEN $2::text <> '' THEN $2::text ELSE text END,
-  from_user = COALESCE($3::integer, from_user),
-  evaluation = COALESCE($4::integer, evaluation)
-WHERE id_comment = $5::integer
+    -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
+    -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+    text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
+    from_user = CASE WHEN $2::integer <> from_user
+                     THEN $2::integer
+                     ELSE from_user END,
+    evaluation = CASE WHEN $3::integer <> evaluation
+                      THEN $3::integer
+                      ELSE evaluation END
+WHERE id_comment = $4::integer
 RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
 `
 
 type EditCommentParamParams struct {
-	EditedAt   pgtype.Timestamp `json:"edited_at"`
-	Text       string           `json:"text"`
-	FromUser   int32            `json:"from_user"`
-	Evaluation int32            `json:"evaluation"`
-	IDComment  int32            `json:"id_comment"`
+	Text       string `json:"text"`
+	FromUser   int32  `json:"from_user"`
+	Evaluation int32  `json:"evaluation"`
+	IDComment  int32  `json:"id_comment"`
 }
 
 // EditCommentParam Изменяем параметр(ы) пользователя
 func (q *Queries) EditCommentParam(ctx context.Context, arg EditCommentParamParams) (Comment, error) {
 	row := q.db.QueryRow(ctx, editCommentParam,
-		arg.EditedAt,
 		arg.Text,
 		arg.FromUser,
 		arg.Evaluation,
@@ -119,13 +117,22 @@ func (q *Queries) EditCommentParam(ctx context.Context, arg EditCommentParamPara
 	return i, err
 }
 
-const getComment = `-- name: GetComment :exec
+const getComment = `-- name: GetComment :one
 SELECT id_comment, created_at, edited_at, text, from_user, evaluation FROM comments
-WHERE id_comment = $1
+WHERE id_comment = $1::integer
 `
 
 // GetComment Возвращаем комментарий
-func (q *Queries) GetComment(ctx context.Context, idComment int32) error {
-	_, err := q.db.Exec(ctx, getComment, idComment)
-	return err
+func (q *Queries) GetComment(ctx context.Context, idComment int32) (Comment, error) {
+	row := q.db.QueryRow(ctx, getComment, idComment)
+	var i Comment
+	err := row.Scan(
+		&i.IDComment,
+		&i.CreatedAt,
+		&i.EditedAt,
+		&i.Text,
+		&i.FromUser,
+		&i.Evaluation,
+	)
+	return i, err
 }

@@ -18,7 +18,7 @@ type Querier interface {
 	// DeleteArticle Удаляем статью и комментарии к ней
 	DeleteArticle(ctx context.Context, idArticle int32) (Article, error)
 	// DeleteComment Удаляем комментарий к статье
-	DeleteComment(ctx context.Context, arg DeleteCommentParams) (Article, error)
+	DeleteComment(ctx context.Context, idComment int32) (Article, error)
 	// DeleteUser Удаляем пользователя и сдвигаем id
 	DeleteUser(ctx context.Context, idUser int32) (User, error)
 	// EditArticleParam Изменяем параметр(ы) статьи
@@ -32,7 +32,7 @@ type Querier interface {
 	// GetArticlesWithAttribute Возвращаем много статей взятых по какому-то признаку(ам)
 	GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error)
 	// GetComment Возвращаем комментарий
-	GetComment(ctx context.Context, idComment int32) error
+	GetComment(ctx context.Context, idComment int32) (Comment, error)
 	// GetManySortedArticles Возвращаем много отсортированных статей
 	GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error)
 	// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
