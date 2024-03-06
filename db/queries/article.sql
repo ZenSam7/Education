@@ -79,8 +79,8 @@ ORDER BY
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
--- EditArticleParam Изменяем параметр(ы) статьи
--- name: EditArticleParam :one
+-- EditArticle Изменяем параметр(ы) статьи
+-- name: EditArticle :one
 UPDATE articles
 SET
   -- Если изменили текст или заголовок то обновляем время изменения

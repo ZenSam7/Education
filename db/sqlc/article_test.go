@@ -63,17 +63,17 @@ func TestGetArticle(t *testing.T) {
 	require.Equal(t, findedArticle.Evaluation, article.Evaluation)
 }
 
-func TestEditArticleParam(t *testing.T) {
+func TestEditArticle(t *testing.T) {
 	article, queries, closeConn := createRandomArticle()
 	defer closeConn() // Не забываем закрыть соединение
 
 	// Измяняем Заголовок
-	arg := EditArticleParamParams{
+	arg := EditArticleParams{
 		IDArticle: article.IDArticle,
 		Title:     tools.GetRandomString(),
 	}
 
-	editedArticle, err := queries.EditArticleParam(context.Background(), arg)
+	editedArticle, err := queries.EditArticle(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, editedArticle)
 
@@ -88,12 +88,12 @@ func TestEditArticleParam(t *testing.T) {
 	article = editedArticle
 
 	// Измяняем Оценку
-	arg = EditArticleParamParams{
+	arg = EditArticleParams{
 		IDArticle:  article.IDArticle,
 		Evaluation: tools.GetRandomInt(),
 	}
 
-	editedArticle, err = queries.EditArticleParam(context.Background(), arg)
+	editedArticle, err = queries.EditArticle(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, editedArticle)
 

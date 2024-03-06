@@ -33,8 +33,8 @@ ORDER BY
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
--- EditUserParam Изменяем параметр(ы) пользователя
--- name: EditUserParam :one
+-- EditUser Изменяем параметр(ы) пользователя
+-- name: EditUser :one
 UPDATE users
 SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',

@@ -136,14 +136,14 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 	}
 
 	// Изменяем параметр(ы) пользователя
-	arg := db.EditUserParamParams{
+	arg := db.EditUserParams{
 		IDUser:      req.IDUser,
 		Name:        req.Name,
 		Description: req.Description,
 		Karma:       req.Karma,
 	}
 
-	editedUser, err := proc.queries.EditUserParam(context.Background(), arg)
+	editedUser, err := proc.queries.EditUser(context.Background(), arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

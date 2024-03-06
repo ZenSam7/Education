@@ -185,7 +185,7 @@ func (proc *Process) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 
 // Надо разделить данные которые получаем с url и данные которые получаем с uri
 type editArticleRequest struct {
-	IDArticle  int32            `json:"id_article" binding:"required"`
+	IDArticle  int32            `json:"id_article" binding:"required,min=1"`
 	Title      string           `json:"title"`
 	Text       string           `json:"text"`
 	Comments   []int32          `json:"comments"`
@@ -204,17 +204,16 @@ func (proc *Process) editArticle(ctx *gin.Context) {
 	}
 
 	// Изменяем статью
-	arg := db.EditArticleParamParams{
+	arg := db.EditArticleParams{
 		IDArticle:  req.IDArticle,
 		Title:      req.Title,
 		Text:       req.Text,
 		Comments:   req.Comments,
 		Authors:    req.Authors,
 		Evaluation: req.Evaluation,
-		EditedAt:   req.EditedAt,
 	}
 
-	editedArticle, err := proc.queries.EditArticleParam(context.Background(), arg)
+	editedArticle, err := proc.queries.EditArticle(context.Background(), arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

@@ -69,7 +69,7 @@ func (q *Queries) DeleteComment(ctx context.Context, idComment int32) (Article, 
 	return i, err
 }
 
-const editCommentParam = `-- name: EditCommentParam :one
+const editComment = `-- name: EditComment :one
 UPDATE comments
 SET
     -- Если изменили текст или автора польщователя то обновляем его
@@ -90,16 +90,16 @@ WHERE id_comment = $4::integer
 RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
 `
 
-type EditCommentParamParams struct {
+type EditCommentParams struct {
 	Text       string `json:"text"`
 	FromUser   int32  `json:"from_user"`
 	Evaluation int32  `json:"evaluation"`
 	IDComment  int32  `json:"id_comment"`
 }
 
-// EditCommentParam Изменяем параметр(ы) пользователя
-func (q *Queries) EditCommentParam(ctx context.Context, arg EditCommentParamParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, editCommentParam,
+// EditComment Изменяем параметр(ы) пользователя
+func (q *Queries) EditComment(ctx context.Context, arg EditCommentParams) (Comment, error) {
+	row := q.db.QueryRow(ctx, editComment,
 		arg.Text,
 		arg.FromUser,
 		arg.Evaluation,
@@ -135,4 +135,49 @@ func (q *Queries) GetComment(ctx context.Context, idComment int32) (Comment, err
 		&i.Evaluation,
 	)
 	return i, err
+}
+
+const getCommentsOfArticle = `-- name: GetCommentsOfArticle :many
+WITH the_article AS (
+    SELECT unnest(comments) AS id_comment FROM articles
+    WHERE id_article = $3::integer
+)
+SELECT id_comment, created_at, edited_at, text, from_user, evaluation FROM comments
+WHERE id_comment IN (SELECT id_comment FROM the_article)
+OFFSET $1::integer
+LIMIT $2::integer
+`
+
+type GetCommentsOfArticleParams struct {
+	Offset    int32 `json:"Offset"`
+	Limit     int32 `json:"Limit"`
+	IDArticle int32 `json:"id_article"`
+}
+
+// GetCommentsOfArticle Возвращаем комментарии
+func (q *Queries) GetCommentsOfArticle(ctx context.Context, arg GetCommentsOfArticleParams) ([]Comment, error) {
+	rows, err := q.db.Query(ctx, getCommentsOfArticle, arg.Offset, arg.Limit, arg.IDArticle)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Comment{}
+	for rows.Next() {
+		var i Comment
+		if err := rows.Scan(
+			&i.IDComment,
+			&i.CreatedAt,
+			&i.EditedAt,
+			&i.Text,
+			&i.FromUser,
+			&i.Evaluation,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

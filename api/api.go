@@ -40,6 +40,13 @@ func NewProcess(queries *db.Queries) *Process {
 	router.PATCH("/article/:id_article", proc.editArticle)
 	router.GET("/article/search", proc.getManySortedArticlesWithAttributes)
 
+	// Как обрабатываем запросы для действий с комментариями:
+	router.POST("/comment", proc.createComment)
+	router.GET("/comment/:id_comment", proc.getComment)
+	router.GET("/comment", proc.getCommentsOfArticle)
+	router.PATCH("/comment/:id_comment", proc.editComment)
+	router.DELETE("/comment/:id_comment", proc.deleteComment)
+
 	proc.router = router
 	return proc
 }

@@ -59,7 +59,7 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 	return i, err
 }
 
-const editUserParam = `-- name: EditUserParam :one
+const editUser = `-- name: EditUser :one
 UPDATE users
 SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
@@ -71,16 +71,16 @@ WHERE id_user = $4::integer
 RETURNING id_user, created_at, name, description, karma
 `
 
-type EditUserParamParams struct {
+type EditUserParams struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Karma       int32  `json:"karma"`
 	IDUser      int32  `json:"id_user"`
 }
 
-// EditUserParam Изменяем параметр(ы) пользователя
-func (q *Queries) EditUserParam(ctx context.Context, arg EditUserParamParams) (User, error) {
-	row := q.db.QueryRow(ctx, editUserParam,
+// EditUser Изменяем параметр(ы) пользователя
+func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, editUser,
 		arg.Name,
 		arg.Description,
 		arg.Karma,

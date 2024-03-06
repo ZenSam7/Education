@@ -88,7 +88,7 @@ func TestDeleteComment(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestEditCommentParam(t *testing.T) {
+func TestEditComment(t *testing.T) {
 	article, queries, closeConn := createRandomArticle()
 	defer closeConn()
 
@@ -108,12 +108,12 @@ func TestEditCommentParam(t *testing.T) {
 	require.NotZero(t, article.Comments[0])
 	require.Equal(t, comm.IDComment, article.Comments[0])
 
-	argsEditedComm := EditCommentParamParams{
+	argsEditedComm := EditCommentParams{
 		IDComment: comm.IDComment,
 		Text:      tools.GetRandomString(),
 	}
 
-	editedComm, err := queries.EditCommentParam(context.Background(), argsEditedComm)
+	editedComm, err := queries.EditComment(context.Background(), argsEditedComm)
 	require.NoError(t, err)
 	require.Equal(t, editedComm.Text, argsEditedComm.Text)
 	require.WithinDuration(t, editedComm.EditedAt.Time, time.Now(), time.Second)

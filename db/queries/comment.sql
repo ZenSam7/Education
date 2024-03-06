@@ -25,8 +25,8 @@ RETURNING *;
 SELECT * FROM comments
 WHERE id_comment = sqlc.arg(id_comment)::integer;
 
--- EditCommentParam Изменяем параметр(ы) пользователя
--- name: EditCommentParam :one
+-- EditComment Изменяем параметр(ы) пользователя
+-- name: EditComment :one
 UPDATE comments
 SET
     -- Если изменили текст или автора польщователя то обновляем его
@@ -46,3 +46,13 @@ SET
 WHERE id_comment = sqlc.arg(id_comment)::integer
 RETURNING *;
 
+-- GetCommentsOfArticle Возвращаем комментарии
+-- name: GetCommentsOfArticle :many
+WITH the_article AS (
+    SELECT unnest(comments) AS id_comment FROM articles
+    WHERE id_article = sqlc.arg(id_article)::integer
+)
+SELECT * FROM comments
+WHERE id_comment IN (SELECT id_comment FROM the_article)
+OFFSET sqlc.arg('Offset')::integer
+LIMIT sqlc.arg('Limit')::integer;

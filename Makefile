@@ -13,7 +13,7 @@ createdb:
 # Удаляем бд
 dropdb:
 	sudo docker exec postgres16 dropdb education
-# Поднимаем миграции (т.е. переходим к текущей версии бд)
+# Поднимаем миграции (т.е. переходим к новой версии бд)
 migrateup:
 	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up
 # Опускаем миграции (т.е. переходим к прошлой версии бд)
@@ -37,7 +37,7 @@ RESTART:
 
 # Запускаем все тесты с подробным описанием и проверкой на полное покрытие тестов
 test:
-	sudo go test -cover ./db/sqlc
+	make sqlc && sudo go test -cover ./db/sqlc
 
 # Запускаем cервер
 server:

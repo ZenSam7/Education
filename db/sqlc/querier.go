@@ -21,18 +21,20 @@ type Querier interface {
 	DeleteComment(ctx context.Context, idComment int32) (Article, error)
 	// DeleteUser Удаляем пользователя и сдвигаем id
 	DeleteUser(ctx context.Context, idUser int32) (User, error)
-	// EditArticleParam Изменяем параметр(ы) статьи
-	EditArticleParam(ctx context.Context, arg EditArticleParamParams) (Article, error)
-	// EditCommentParam Изменяем параметр(ы) пользователя
-	EditCommentParam(ctx context.Context, arg EditCommentParamParams) (Comment, error)
-	// EditUserParam Изменяем параметр(ы) пользователя
-	EditUserParam(ctx context.Context, arg EditUserParamParams) (User, error)
+	// EditArticle Изменяем параметр(ы) статьи
+	EditArticle(ctx context.Context, arg EditArticleParams) (Article, error)
+	// EditComment Изменяем параметр(ы) пользователя
+	EditComment(ctx context.Context, arg EditCommentParams) (Comment, error)
+	// EditUser Изменяем параметр(ы) пользователя
+	EditUser(ctx context.Context, arg EditUserParams) (User, error)
 	// GetArticle Возвращаем статью по id
 	GetArticle(ctx context.Context, idArticle int32) (Article, error)
 	// GetArticlesWithAttribute Возвращаем много статей взятых по какому-то признаку(ам)
 	GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error)
 	// GetComment Возвращаем комментарий
 	GetComment(ctx context.Context, idComment int32) (Comment, error)
+	// GetCommentsOfArticle Возвращаем комментарии
+	GetCommentsOfArticle(ctx context.Context, arg GetCommentsOfArticleParams) ([]Comment, error)
 	// GetManySortedArticles Возвращаем много отсортированных статей
 	GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error)
 	// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по

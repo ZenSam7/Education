@@ -70,7 +70,7 @@ func (q *Queries) DeleteArticle(ctx context.Context, idArticle int32) (Article, 
 	return i, err
 }
 
-const editArticleParam = `-- name: EditArticleParam :one
+const editArticle = `-- name: EditArticle :one
 UPDATE articles
 SET
   -- Если изменили текст или заголовок то обновляем время изменения
@@ -90,7 +90,7 @@ WHERE id_article = $6::integer
 RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
-type EditArticleParamParams struct {
+type EditArticleParams struct {
 	Text       string  `json:"text"`
 	Title      string  `json:"title"`
 	Evaluation int32   `json:"evaluation"`
@@ -99,9 +99,9 @@ type EditArticleParamParams struct {
 	IDArticle  int32   `json:"id_article"`
 }
 
-// EditArticleParam Изменяем параметр(ы) статьи
-func (q *Queries) EditArticleParam(ctx context.Context, arg EditArticleParamParams) (Article, error) {
-	row := q.db.QueryRow(ctx, editArticleParam,
+// EditArticle Изменяем параметр(ы) статьи
+func (q *Queries) EditArticle(ctx context.Context, arg EditArticleParams) (Article, error) {
+	row := q.db.QueryRow(ctx, editArticle,
 		arg.Text,
 		arg.Title,
 		arg.Evaluation,

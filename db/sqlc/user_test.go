@@ -45,18 +45,18 @@ func TestCreateUser(t *testing.T) {
 	require.NotZero(t, newUser.CreatedAt)
 }
 
-func TestEditUserParam(t *testing.T) {
+func TestEditUser(t *testing.T) {
 	user, queries, closeConn := createRandomUser()
 	// Не забываем закрыть соединение
 	defer closeConn()
 
 	// Изменяем Имя
-	agr := EditUserParamParams{
+	agr := EditUserParams{
 		Name:   tools.GetRandomString(),
 		IDUser: user.IDUser,
 	}
 
-	editedUser, err := queries.EditUserParam(context.Background(), agr)
+	editedUser, err := queries.EditUser(context.Background(), agr)
 	require.NoError(t, err)
 	require.NotEmpty(t, editedUser)
 
@@ -68,12 +68,12 @@ func TestEditUserParam(t *testing.T) {
 	user = editedUser // Обновляем пользователя с которым сравниваем
 
 	// Изменяем Описание
-	agr = EditUserParamParams{
+	agr = EditUserParams{
 		Description: tools.GetRandomString(),
 		IDUser:      user.IDUser,
 	}
 
-	editedUser, err = queries.EditUserParam(context.Background(), agr)
+	editedUser, err = queries.EditUser(context.Background(), agr)
 	require.NoError(t, err)
 	require.NotEmpty(t, editedUser)
 
@@ -85,12 +85,12 @@ func TestEditUserParam(t *testing.T) {
 	user = editedUser // Обновляем пользователя с которым сравниваем
 
 	// Изменяем Карму
-	agr = EditUserParamParams{
+	agr = EditUserParams{
 		Karma:  tools.GetRandomInt(),
 		IDUser: user.IDUser,
 	}
 
-	editedUser, err = queries.EditUserParam(context.Background(), agr)
+	editedUser, err = queries.EditUser(context.Background(), agr)
 	require.NoError(t, err)
 	require.NotEmpty(t, editedUser)
 
