@@ -53,4 +53,4 @@ jobs:
         sudo make migrateup
 
     - name: Testing
-      run: sudo make test
+      run: sudo go test -cover ./db/sqlc

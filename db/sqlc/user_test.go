@@ -154,7 +154,7 @@ func TestGetManySortedUsers(t *testing.T) {
 	}
 
 	arg := GetManySortedUsersParams{
-		Offset: 0,
+		Offset: createdUsers[0].IDUser - 1,
 		Limit:  10,
 		IDUser: true,
 	}

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-// createUserRequest Поле Name обязательно (required), а Description заполним сами в createUser
+// createUserRequest Поле Name обязательно (required), а Description не обязательно
 // (json == что логично, берём данные из json'а в теле запроса)
 type createUserRequest struct {
 	Name        string `json:"name" binding:"required"`
@@ -23,11 +23,6 @@ func (proc *Process) createUser(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
-	}
-
-	// Если нету описания, то добавляем всё сами
-	if req.Description == "" {
-		req.Description = "Education is the cool site"
 	}
 
 	// Создаём пользователя

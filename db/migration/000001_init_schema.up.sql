@@ -8,7 +8,7 @@ CREATE TABLE "users" (
   id_user       serial PRIMARY KEY,
   created_at    timestamptz DEFAULT now(),
   name          varchar NOT NULL CHECK ( name <> '' ),
-  description   text NOT NULL CHECK ( description <> '' ),
+  description   text NOT NULL,
   karma         integer DEFAULT 0 NOT NULL
 );
 
