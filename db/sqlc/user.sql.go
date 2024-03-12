@@ -10,19 +10,20 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, description)
-VALUES ($1::text, $2::text)
-RETURNING id_user, created_at, name, description, karma
+INSERT INTO users (name, email, password_hash)
+VALUES ($1::text, $2::text, $3::text)
+RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
 type CreateUserParams struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
 }
 
 // CreateUser Создаём пользователя
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Description)
+	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Email, arg.PasswordHash)
 	var i User
 	err := row.Scan(
 		&i.IDUser,
@@ -30,6 +31,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Name,
 		&i.Description,
 		&i.Karma,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }
@@ -42,7 +45,7 @@ WITH update_id AS ( -- Объединяем 2 запроса в 1
 )
 DELETE FROM users
 WHERE id_user = $1::integer
-RETURNING id_user, created_at, name, description, karma
+RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
 // DeleteUser Удаляем пользователя и сдвигаем id
@@ -55,6 +58,8 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 		&i.Name,
 		&i.Description,
 		&i.Karma,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }
@@ -68,7 +73,7 @@ SET
   description = CASE WHEN $2::text <> '' THEN $2::text ELSE description END,
   karma = COALESCE($3::integer, karma)
 WHERE id_user = $4::integer
-RETURNING id_user, created_at, name, description, karma
+RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
 type EditUserParams struct {
@@ -93,12 +98,14 @@ func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error
 		&i.Name,
 		&i.Description,
 		&i.Karma,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getManySortedUsers = `-- name: GetManySortedUsers :many
-SELECT id_user, created_at, name, description, karma FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
 ORDER BY
         CASE WHEN $1::boolean THEN id_user::integer
              WHEN $2::boolean THEN karma::integer END
@@ -142,6 +149,8 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 			&i.Name,
 			&i.Description,
 			&i.Karma,
+			&i.Email,
+			&i.PasswordHash,
 		); err != nil {
 			return nil, err
 		}
@@ -154,7 +163,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id_user, created_at, name, description, karma FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
 WHERE id_user = $1
 `
 
@@ -168,6 +177,8 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 		&i.Name,
 		&i.Description,
 		&i.Karma,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }

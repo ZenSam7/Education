@@ -1,3 +1,8 @@
+Если WSL нагружает цп на 100%, то можно:
+∅ Перезагрузать wsl: taskkill /f /im wslservice.exe
+∅ (и это должно помочь): Win+Ctrl+Shift+B
+
+
 
 :::ПОДКЛЮЧЕНИЕ К БД:::
 ∅ Чтобы создать новый postgresql:
@@ -52,11 +57,11 @@ $ make test
 
 :::МИГРАЦИИ (используется библиотека golang-migrate):::
 ∅ Создать миграцию:
-$ migrate create -ext sql -dir migration -seq init_schema
+$ migrate create -ext sql -dir migration -seq NAME_MIGRATION
 [-ext sql] Создать файлы с расширением .sql
 [-dir migration] Куда сохранить миграции
 [-seq] Создать последовательный номер миграции
-[init_schema] Имя миграции
+[NAME_MIGRATION] Имя миграции
 
 ∅ Запустить миграцию:
 $ migrate -path /mnt/c/Users/samki/GoProjects/Education/db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up

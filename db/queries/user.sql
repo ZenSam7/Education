@@ -1,7 +1,7 @@
 -- CreateUser Создаём пользователя
 -- name: CreateUser :one
-INSERT INTO users (name, description)
-VALUES (sqlc.arg(name)::text, sqlc.arg(description)::text)
+INSERT INTO users (name, email, password_hash)
+VALUES (sqlc.arg(name)::text, sqlc.arg(email)::text, sqlc.arg(password_hash)::text)
 RETURNING *;
 
 -- DeleteUser Удаляем пользователя и сдвигаем id

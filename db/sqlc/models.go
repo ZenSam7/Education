@@ -29,9 +29,11 @@ type Comment struct {
 }
 
 type User struct {
-	IDUser      int32              `json:"id_user"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Karma       int32              `json:"karma"`
+	IDUser       int32              `json:"id_user"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Name         string             `json:"name"`
+	Description  pgtype.Text        `json:"description"`
+	Karma        int32              `json:"karma"`
+	Email        string             `json:"email"`
+	PasswordHash string             `json:"password_hash"`
 }

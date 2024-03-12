@@ -16,8 +16,9 @@ func createRandomUser() (User, *Queries, func()) {
 	queries, closeConn := GetQueries()
 
 	arg := CreateUserParams{
-		Name:        tools.GetRandomString(),
-		Description: tools.GetRandomString(),
+		Name:         tools.GetRandomString(),
+		Email:        tools.GetRandomEmail(),
+		PasswordHash: tools.GetRandomString(),
 	}
 	newUser, _ := queries.CreateUser(context.Background(), arg)
 
@@ -29,8 +30,9 @@ func TestCreateUser(t *testing.T) {
 	defer closeConn()
 
 	arg := CreateUserParams{
-		Name:        tools.GetRandomString(),
-		Description: tools.GetRandomString(),
+		Name:         tools.GetRandomString(),
+		Email:        tools.GetRandomEmail(),
+		PasswordHash: tools.GetRandomString(),
 	}
 
 	newUser, err := queries.CreateUser(context.Background(), arg)
@@ -38,7 +40,8 @@ func TestCreateUser(t *testing.T) {
 	require.NotEmpty(t, newUser)
 
 	require.Equal(t, arg.Name, newUser.Name)
-	require.Equal(t, arg.Description, newUser.Description)
+	require.Equal(t, arg.Email, newUser.Email)
+	require.Equal(t, arg.PasswordHash, newUser.PasswordHash)
 	require.Zero(t, newUser.Karma)
 
 	require.NotZero(t, newUser.IDUser)
@@ -167,6 +170,6 @@ func TestGetManySortedUsers(t *testing.T) {
 		require.NotEmpty(t, usr.IDUser)
 		require.NotEmpty(t, usr.CreatedAt)
 		require.NotEmpty(t, usr.Name)
-		require.NotEmpty(t, usr.Description)
+		require.Empty(t, usr.Description)
 	}
 }
