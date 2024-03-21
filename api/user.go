@@ -11,8 +11,9 @@ import (
 // createUserRequest Поле Name обязательно (required), а Description не обязательно
 // (json == что логично, берём данные из json'а в теле запроса)
 type createUserRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
+	Name         string `json:"name" binding:"required"`
+	Email        string `json:"email" binding:"required"`
+	PasswordHash string `json:"password_hash" binding:"required"`
 }
 
 func (proc *Process) createUser(ctx *gin.Context) {
@@ -27,8 +28,9 @@ func (proc *Process) createUser(ctx *gin.Context) {
 
 	// Создаём пользователя
 	arg := db.CreateUserParams{
-		Name:        req.Name,
-		Description: req.Description,
+		Name:         req.Name,
+		Email:        req.Email,
+		PasswordHash: req.PasswordHash,
 	}
 	user, err := proc.queries.CreateUser(context.Background(), arg)
 	if err != nil {
@@ -73,19 +75,19 @@ func (proc *Process) getUser(ctx *gin.Context) {
 // getManyUsersRequest Сколько пользователей на страничке
 // (form == берём данные из uri, которые идут после "?" (типа: /user?page_size=20&page_num=1))
 type getManyUsersRequest struct {
-	IDUser      bool  `json:"id_user"`
-	Name        bool  `json:"name"`
-	Description bool  `json:"description"`
-	Karma       bool  `json:"karma"`
-	PageSize    int32 `json:"page_size" binding:"required,min=1"`
-	PageNum     int32 `json:"page_num" binding:"required,min=1"`
+	IDUser      bool  `form:"id_user"`
+	Name        bool  `form:"name"`
+	Description bool  `form:"description"`
+	Karma       bool  `form:"karma"`
+	PageSize    int32 `form:"page_size" binding:"required,min=1"`
+	PageNum     int32 `form:"page_num" binding:"required,min=1"`
 }
 
 func (proc *Process) getManyUsers(ctx *gin.Context) {
 	var req getManyUsersRequest
 
 	// Проверяем чтобы все теги соответсвовали
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}

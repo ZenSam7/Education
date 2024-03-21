@@ -7,15 +7,15 @@ import (
 )
 
 type getCommentsOfArticleRequest struct {
-	IDArticle int32 `json:"id_article" binding:"required,min=1"`
-	PageNum   int32 `json:"page_num" binding:"required,min=1"`
-	PageSize  int32 `json:"page_size" binding:"required,min=1"`
+	IDArticle int32 `uri:"id_article" binding:"required,min=1"`
+	PageNum   int32 `uri:"page_num" binding:"required,min=1"`
+	PageSize  int32 `uri:"page_size" binding:"required,min=1"`
 }
 
 func (proc *Process) getCommentsOfArticle(c *gin.Context) {
 	var req getCommentsOfArticleRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindUri(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}

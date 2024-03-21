@@ -86,23 +86,23 @@ func (proc *Process) getArticle(ctx *gin.Context) {
 
 // Да громоздко.
 type getManyArticlesRequest struct {
-	IDArticle  bool  `json:"id_article"`
-	Evaluation bool  `json:"evaluation"`
-	Comments   bool  `json:"comments"`
-	Authors    bool  `json:"authors"`
-	Title      bool  `json:"title"`
-	Text       bool  `json:"text"`
-	EditedAt   bool  `json:"edited_at"`
-	CreatedAt  bool  `json:"created_at"`
-	PageNum    int32 `json:"page_num" binding:"required,min=1"`
-	PageSize   int32 `json:"page_size" binding:"required,min=1"`
+	IDArticle  bool  `form:"id_article"`
+	Evaluation bool  `form:"evaluation"`
+	Comments   bool  `form:"comments"`
+	Authors    bool  `form:"authors"`
+	Title      bool  `form:"title"`
+	Text       bool  `form:"text"`
+	EditedAt   bool  `form:"edited_at"`
+	CreatedAt  bool  `form:"created_at"`
+	PageNum    int32 `form:"page_num" binding:"required,min=1"`
+	PageSize   int32 `form:"page_size" binding:"required,min=1"`
 }
 
 func (proc *Process) getManySortedArticles(ctx *gin.Context) {
 	var req getManyArticlesRequest
 
 	// Проверяем теги
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
