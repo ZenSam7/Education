@@ -37,7 +37,7 @@ sqlc:
 	sudo sqlc generate
 # Запускаем все тесты с подробным описанием и проверкой на полное покрытие тестов
 test:
-	make sqlc && sudo go test -cover ./db/sqlc
+	make sqlc && sudo go test -cover ./db/sqlc && sudo go test -cover ./tools
 
 # Перезапускаем нахер всё
 RESET:

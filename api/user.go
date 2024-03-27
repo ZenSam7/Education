@@ -3,17 +3,20 @@ package api
 import (
 	"context"
 	"database/sql"
+	"errors"
 	db "github.com/ZenSam7/Education/db/sqlc"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-// createUserRequest Поле Name обязательно (required), а Description не обязательно
+// createUserRequest Поле Name обязательно (required) и без спецсимволов (alphanum),
+// а также минимальная длина пароля - 6 символов
 // (json == что логично, берём данные из json'а в теле запроса)
 type createUserRequest struct {
-	Name         string `json:"name" binding:"required"`
-	Email        string `json:"email" binding:"required"`
-	PasswordHash string `json:"password_hash" binding:"required"`
+	Name     string `json:"name" binding:"required,alphanum"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 func (proc *Process) createUser(ctx *gin.Context) {
@@ -26,17 +29,32 @@ func (proc *Process) createUser(ctx *gin.Context) {
 		return
 	}
 
-	// Создаём пользователя
-	arg := db.CreateUserParams{
-		Name:         req.Name,
-		Email:        req.Email,
-		PasswordHash: req.PasswordHash,
-	}
-	user, err := proc.queries.CreateUser(context.Background(), arg)
+	passwordHash, err := tools.GetPasswordHash(req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+
+	// Создаём пользователя
+	arg := db.CreateUserParams{
+		Name:         req.Name,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+	}
+	user, err := proc.queries.CreateUser(context.Background(), arg)
+	if err != nil {
+		// Если пользователь с таким именем уже есть, то выдаем ошибку
+		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
+			ctx.JSON(http.StatusConflict, errorResponse(errors.New("user with this name already exists")))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// Заменяем PasswordHash, т.к. передавать его не безопасно
+	user.PasswordHash = "what u looking at :)"
 
 	ctx.JSON(http.StatusOK, user)
 }

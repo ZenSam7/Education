@@ -18,7 +18,7 @@ func createRandomUser() (User, *Queries, func()) {
 	arg := CreateUserParams{
 		Name:         tools.GetRandomString(),
 		Email:        tools.GetRandomEmail(),
-		PasswordHash: tools.GetRandomString(),
+		PasswordHash: tools.GetRandomHash(),
 	}
 	newUser, _ := queries.CreateUser(context.Background(), arg)
 
@@ -32,7 +32,7 @@ func TestCreateUser(t *testing.T) {
 	arg := CreateUserParams{
 		Name:         tools.GetRandomString(),
 		Email:        tools.GetRandomEmail(),
-		PasswordHash: tools.GetRandomString(),
+		PasswordHash: tools.GetRandomHash(),
 	}
 
 	newUser, err := queries.CreateUser(context.Background(), arg)
