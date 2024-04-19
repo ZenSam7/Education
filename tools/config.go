@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-// Config Какие переменные среды вытаскиваем из connect_data.env
+// Config Какие переменные среды вытаскиваем из .env
 type Config struct {
 	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
 	DBConnect     string `mapstructure:"DB_CONNECT"`
@@ -15,7 +15,7 @@ type Config struct {
 func LoadConfig(path string) (config Config) {
 	// Указываем файл
 	viper.AddConfigPath(path)
-	viper.SetConfigName("connect_data")
+	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
 
 	// Загружаем переменные

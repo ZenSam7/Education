@@ -26,6 +26,13 @@ func TestCheckPassword(t *testing.T) {
 	require.True(t, check)
 	require.NotEmpty(t, hash)
 
+	// Проверка что хеш не изменяется при том же пароле
+	hashAgain, _ := GetPasswordHash(password)
+	checkAgain := CheckPassword(password, hash)
+
+	require.True(t, checkAgain)
+	require.NotEmpty(t, hashAgain)
+
 	otherPassword := GetRandomString()
 	check = CheckPassword(otherPassword, hash)
 

@@ -5,7 +5,7 @@
 
 
 :::ПОДКЛЮЧЕНИЕ К БД:::
-∅ Чтобы создать новый postgresql:
+∅ Чтобы создать новый контейнер PostgreSQL:
 $ docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
 
 ∅ Подключение к бд:

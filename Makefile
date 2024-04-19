@@ -4,26 +4,28 @@
 # $ cd /mnt/c/Users/samki/GoProjects/Education
 # $ make <название нашей команды>
 
+include .env
+
 # Создаём новый контейнер
 postgres:
-	sudo docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:16
+	sudo docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=${DB_PASSWORD} -e POSTGRES_PASSWORD=${DB_USER_NAME} -d postgres:16
 # Создаём новую бд
 createdb:
-	sudo docker exec postgres16 createdb --username=root --owner=root education
+	sudo docker exec postgres16 createdb --username=${DB_USER_NAME} --owner=${DB_USER_NAME} education
 # Удаляем бд
 dropdb:
 	sudo docker exec postgres16 dropdb education
 
 # Поднимаем миграции (т.е. переходим к новой версии бд)
 migrateup:
-	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" up
 migrateup1:
-	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" up 1
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" up 1
 # Опускаем миграции (т.е. переходим к прошлой версии бд)
 migratedown:
-	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" down
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" down
 migratedown1:
-	migrate -path ./db/migration/ -database "postgresql://root:root@localhost:5432/education?sslmode=disable" down 1
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" down 1
 
 # Подключаемся к бд
 connect:
@@ -39,7 +41,7 @@ sqlc:
 test:
 	make sqlc && sudo go test -cover ./db/sqlc && sudo go test -cover ./tools
 
-# Перезапускаем нахер всё
+# Пересоздаём нахер всё
 RESET:
 	sudo docker restart postgres16 && sudo make refreshdb && sudo make sqlc
 # Как RESET только ещё и сервер запускаем

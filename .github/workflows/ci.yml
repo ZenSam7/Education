@@ -2,6 +2,7 @@
 name: Education
 
 on:
+  # Или коммит или пул реквест
   push:
     branches: [ "main" ]
   pull_request:
@@ -16,8 +17,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: root
-          POSTGRES_PASSWORD: root
+          # Изменяются в настройках репозитория во вкладке "Secrets and variables"
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: education
         options: >-
           --health-cmd pg_isready
