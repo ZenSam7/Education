@@ -50,6 +50,6 @@ RESTART:
 
 # Запускаем cервер
 server:
-	sudo go run main.go
+	go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb sqlc test RESET server
+.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb sqlc test RESET RESTART server
