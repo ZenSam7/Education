@@ -1,13 +1,26 @@
 package tools
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
-func GetRandomString() string {
-	// Без пробелов, иначе нельзя использовать в GetRandomEmail
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+// GetRandomString minLength: необязательный аргумент. По умолчанию минимальная длина: 2
+func GetRandomString(minLength ...int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	// Минимальная длина: 2
-	str := make([]byte, rand.Intn(len(letters)-2)+2)
+	// Установка минимальной длины строки
+	var minLengthString int
+	if len(minLength) > 0 {
+		minLengthString = minLength[0]
+	} else {
+		minLengthString = 2
+	}
+
+	// Генерация случайной длины строки от minLengthString до minLengthString + len(letters)
+	strLength := rand.Intn(len(letters)) + minLengthString
+
+	// Создание пустой строки заданной длины
+	str := make([]byte, strLength)
 	for i := range str {
 		str[i] = letters[rand.Intn(len(letters))]
 	}

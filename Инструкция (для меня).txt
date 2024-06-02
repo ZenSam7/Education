@@ -2,6 +2,9 @@
 ∅ Перезагрузать wsl: taskkill /f /im wslservice.exe
 ∅ (и это должно помочь): Win+Ctrl+Shift+B
 
+Установка go:
+sudo tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz &&  export PATH=$PATH:/usr/local/go/bin &&  source ~/.bashrc && go version
+
 
 
 :::ПОДКЛЮЧЕНИЕ К БД:::
