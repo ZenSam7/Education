@@ -12,7 +12,10 @@ func main() {
 	queries, closeConn := db.GetQueries()
 	defer closeConn()
 
-	server := api.NewProcess(queries)
+	server, err := api.NewProcess(config, queries)
+	if err != nil {
+		log.Fatal("Ошибка в создании роутера:", err.Error())
+	}
 
 	if err := server.Run(config.ServerAddress); err != nil {
 		log.Fatal("Не получилось поднять сервер (api):", err)

@@ -4,13 +4,8 @@ INSERT INTO users (name, email, password_hash)
 VALUES (sqlc.arg(name)::text, sqlc.arg(email)::text, sqlc.arg(password_hash)::text)
 RETURNING *;
 
--- DeleteUser Удаляем пользователя и сдвигаем id
+-- DeleteUser Удаляем пользователя
 -- name: DeleteUser :one
-WITH update_id AS ( -- Объединяем 2 запроса в 1
-    UPDATE users
-    SET id_user = id_user - 1
-    WHERE id_user > sqlc.arg(id_user)::integer
-)
 DELETE FROM users
 WHERE id_user = sqlc.arg(id_user)::integer
 RETURNING *;
@@ -19,6 +14,11 @@ RETURNING *;
 -- name: GetUser :one
 SELECT * FROM users
 WHERE id_user = $1;
+
+-- GetUserForName Возвращаем пользователя по имени
+-- name: GetUserForName :one
+SELECT * FROM users
+WHERE name = $1;
 
 -- GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 -- (можно поставить: id_user, и сортировки не будет)

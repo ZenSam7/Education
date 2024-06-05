@@ -26,6 +26,8 @@ migratedown:
 	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" down
 migratedown1:
 	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" down 1
+makemigrate:
+	migrate create -ext sql -dir migration -seq
 
 # Подключаемся к бд
 connect:
@@ -50,6 +52,7 @@ RESTART:
 
 # Запускаем cервер
 server:
-	go run main.go
+	sudo go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown connect refreshdb sqlc test RESET RESTART server
+.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate
+.PHONY: connect refreshdb sqlc test RESET RESTART server

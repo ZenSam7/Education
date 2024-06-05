@@ -24,7 +24,7 @@ type Comment struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	EditedAt   pgtype.Timestamptz `json:"edited_at"`
 	Text       string             `json:"text"`
-	FromUser   int32              `json:"from_user"`
+	Author     int32              `json:"author"`
 	Evaluation int32              `json:"evaluation"`
 }
 

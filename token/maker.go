@@ -13,6 +13,6 @@ var (
 
 // Maker интерфейс для управления токенами
 type Maker interface {
-	CreateToken(username string, duration time.Duration) (string, error)
+	CreateToken(IDUser int32, duration time.Duration) (string, error)
 	VerifyToken(token string) (*Payload, error)
 }

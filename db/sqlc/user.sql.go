@@ -38,17 +38,12 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteUser = `-- name: DeleteUser :one
-WITH update_id AS ( -- Объединяем 2 запроса в 1
-    UPDATE users
-    SET id_user = id_user - 1
-    WHERE id_user > $1::integer
-)
 DELETE FROM users
 WHERE id_user = $1::integer
 RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
-// DeleteUser Удаляем пользователя и сдвигаем id
+// DeleteUser Удаляем пользователя
 func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 	row := q.db.QueryRow(ctx, deleteUser, idUser)
 	var i User
@@ -170,6 +165,27 @@ WHERE id_user = $1
 // GetUser Возвращаем пользователя
 func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, idUser)
+	var i User
+	err := row.Scan(
+		&i.IDUser,
+		&i.CreatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Karma,
+		&i.Email,
+		&i.PasswordHash,
+	)
+	return i, err
+}
+
+const getUserForName = `-- name: GetUserForName :one
+SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
+WHERE name = $1
+`
+
+// GetUserForName Возвращаем пользователя по имени
+func (q *Queries) GetUserForName(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserForName, name)
 	var i User
 	err := row.Scan(
 		&i.IDUser,

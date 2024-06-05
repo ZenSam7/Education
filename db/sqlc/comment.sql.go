@@ -15,27 +15,27 @@ WITH add_comment AS ( -- Я знаю что есть тразнакции
     SET comments = array_append(comments, lastval())
     WHERE id_article = $1
 )
-INSERT INTO comments (text, from_user)
+INSERT INTO comments (text, author)
 VALUES ($3, $2)
-RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
+RETURNING id_comment, created_at, edited_at, text, author, evaluation
 `
 
 type CreateCommentParams struct {
 	IDArticle int32  `json:"id_article"`
-	FromUser  int32  `json:"from_user"`
+	Author    int32  `json:"author"`
 	Text      string `json:"text"`
 }
 
 // CreateComment Создаём комментарий к статье
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, createComment, arg.IDArticle, arg.FromUser, arg.Text)
+	row := q.db.QueryRow(ctx, createComment, arg.IDArticle, arg.Author, arg.Text)
 	var i Comment
 	err := row.Scan(
 		&i.IDComment,
 		&i.CreatedAt,
 		&i.EditedAt,
 		&i.Text,
-		&i.FromUser,
+		&i.Author,
 		&i.Evaluation,
 	)
 	return i, err
@@ -74,51 +74,42 @@ UPDATE comments
 SET
     -- Если изменили текст или автора польщователя то обновляем его
     edited_at = CASE WHEN $1::text <> '' THEN NOW()
-                     WHEN $2::integer <> from_user THEN NOW()
+                     WHEN $2::integer <> author THEN NOW()
                      ELSE edited_at END,
 
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
     text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
-    from_user = CASE WHEN $2::integer <> from_user
+    author = CASE WHEN $2::integer <> author
                      THEN $2::integer
-                     ELSE from_user END,
-    evaluation = CASE WHEN $3::integer <> evaluation
-                      THEN $3::integer
-                      ELSE evaluation END
-WHERE id_comment = $4::integer
-RETURNING id_comment, created_at, edited_at, text, from_user, evaluation
+                     ELSE author END
+WHERE id_comment = $3::integer
+RETURNING id_comment, created_at, edited_at, text, author, evaluation
 `
 
 type EditCommentParams struct {
-	Text       string `json:"text"`
-	FromUser   int32  `json:"from_user"`
-	Evaluation int32  `json:"evaluation"`
-	IDComment  int32  `json:"id_comment"`
+	Text      string `json:"text"`
+	Author    int32  `json:"author"`
+	IDComment int32  `json:"id_comment"`
 }
 
 // EditComment Изменяем параметр(ы) пользователя
 func (q *Queries) EditComment(ctx context.Context, arg EditCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, editComment,
-		arg.Text,
-		arg.FromUser,
-		arg.Evaluation,
-		arg.IDComment,
-	)
+	row := q.db.QueryRow(ctx, editComment, arg.Text, arg.Author, arg.IDComment)
 	var i Comment
 	err := row.Scan(
 		&i.IDComment,
 		&i.CreatedAt,
 		&i.EditedAt,
 		&i.Text,
-		&i.FromUser,
+		&i.Author,
 		&i.Evaluation,
 	)
 	return i, err
 }
 
 const getComment = `-- name: GetComment :one
-SELECT id_comment, created_at, edited_at, text, from_user, evaluation FROM comments
+SELECT id_comment, created_at, edited_at, text, author, evaluation FROM comments
 WHERE id_comment = $1::integer
 `
 
@@ -131,7 +122,7 @@ func (q *Queries) GetComment(ctx context.Context, idComment int32) (Comment, err
 		&i.CreatedAt,
 		&i.EditedAt,
 		&i.Text,
-		&i.FromUser,
+		&i.Author,
 		&i.Evaluation,
 	)
 	return i, err
@@ -142,7 +133,7 @@ WITH the_article AS (
     SELECT unnest(comments) AS id_comment FROM articles
     WHERE id_article = $3::integer
 )
-SELECT id_comment, created_at, edited_at, text, from_user, evaluation FROM comments
+SELECT id_comment, created_at, edited_at, text, author, evaluation FROM comments
 WHERE id_comment IN (SELECT id_comment FROM the_article)
 OFFSET $1::integer
 LIMIT $2::integer
@@ -169,7 +160,7 @@ func (q *Queries) GetCommentsOfArticle(ctx context.Context, arg GetCommentsOfArt
 			&i.CreatedAt,
 			&i.EditedAt,
 			&i.Text,
-			&i.FromUser,
+			&i.Author,
 			&i.Evaluation,
 		); err != nil {
 			return nil, err

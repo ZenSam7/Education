@@ -19,7 +19,7 @@ type Querier interface {
 	DeleteArticle(ctx context.Context, idArticle int32) (Article, error)
 	// DeleteComment Удаляем комментарий к статье
 	DeleteComment(ctx context.Context, idComment int32) (Article, error)
-	// DeleteUser Удаляем пользователя и сдвигаем id
+	// DeleteUser Удаляем пользователя
 	DeleteUser(ctx context.Context, idUser int32) (User, error)
 	// EditArticle Изменяем параметр(ы) статьи
 	EditArticle(ctx context.Context, arg EditArticleParams) (Article, error)
@@ -45,6 +45,8 @@ type Querier interface {
 	GetManySortedUsers(ctx context.Context, arg GetManySortedUsersParams) ([]User, error)
 	// GetUser Возвращаем пользователя
 	GetUser(ctx context.Context, idUser int32) (User, error)
+	// GetUserForName Возвращаем пользователя по имени
+	GetUserForName(ctx context.Context, name string) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

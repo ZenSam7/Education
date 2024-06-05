@@ -28,7 +28,7 @@ CREATE TABLE "comments" (
     created_at    timestamptz DEFAULT now(),
     edited_at     timestamptz DEFAULT NULL,
     text          text NOT NULL CHECK ( text <> '' ),
-    from_user     integer NOT NULL,
+    author        integer NOT NULL,
     evaluation    integer NOT NULL DEFAULT 0
 );
 

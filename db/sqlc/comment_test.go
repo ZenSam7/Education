@@ -14,7 +14,7 @@ func TestCreateComment(t *testing.T) {
 
 	arg := CreateCommentParams{
 		Text:      tools.GetRandomString(),
-		FromUser:  tools.GetRandomUint(),
+		Author:    tools.GetRandomUint(),
 		IDArticle: tools.GetRandomUint(),
 	}
 
@@ -26,7 +26,7 @@ func TestCreateComment(t *testing.T) {
 	require.WithinDuration(t, newComment.CreatedAt.Time, time.Now(), time.Second)
 	require.Equal(t, newComment.EditedAt.Time, time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
 	require.Equal(t, newComment.Text, arg.Text)
-	require.Equal(t, newComment.FromUser, arg.FromUser)
+	require.Equal(t, newComment.Author, arg.Author)
 }
 
 func TestGetComment(t *testing.T) {
@@ -36,7 +36,7 @@ func TestGetComment(t *testing.T) {
 	// Создаём комментарий
 	arg := CreateCommentParams{
 		Text:      tools.GetRandomString(),
-		FromUser:  tools.GetRandomUint(),
+		Author:    tools.GetRandomUint(),
 		IDArticle: tools.GetRandomUint(),
 	}
 	comm, err := queries.CreateComment(context.Background(), arg)
@@ -49,7 +49,7 @@ func TestGetComment(t *testing.T) {
 	require.Equal(t, newComm.CreatedAt, comm.CreatedAt)
 	require.Equal(t, newComm.EditedAt, comm.EditedAt)
 	require.Equal(t, newComm.Text, comm.Text)
-	require.Equal(t, newComm.FromUser, comm.FromUser)
+	require.Equal(t, newComm.Author, comm.Author)
 }
 
 func TestDeleteComment(t *testing.T) {
@@ -59,7 +59,7 @@ func TestDeleteComment(t *testing.T) {
 	// Создаём комментарий
 	arg := CreateCommentParams{
 		Text:      tools.GetRandomString(),
-		FromUser:  tools.GetRandomUint(),
+		Author:    tools.GetRandomUint(),
 		IDArticle: article.IDArticle,
 	}
 	comm, err := queries.CreateComment(context.Background(), arg)
@@ -95,7 +95,7 @@ func TestEditComment(t *testing.T) {
 	// Создаём комментарий
 	arg := CreateCommentParams{
 		Text:      tools.GetRandomString(),
-		FromUser:  tools.GetRandomUint(),
+		Author:    tools.GetRandomUint(),
 		IDArticle: article.IDArticle,
 	}
 	comm, err := queries.CreateComment(context.Background(), arg)

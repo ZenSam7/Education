@@ -4,13 +4,17 @@ package api
 
 import (
 	db "github.com/ZenSam7/Education/db/sqlc"
+	"github.com/ZenSam7/Education/token"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
 )
 
 // Process Обрабатываем запросы от API
 type Process struct {
-	queries *db.Queries
-	router  *gin.Engine
+	queries    *db.Queries
+	router     *gin.Engine
+	tokenMaker token.Maker
+	config     tools.Config
 }
 
 // Run Начинаем прослушивать запросы к API
@@ -20,38 +24,57 @@ func (proc *Process) Run(address string) error {
 
 // NewProcess Новый HTTP процесс для обработки запросов и роутер (который просто
 // вызывает определёную функцию при каком-либо запросе на конкретный URI)
-func NewProcess(queries *db.Queries) *Process {
-	proc := &Process{queries: queries}
-	router := gin.Default()
+func NewProcess(config tools.Config, queries *db.Queries) (*Process, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, err
+	}
+	proc := &Process{
+		queries:    queries,
+		tokenMaker: tokenMaker,
+		config:     config,
+	}
 
-	// Как обрабатываем запросы для действий с пользователями:
+	router := gin.Default()
+	proc.setupRouter(router)
+
+	return proc, nil
+}
+
+// setupRouter Устанавливаем все возможные url для обработки и делим
+// их для авторизованных и не авторизованных пользователей
+func (proc *Process) setupRouter(router *gin.Engine) {
+	// Добавляем сайты только для авторизованных пользователей ("/" - общий префикс)
+	authRouter := router.Group("/").Use(authMiddleware(proc.tokenMaker))
+
+	// Обрабатываем запросы для действий с пользователями:
 	router.POST("/user", proc.createUser)
+	router.POST("/user/login", proc.loginUser)
 	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
 	router.GET("/user/:id_user", proc.getUser)
-	router.GET("/user/list", proc.getManyUsers)
-	router.PATCH("/user/:id_user", proc.editUserParam)
-	router.DELETE("/user/:id_user", proc.deleteUser)
+	router.GET("/user/list", proc.getManySortedUsers)
+	authRouter.PATCH("/user/", proc.editUserParam)
+	authRouter.DELETE("/user/", proc.deleteUser)
 
-	// Как обрабатываем запросы для действий со статьями:
-	router.POST("/article", proc.createArticle)
-	router.DELETE("/article/:id_article", proc.deleteArticle)
+	// Обрабатываем запросы для действий со статьями:
+	authRouter.POST("/article", proc.createArticle)
+	authRouter.DELETE("/article/:id_article", proc.deleteArticle)
 	router.GET("/article/:id_article", proc.getArticle)
 	router.GET("/article/list", proc.getManySortedArticles)
 	router.GET("/article/comments/:id_article", proc.getCommentsOfArticle)
-	router.PATCH("/article/:id_article", proc.editArticle)
+	authRouter.PATCH("/article/:id_article", proc.editArticle)
 	router.GET("/article/search", proc.getManySortedArticlesWithAttributes)
 
-	// Как обрабатываем запросы для действий с комментариями:
-	router.POST("/comment", proc.createComment)
+	// Обрабатываем запросы для действий с комментариями:
+	authRouter.POST("/comment", proc.createComment)
 	router.GET("/comment/:id_comment", proc.getComment)
-	router.PATCH("/comment/:id_comment", proc.editComment)
-	router.DELETE("/comment/:id_comment", proc.deleteComment)
+	authRouter.PATCH("/comment/:id_comment", proc.editComment)
+	authRouter.DELETE("/comment/:id_comment", proc.deleteComment)
 
 	proc.router = router
-	return proc
 }
 
-// errorResponse Преврящаем ошибку в нужный объект чтобы использовать его в gin
+// errorResponse Превpящаем ошибку в нужный объект чтобы использовать его в gin
 func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }

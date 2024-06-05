@@ -86,26 +86,6 @@ func TestEditArticle(t *testing.T) {
 	require.Equal(t, editedArticle.Authors, article.Authors)
 	require.Equal(t, editedArticle.Evaluation, article.Evaluation)
 	article = editedArticle
-
-	// Измяняем Оценку
-	arg = EditArticleParams{
-		IDArticle:  article.IDArticle,
-		Evaluation: tools.GetRandomInt(),
-	}
-
-	editedArticle, err = queries.EditArticle(context.Background(), arg)
-	require.NoError(t, err)
-	require.NotEmpty(t, editedArticle)
-
-	require.Equal(t, editedArticle.IDArticle, article.IDArticle)
-	require.Equal(t, editedArticle.CreatedAt, article.CreatedAt)
-	require.Equal(t, editedArticle.EditedAt, article.EditedAt)
-	require.Equal(t, editedArticle.Title, article.Title)
-	require.Equal(t, editedArticle.Text, article.Text)
-	require.Equal(t, editedArticle.Comments, article.Comments)
-	require.Equal(t, editedArticle.Authors, article.Authors)
-	require.NotEqual(t, editedArticle.Evaluation, article.Evaluation)
-	require.WithinDuration(t, editedArticle.EditedAt.Time, time.Now(), time.Second)
 }
 
 func TestGetArticlesWithAttribute(t *testing.T) {
@@ -161,17 +141,17 @@ func TestGetManySortedArticlesWithAttribute(t *testing.T) {
 		Limit:           10000000,
 	}
 
-	article, err := queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
+	articles, err := queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, article)
+	require.NotEmpty(t, articles)
 
 	require.Equal(t, createdArticles[0].EditedAt.Time,
 		time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
-	require.Equal(t, createdArticles[0].Evaluation, article[0].Evaluation)
-	require.Equal(t, createdArticles[0].Authors, article[0].Authors)
-	require.Equal(t, createdArticles[0].Comments, article[0].Comments)
-	require.Equal(t, createdArticles[0].Text, article[0].Text)
-	require.Equal(t, createdArticles[0].Title, article[0].Title)
+	require.Equal(t, createdArticles[0].Evaluation, articles[0].Evaluation)
+	require.Equal(t, createdArticles[0].Authors, articles[0].Authors)
+	require.Equal(t, createdArticles[0].Comments, articles[0].Comments)
+	require.Equal(t, createdArticles[0].Text, articles[0].Text)
+	require.Equal(t, createdArticles[0].Title, articles[0].Title)
 
 	// Сортируем статьи по ID
 	arg = GetManySortedArticlesWithAttributeParams{
@@ -180,13 +160,12 @@ func TestGetManySortedArticlesWithAttribute(t *testing.T) {
 		Limit:           10,
 	}
 
-	article, err = queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
+	articles, err = queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, article)
+	require.NotEmpty(t, articles)
 
-	for ind, art := range article[:9] {
-		require.Equal(t, art.EditedAt.Time, time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
-		require.True(t, article[ind].IDArticle < article[ind+1].IDArticle)
+	for ind, art := range articles[:9] {
+		require.True(t, articles[ind].IDArticle < articles[ind+1].IDArticle)
 		require.NotEmpty(t, art.Title)
 		require.NotEmpty(t, art.Text)
 		require.NotEmpty(t, art.Authors)

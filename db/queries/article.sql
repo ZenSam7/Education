@@ -93,7 +93,6 @@ SET
   -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
   title = CASE WHEN sqlc.arg(title)::text <> '' THEN sqlc.arg(title)::text ELSE title END,
   text = CASE WHEN sqlc.arg(text)::text <> '' THEN sqlc.arg(text)::text ELSE text END,
-  evaluation = CASE WHEN sqlc.arg(evaluation)::integer <> 0 THEN sqlc.arg(evaluation)::integer ELSE evaluation END,
   comments = COALESCE(sqlc.arg(comments), comments),
   authors = COALESCE(sqlc.arg(authors), authors)
 WHERE id_article = sqlc.arg(id_article)::integer

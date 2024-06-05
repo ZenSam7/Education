@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
+	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -23,7 +25,7 @@ func (proc *Process) createUser(ctx *gin.Context) {
 	var req createUserRequest
 
 	// Проверяем чтобы все теги соответсвовали (в gin есть валидатор)
-	// (в нашем случае чтобы было поле Name, иначе выдаём ошибку в JSON'е)
+	// (в нашем случае чтобы было поле Username, иначе выдаём ошибку в JSON'е)
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -45,7 +47,7 @@ func (proc *Process) createUser(ctx *gin.Context) {
 	if err != nil {
 		// Если пользователь с таким именем уже есть, то выдаем ошибку
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
-			ctx.JSON(http.StatusConflict, errorResponse(errors.New("user with this name already exists")))
+			ctx.JSON(http.StatusConflict, errorResponse(errors.New("user with this name/email already exists")))
 			return
 		}
 
@@ -53,13 +55,11 @@ func (proc *Process) createUser(ctx *gin.Context) {
 		return
 	}
 
-	// Заменяем PasswordHash, т.к. передавать его не безопасно
-	user.PasswordHash = "what u looking at :)"
-
+	userToResponse(&user)
 	ctx.JSON(http.StatusOK, user)
 }
 
-// createUserRequest Нам нужен парамерт URI id_user который >= 1
+// getUserRequest Нам нужен парамерт URI id_user который >= 1
 // (uri == берём данные из uri (типа: user/42))
 type getUserRequest struct {
 	IDUser int32 `uri:"id_user" binding:"required,min=1"`
@@ -87,25 +87,26 @@ func (proc *Process) getUser(ctx *gin.Context) {
 		return
 	}
 
+	userToResponse(&user)
 	ctx.JSON(http.StatusOK, user)
 }
 
-// getManyUsersRequest Сколько пользователей на страничке
+// getManySortedUsersRequest Сколько а как отсортированных пользователей на страничке
 // (form == берём данные из uri, которые идут после "?" (типа: /user?page_size=20&page_num=1))
-type getManyUsersRequest struct {
-	IDUser      bool  `form:"id_user"`
-	Name        bool  `form:"name"`
-	Description bool  `form:"description"`
-	Karma       bool  `form:"karma"`
-	PageSize    int32 `form:"page_size" binding:"required,min=1"`
-	PageNum     int32 `form:"page_num" binding:"required,min=1"`
+type getManySortedUsersRequest struct {
+	IDUser      bool  `json:"id_user"`
+	Name        bool  `json:"name"`
+	Description bool  `json:"description"`
+	Karma       bool  `json:"karma"`
+	PageSize    int32 `json:"page_size" binding:"required,min=1"`
+	PageNum     int32 `json:"page_num" binding:"required,min=1"`
 }
 
-func (proc *Process) getManyUsers(ctx *gin.Context) {
-	var req getManyUsersRequest
+func (proc *Process) getManySortedUsers(ctx *gin.Context) {
+	var req getManySortedUsersRequest
 
 	// Проверяем чтобы все теги соответсвовали
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -130,15 +131,19 @@ func (proc *Process) getManyUsers(ctx *gin.Context) {
 		return
 	}
 
+	// Превращаем в нужный формат
+	for i, u := range users {
+		users[i] = *userToResponse(&u)
+	}
+
 	ctx.JSON(http.StatusOK, users)
 }
 
 // Надо разделить данные которые получаем с url и данные которые получаем с uri
 type editUserParamRequest struct {
-	Name        string `json:"name"`
 	Description string `json:"description"`
 	Karma       int32  `json:"karma"`
-	IDUser      int32  `json:"id_user" binding:"required,min=1"`
+	Name        string `json:"name"`
 }
 
 func (proc *Process) editUserParam(ctx *gin.Context) {
@@ -150,9 +155,12 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 		return
 	}
 
+	// Делаем операцию только для авторизованного пользователя
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+
 	// Изменяем параметр(ы) пользователя
 	arg := db.EditUserParams{
-		IDUser:      req.IDUser,
+		IDUser:      payload.IDUser,
 		Name:        req.Name,
 		Description: req.Description,
 		Karma:       req.Karma,
@@ -164,28 +172,78 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 		return
 	}
 
+	userToResponse(&editedUser)
 	ctx.JSON(http.StatusOK, editedUser)
 }
 
-type deleteUserRequest struct {
-	IDUser int32 `uri:"id_user" binding:"required"`
-}
-
 func (proc *Process) deleteUser(ctx *gin.Context) {
-	var req deleteUserRequest
-
-	// Проверяем чтобы все теги соответствовали
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	// Удаляем пользователя
-	deletedUser, err := proc.queries.DeleteUser(context.Background(), req.IDUser)
+	// Удаляем авторизованного пользователя
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	deletedUser, err := proc.queries.DeleteUser(context.Background(), payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
+	userToResponse(&deletedUser)
 	ctx.JSON(http.StatusOK, deletedUser)
+}
+
+// loginUserRequest Логиним пользователя
+type loginUserRequest struct {
+	Name     string `json:"name" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+// loginUserResponse Отправляем токен
+type loginUserResponse struct {
+	Token string  `json:"token"`
+	User  db.User `json:"user"`
+}
+
+// userToResponse Заменяем PasswordHash, т.к. передавать его не безопасно
+func userToResponse(user *db.User) *db.User {
+	user.PasswordHash = "wat u looking at :)"
+	return user
+}
+
+func (proc *Process) loginUser(ctx *gin.Context) {
+	var req loginUserRequest
+
+	// Проверяем чтобы все теги соответствовали
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// Входим в систему
+	user, err := proc.queries.GetUserForName(context.Background(), req.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// Проверяем пароль
+	if !tools.CheckPassword(req.Password, user.PasswordHash) {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("wrong password")))
+		return
+	}
+
+	// Залогиненному пользователю даём токен
+	newToken, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.TokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	response := loginUserResponse{
+		Token: newToken,
+		User:  user,
+	}
+
+	userToResponse(&response.User)
+	ctx.JSON(http.StatusOK, response)
 }

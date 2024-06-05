@@ -83,20 +83,18 @@ SET
   -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
   title = CASE WHEN $2::text <> '' THEN $2::text ELSE title END,
   text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
-  evaluation = CASE WHEN $3::integer <> 0 THEN $3::integer ELSE evaluation END,
-  comments = COALESCE($4, comments),
-  authors = COALESCE($5, authors)
-WHERE id_article = $6::integer
+  comments = COALESCE($3, comments),
+  authors = COALESCE($4, authors)
+WHERE id_article = $5::integer
 RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
 `
 
 type EditArticleParams struct {
-	Text       string  `json:"text"`
-	Title      string  `json:"title"`
-	Evaluation int32   `json:"evaluation"`
-	Comments   []int32 `json:"comments"`
-	Authors    []int32 `json:"authors"`
-	IDArticle  int32   `json:"id_article"`
+	Text      string  `json:"text"`
+	Title     string  `json:"title"`
+	Comments  []int32 `json:"comments"`
+	Authors   []int32 `json:"authors"`
+	IDArticle int32   `json:"id_article"`
 }
 
 // EditArticle Изменяем параметр(ы) статьи
@@ -104,7 +102,6 @@ func (q *Queries) EditArticle(ctx context.Context, arg EditArticleParams) (Artic
 	row := q.db.QueryRow(ctx, editArticle,
 		arg.Text,
 		arg.Title,
-		arg.Evaluation,
 		arg.Comments,
 		arg.Authors,
 		arg.IDArticle,

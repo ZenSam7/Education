@@ -13,19 +13,19 @@ func TestNewPasetoMaker(t *testing.T) {
 	maker, err := NewPasetoMaker(tools.GetRandomString(minSecretKeySize)[:32]) // Строго 32!
 	require.NoError(t, err)
 
-	randomUsername := tools.GetRandomString()
+	randomIDUser := tools.GetRandomInt()
 	duration := time.Minute
 
-	token, err := maker.CreateToken(randomUsername, duration)
+	token, err := maker.CreateToken(randomIDUser, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
-	payload, err := NewPayload(randomUsername, duration)
+	payload, err := NewPayload(randomIDUser, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, payload)
 
 	require.NotEmpty(t, payload.ID)
-	require.Equal(t, payload.Username, randomUsername)
+	require.Equal(t, payload.IDUser, randomIDUser)
 	require.WithinDuration(t, payload.IssuedAt, time.Now(), time.Second)
 	require.WithinDuration(t, payload.ExpiredAt, time.Now().Add(duration), time.Second)
 }

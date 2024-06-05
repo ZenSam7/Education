@@ -5,7 +5,7 @@ WITH add_comment AS ( -- Я знаю что есть тразнакции
     SET comments = array_append(comments, lastval())
     WHERE id_article = $1
 )
-INSERT INTO comments (text, from_user)
+INSERT INTO comments (text, author)
 VALUES ($3, $2)
 RETURNING *;
 
@@ -31,18 +31,15 @@ UPDATE comments
 SET
     -- Если изменили текст или автора польщователя то обновляем его
     edited_at = CASE WHEN sqlc.arg(text)::text <> '' THEN NOW()
-                     WHEN sqlc.arg(from_user)::integer <> from_user THEN NOW()
+                     WHEN sqlc.arg(author)::integer <> author THEN NOW()
                      ELSE edited_at END,
 
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
     text = CASE WHEN sqlc.arg(text)::text <> '' THEN sqlc.arg(text)::text ELSE text END,
-    from_user = CASE WHEN sqlc.arg(from_user)::integer <> from_user
-                     THEN sqlc.arg(from_user)::integer
-                     ELSE from_user END,
-    evaluation = CASE WHEN sqlc.arg(evaluation)::integer <> evaluation
-                      THEN sqlc.arg(evaluation)::integer
-                      ELSE evaluation END
+    author = CASE WHEN sqlc.arg(author)::integer <> author
+                     THEN sqlc.arg(author)::integer
+                     ELSE author END
 WHERE id_comment = sqlc.arg(id_comment)::integer
 RETURNING *;
 
