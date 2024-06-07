@@ -23,7 +23,7 @@ func TestNewJWTMaker(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, payload)
 
-	require.NotEmpty(t, payload.ID)
+	require.NotEmpty(t, payload.IDUser)
 	require.Equal(t, payload.IDUser, randomIDUser)
 	require.WithinDuration(t, payload.IssuedAt, time.Now(), time.Second)
 	require.WithinDuration(t, payload.ExpiredAt, time.Now().Add(duration), time.Second)
