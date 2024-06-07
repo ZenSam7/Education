@@ -41,7 +41,7 @@ func NewProcess(config tools.Config, queries *db.Queries) (*Process, error) {
 	return proc, nil
 }
 
-// setupRouter Устанавливаем все возможные url для обработки и делим
+// setupRouter Устанавливаем все возможные url для обработки, а также делим
 // их для авторизованных и не авторизованных пользователей
 func (proc *Process) setupRouter(router *gin.Engine) {
 	// Добавляем сайты только для авторизованных пользователей ("/" - общий префикс)

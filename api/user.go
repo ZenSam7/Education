@@ -57,6 +57,7 @@ func (proc *Process) createUser(ctx *gin.Context) {
 
 	userToResponse(&user)
 	ctx.JSON(http.StatusOK, user)
+
 }
 
 // getUserRequest Нам нужен парамерт URI id_user который >= 1
