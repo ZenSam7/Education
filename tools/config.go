@@ -9,7 +9,11 @@ import (
 // Config Какие переменные среды вытаскиваем из .env
 type Config struct {
 	ServerAddress     string        `mapstructure:"SERVER_ADDRESS"`
-	DBConnect         string        `mapstructure:"DB_CONNECT"`
+	DBUserName        string        `mapstructure:"DB_USER_NAME"`
+	DBPassword        string        `mapstructure:"DB_PASSWORD"`
+	DBHost            string        `mapstructure:"DB_HOST"`
+	DBName            string        `mapstructure:"DB_NAME"`
+	DBSSLMode         string        `mapstructure:"DB_SSL_MODE"`
 	TokenSymmetricKey string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	TokenDuration     time.Duration `mapstructure:"TOKEN_DURATION"`
 }

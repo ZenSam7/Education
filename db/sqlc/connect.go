@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/jackc/pgx/v5"
 	"log"
@@ -13,10 +14,20 @@ func GetQueries() (*Queries, func()) {
 	ctx := context.Background()
 	config := tools.LoadConfig("../..")
 
+	// Создаём url для соединения через pgx
+	dbConnectParameters := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s sslmode=%s",
+		config.DBHost,
+		config.DBUserName,
+		config.DBPassword,
+		config.DBName,
+		config.DBSSLMode,
+	)
+
 	// Открываем соединение при помощи pgx
 	conn, err := pgx.Connect(
 		ctx,
-		config.DBConnect,
+		dbConnectParameters,
 	)
 	if err != nil {
 		log.Fatal("Не получается подключиться к бд:", err)

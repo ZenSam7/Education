@@ -20,7 +20,7 @@ jobs:
           # Изменяются в настройках репозитория во вкладке "Secrets and variables"
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: education
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB_NAME }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -28,21 +28,20 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.22.4'
 
-    - name: Run Docker
+    - name: Run Postgres
       run: |
-        sudo docker ps -a
+        sudo make net
         sudo make postgres
         sudo apt install postgresql
         sudo service postgresql restart
 
-    # Сначала устанавливаем migrate а потом уже вызываем миграции
     - name: Install Golang migrate and sqlc
       run: |
         curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
@@ -54,5 +53,11 @@ jobs:
         sudo make createdb 
         sudo make migrateup
 
+    # Тут нельзя использовать make test, т.к. в make test вызывается sqlc, который хрен установишь
     - name: Testing
-      run: sudo go test -cover ./db/sqlc
+      run: sudo go test -cover ./...
+
+    - name: Run app in container
+      run: |
+        sudo make myimage
+        sudo make runimage

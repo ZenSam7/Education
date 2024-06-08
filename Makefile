@@ -8,30 +8,31 @@ include .env
 
 # Создаём новый контейнер
 postgres:
-	sudo docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=${DB_PASSWORD} -e POSTGRES_PASSWORD=${DB_USER_NAME} -d postgres:16
+	sudo docker run --name postgres -p 5432:5432 --net edu_net -e POSTGRES_USER=${DB_PASSWORD} -e POSTGRES_PASSWORD=${DB_USER_NAME} -d postgres:16
 # Создаём новую бд
 createdb:
-	sudo docker exec postgres16 createdb --username=${DB_USER_NAME} --owner=${DB_USER_NAME} education
+	sudo docker exec postgres createdb --username=${DB_USER_NAME} --owner=${DB_USER_NAME} ${DB_NAME}
 # Удаляем бд
 dropdb:
-	sudo docker exec postgres16 dropdb education
+	sudo docker exec postgres dropdb education
 
 # Поднимаем миграции (т.е. переходим к новой версии бд)
 migrateup:
-	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" up
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?sslmode=${DB_SSL_MODE}" up
 migrateup1:
-	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" up 1
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?sslmode=${DB_SSL_MODE}" up 1
 # Опускаем миграции (т.е. переходим к прошлой версии бд)
 migratedown:
-	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" down
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?sslmode=${DB_SSL_MODE}" down
 migratedown1:
-	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/education?sslmode=disable" down 1
+	migrate -path ./db/migration/ -database "postgresql://${DB_USER_NAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?sslmode=${DB_SSL_MODE}" down 1
+# Создаём новую миграцию
 makemigrate:
 	migrate create -ext sql -dir migration -seq
 
 # Подключаемся к бд
 connect:
-	sudo docker exec -it postgres16 psql -U root education
+	sudo docker exec -it postgres psql -U root ${DB_NAME}
 # Удаляем и создаём новую бд со всеми миграциями
 refreshdb:
 	sudo make dropdb && sudo make createdb && sudo make migrateup
@@ -41,11 +42,11 @@ sqlc:
 	sudo sqlc generate
 # Запускаем все тесты с подробным описанием и проверкой на полное покрытие тестов
 test:
-	make sqlc && go test -cover ./db/sqlc && go test -cover ./tools
+	make sqlc && go test -cover ./...
 
 # Пересоздаём нахер всё
 RESET:
-	sudo docker restart postgres16 && sudo make refreshdb && sudo make sqlc
+	sudo docker restart postgres && sudo make refreshdb && sudo make sqlc
 # Как RESET только ещё и сервер запускаем
 RESTART:
 	make RESET && make server
@@ -54,5 +55,15 @@ RESTART:
 server:
 	sudo go run main.go
 
+# Собираем образ
+myimage:
+	sudo docker build -t education:latest .
+# Меняем DB_HOST с localhost на "postgres" (имя контейнера), т.к. они подключены к одной сети edu_net
+runimage:
+	sudo docker run --name edu -p 8080:8080 -e GIN_MODE=release -e DB_HOST="postgres" --net edu_net education:latest
+net:
+	sudo docker network create edu_net
+
+
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate
-.PHONY: connect refreshdb sqlc test RESET RESTART server
+.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net
