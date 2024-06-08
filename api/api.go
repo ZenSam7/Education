@@ -48,7 +48,7 @@ func (proc *Process) setupRouter(router *gin.Engine) {
 	authRouter := router.Group("/").Use(authMiddleware(proc.tokenMaker))
 
 	// Обрабатываем запросы для действий с пользователями:
-	router.POST("/user", proc.createUser)
+	router.POST("/user/register", proc.createUser)
 	router.POST("/user/login", proc.loginUser)
 	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
 	router.GET("/user/:id_user", proc.getUser)
