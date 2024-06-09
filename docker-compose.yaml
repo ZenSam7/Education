@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    networks:
+      - edu_net
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  edu:
+    container_name: edu
+    build: .
+    env_file:
+      - .env
+    environment:
+      GIN_MODE: release
+      DB_HOST: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - edu_net
+    entrypoint: [ "./run.sh" ]
+    command: [ "./main" ]
+
+
+volumes:
+  db_data:
+
+networks:
+  edu_net:
+    name: edu_net
+    driver: bridge
+    # external: true  # Используем существующую сеть

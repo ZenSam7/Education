@@ -1,20 +1,27 @@
 # Устанавливаем имя для этапа первого сборки
 FROM golang:1.22.4-alpine3.20 AS builder
-WORKDIR /app/education
 LABEL author="ZenSam7"
+WORKDIR /app/education
 
 COPY . .
-# Компилируем приложение в файл main(.exe) с точкой входа из main.go
+# Компилируем приложение и устанавливаем migration
 RUN go build -o main main.go
+RUN apk add curl
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
 
 # На втором этапе устанавливаем только alpine чтобы прога занимала как можно меньше места
 FROM alpine:3.20
 WORKDIR /app/education
+# Тут мы просто из builder копируем, а не сами файлы
 COPY --from=builder /app/education/main .
-# Отдельно загружаем конфигурацию
+COPY --from=builder /app/education/migrate .
+# Отдельно загружаем конфигурацию и миграции
 COPY .env .
+COPY run.sh .
+RUN chmod +x ./run.sh
+COPY db/migration ./migration
 
 EXPOSE 8080
 
 # Запускаем приложение (но с возможностью проигнорировать эту команду)
-CMD ["/app/education/main"]
+ENTRYPOINT ["/app/education/run.sh", "/app/education/main"]

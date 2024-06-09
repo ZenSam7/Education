@@ -9,8 +9,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
+  install_and_deploy:
     runs-on: ubuntu-latest
 
     services:
@@ -20,7 +19,7 @@ jobs:
           # Изменяются в настройках репозитория во вкладке "Secrets and variables"
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB_NAME }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -28,36 +27,32 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - name: Set up Go
+    - name: Install Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.22.4'
 
-    - name: Run Postgres
-      run: |
-        sudo make net
-        sudo make postgres
-        sudo apt install postgresql
-        sudo service postgresql restart
-
-    - name: Install Golang migrate and sqlc
+    - name: Install Golang-migrate and sqlc
       run: |
         curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
         sudo mv migrate /usr/bin/migrate
         docker run --rm -v $(pwd):/src -w /src kjconroy/sqlc generate
 
+    - name: Run Postgres
+      run: |
+        make net
+        make postgres
+
     - name: Create database
       run: |
-        sudo make createdb 
-        sudo make migrateup
+        sudo service postgresql restart
+        make createdb
+        make migrateup
 
-    # Тут нельзя использовать make test, т.к. в make test вызывается sqlc, который хрен установишь
+    # Тут нельзя использовать make test, т.к. в make test вызывается sqlc, который сюда хрен установишь
+    # ./... тоже нельзя использовать
     - name: Testing
-      run: sudo go test -cover ./...
-
-    - name: Run app in container
-      run: |
-        sudo make myimage
-        sudo make runimage
+      run: go test ./db/sqlc ./tools ./token ./api

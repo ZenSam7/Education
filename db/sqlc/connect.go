@@ -16,11 +16,10 @@ func GetQueries() (*Queries, func()) {
 
 	// Создаём url для соединения через pgx
 	dbConnectParameters := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s sslmode=%s",
+		"host=%s user=%s password=%s dbname=education sslmode=%s",
 		config.DBHost,
 		config.DBUserName,
 		config.DBPassword,
-		config.DBName,
 		config.DBSSLMode,
 	)
 
