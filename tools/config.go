@@ -8,13 +8,14 @@ import (
 
 // Config Какие переменные среды вытаскиваем из .env
 type Config struct {
-	ServerAddress     string        `mapstructure:"SERVER_ADDRESS"`
-	DBUserName        string        `mapstructure:"POSTGRES_USER"`
-	DBPassword        string        `mapstructure:"POSTGRES_PASSWORD"`
-	DBHost            string        `mapstructure:"DB_HOST"`
-	DBSSLMode         string        `mapstructure:"DB_SSL_MODE"`
-	TokenSymmetricKey string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
-	TokenDuration     time.Duration `mapstructure:"TOKEN_DURATION"`
+	ServerAddress        string        `mapstructure:"SERVER_ADDRESS"`
+	DBUserName           string        `mapstructure:"POSTGRES_USER"`
+	DBPassword           string        `mapstructure:"POSTGRES_PASSWORD"`
+	DBHost               string        `mapstructure:"DB_HOST"`
+	DBSSLMode            string        `mapstructure:"DB_SSL_MODE"`
+	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	TokenDuration        time.Duration `mapstructure:"TOKEN_DURATION"`
+	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 }
 
 // LoadConfig Загружаем переменные среды (надо подавать путь к .env относительно текущей папки)

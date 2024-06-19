@@ -5,31 +5,31 @@
 -- поэтому надо использовать CHECK ( title <> '' )
 
 CREATE TABLE "users" (
-    id_user       serial PRIMARY KEY,
-    created_at    timestamptz DEFAULT now(),
-    name          varchar NOT NULL CHECK ( name <> '' ),
-    description   text DEFAULT NULL,
-    karma         integer DEFAULT 0 NOT NULL
+    id_user     serial PRIMARY KEY,
+    created_at  timestamptz DEFAULT now(),
+    name        varchar NOT NULL CHECK ( name <> '' ),
+    description text DEFAULT NULL,
+    karma       integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE "articles" (
-    id_article    serial PRIMARY KEY,
-    created_at    timestamptz DEFAULT now(),
-    edited_at     timestamptz,
-    title         varchar NOT NULL CHECK ( title <> '' ),
-    text          text NOT NULL CHECK ( text <> '' ),
-    comments      integer[],
-    authors       integer[] NOT NULL,
-    evaluation    integer NOT NULL DEFAULT 0
+    id_article  serial PRIMARY KEY,
+    created_at  timestamptz DEFAULT now(),
+    edited_at   timestamptz,
+    title       varchar NOT NULL CHECK ( title <> '' ),
+    text        text NOT NULL CHECK ( text <> '' ),
+    comments    integer[],
+    authors     integer[] NOT NULL,
+    evaluation  integer NOT NULL DEFAULT 0
 );
 
 CREATE TABLE "comments" (
-    id_comment    serial PRIMARY KEY,
-    created_at    timestamptz DEFAULT now(),
-    edited_at     timestamptz DEFAULT NULL,
-    text          text NOT NULL CHECK ( text <> '' ),
-    author        integer NOT NULL,
-    evaluation    integer NOT NULL DEFAULT 0
+    id_comment  serial PRIMARY KEY,
+    created_at  timestamptz DEFAULT now(),
+    edited_at   timestamptz DEFAULT NULL,
+    text        text NOT NULL CHECK ( text <> '' ),
+    author      integer NOT NULL,
+    evaluation  integer NOT NULL DEFAULT 0
 );
 
 CREATE INDEX user_indx ON "users" ("id_user");
@@ -37,3 +37,6 @@ CREATE INDEX user_indx ON "users" ("id_user");
 CREATE INDEX article_indx ON "articles" ("id_article");
 
 CREATE INDEX comment_indx ON "comments" ("id_comment");
+
+-- Создаём ссылку на id
+ALTER TABLE "comments" ADD CONSTRAINT fk_comment_user FOREIGN KEY (author) REFERENCES "users" (id_user);
