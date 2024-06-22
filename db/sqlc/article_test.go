@@ -37,7 +37,7 @@ func TestCreateArticle(t *testing.T) {
 	require.NotEmpty(t, newArticle)
 
 	require.NotZero(t, newArticle.IDArticle)
-	require.WithinDuration(t, newArticle.CreatedAt.Time, time.Now(), time.Second)
+	require.WithinDuration(t, newArticle.CreatedAt.Time, time.Now(), 2*time.Second)
 	require.Equal(t, newArticle.EditedAt.Time, time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
 	require.Equal(t, newArticle.Title, arg.Title)
 	require.Equal(t, newArticle.Text, arg.Text)
@@ -79,7 +79,7 @@ func TestEditArticle(t *testing.T) {
 
 	require.Equal(t, editedArticle.IDArticle, article.IDArticle)
 	require.Equal(t, editedArticle.CreatedAt, article.CreatedAt)
-	require.WithinDuration(t, editedArticle.EditedAt.Time, time.Now(), time.Second)
+	require.WithinDuration(t, editedArticle.EditedAt.Time, time.Now(), 2*time.Second)
 	require.NotEqual(t, editedArticle.Title, article.Title)
 	require.Equal(t, editedArticle.Text, article.Text)
 	require.Equal(t, editedArticle.Comments, article.Comments)

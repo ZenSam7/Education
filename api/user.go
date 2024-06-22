@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,7 +8,10 @@ import (
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"net/http"
+	"time"
 )
 
 // createUserRequest Поле Name обязательно (required) и без спецсимволов (alphanum),
@@ -43,11 +45,11 @@ func (proc *Process) createUser(ctx *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 	}
-	user, err := proc.queries.CreateUser(context.Background(), arg)
+	user, err := proc.queries.CreateUser(ctx, arg)
 	if err != nil {
 		// Если пользователь с таким именем уже есть, то выдаем ошибку
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
-			ctx.JSON(http.StatusConflict, errorResponse(errors.New("user with this name/email already exists")))
+			ctx.JSON(http.StatusConflict, errorResponse(errors.New("user with this name or email already exists")))
 			return
 		}
 
@@ -77,7 +79,7 @@ func (proc *Process) getUser(ctx *gin.Context) {
 	}
 
 	// Получаем пользователя
-	user, err := proc.queries.GetUser(context.Background(), req.IDUser)
+	user, err := proc.queries.GetUser(ctx, req.IDUser)
 	if err != nil {
 		// Если у нас просто нет такого пользователя, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
@@ -121,7 +123,7 @@ func (proc *Process) getManySortedUsers(ctx *gin.Context) {
 		Limit:       req.PageSize,
 		Offset:      (req.PageNum - 1) * req.PageSize,
 	}
-	users, err := proc.queries.GetManySortedUsers(context.Background(), arg)
+	users, err := proc.queries.GetManySortedUsers(ctx, arg)
 	if err != nil {
 		// Если у нас просто нет таких пользователей, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
@@ -167,7 +169,7 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 		Karma:       req.Karma,
 	}
 
-	editedUser, err := proc.queries.EditUser(context.Background(), arg)
+	editedUser, err := proc.queries.EditUser(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -180,7 +182,7 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 func (proc *Process) deleteUser(ctx *gin.Context) {
 	// Удаляем авторизованного пользователя
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
-	deletedUser, err := proc.queries.DeleteUser(context.Background(), payload.IDUser)
+	deletedUser, err := proc.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -198,8 +200,12 @@ type loginUserRequest struct {
 
 // loginUserResponse Отправляем токен
 type loginUserResponse struct {
-	Token string  `json:"token"`
-	User  db.User `json:"user"`
+	AccessToken           string    `json:"access_token"`
+	AccessTokenExpiredAt  time.Time `json:"access_token_expired_at"`
+	RefreshToken          string    `json:"resfresh_token"`
+	RefreshTokenExpiredAt time.Time `json:"refresh_token_expired_at"`
+	SessionID             uuid.UUID `json:"session_id"`
+	User                  db.User   `json:"user"`
 }
 
 // userToResponse Заменяем PasswordHash, т.к. передавать его не безопасно
@@ -218,7 +224,7 @@ func (proc *Process) loginUser(ctx *gin.Context) {
 	}
 
 	// Входим в систему
-	user, err := proc.queries.GetUserForName(context.Background(), req.Name)
+	user, err := proc.queries.GetUserForName(ctx, req.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -234,17 +240,105 @@ func (proc *Process) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	// Залогиненному пользователю даём токен
-	newToken, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.TokenDuration)
+	// Залогиненному пользователю даём простой токен и refresh token
+	newAccessToken, tokenPayload, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.AccessTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+
+	refreshToken, refreshPayload, err := proc.tokenMaker.CreateToken(tokenPayload.IDUser, proc.config.RefreshTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	session, err := proc.queries.CreateSession(ctx, db.CreateSessionParams{
+		IDSession:    pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true},
+		IDUser:       user.IDUser,
+		RefreshToken: refreshToken,
+		ExpiredAt:    pgtype.Timestamptz{Time: refreshPayload.ExpiredAt, Valid: true},
+		ClientIp:     ctx.ClientIP(),
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
 	response := loginUserResponse{
-		Token: newToken,
-		User:  user,
+		AccessToken:           newAccessToken,
+		AccessTokenExpiredAt:  tokenPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiredAt: refreshPayload.ExpiredAt,
+		SessionID:             session.IDSession.Bytes,
+		User:                  user,
 	}
 
 	userToResponse(&response.User)
 	ctx.JSON(http.StatusOK, response)
+}
+
+type renewAccessTokenRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type renewAccessTokenResponse struct {
+	AccessToken          string    `json:"access_token"`
+	AccessTokenExpiredAt time.Time `json:"access_token_expired_at"`
+}
+
+// renewAccessToken Входим по refresh токену и обновляем старый токен
+func (proc *Process) renewAccessToken(ctx *gin.Context) {
+	var req renewAccessTokenRequest
+
+	// Проверяем чтобы все теги соответствовали
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	refreshPayload, err := proc.tokenMaker.VerifyToken(req.RefreshToken)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusUnauthorized, fmt.Errorf("необходимо залогиниться"))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	session, err := proc.queries.GetSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if session.Blocked {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("сессия заблокирована")))
+	}
+
+	if session.IDUser != refreshPayload.IDUser {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("некорректная сессия пользователя")))
+		return
+	}
+
+	if session.RefreshToken != req.RefreshToken {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("некорректный refresh токен")))
+		return
+	}
+
+	// Т.к. мы тут вызаваем не refreshPayload.Valid() это позволяет нам продливать сессии
+	if time.Now().After(session.ExpiredAt.Time) {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("сессия завершена")))
+		return
+	}
+
+	// Теперь пересоздаём токен
+	newAccessToken, tokenPayload, err := proc.tokenMaker.CreateToken(session.IDUser, proc.config.AccessTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, renewAccessTokenResponse{AccessToken: newAccessToken, AccessTokenExpiredAt: tokenPayload.ExpiredAt})
 }

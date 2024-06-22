@@ -37,6 +37,3 @@ CREATE INDEX user_indx ON "users" ("id_user");
 CREATE INDEX article_indx ON "articles" ("id_article");
 
 CREATE INDEX comment_indx ON "comments" ("id_comment");
-
--- Создаём ссылку на id
-ALTER TABLE "comments" ADD CONSTRAINT fk_comment_user FOREIGN KEY (author) REFERENCES "users" (id_user);

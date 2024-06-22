@@ -50,6 +50,7 @@ func (proc *Process) setupRouter(router *gin.Engine) {
 	// Обрабатываем запросы для действий с пользователями:
 	router.POST("/user/register", proc.createUser)
 	router.POST("/user/login", proc.loginUser)
+	router.POST("/token/renew_access", proc.renewAccessToken)
 	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
 	router.GET("/user/:id_user", proc.getUser)
 	router.GET("/user/list", proc.getManySortedUsers)

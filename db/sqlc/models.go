@@ -28,6 +28,16 @@ type Comment struct {
 	Evaluation int32              `json:"evaluation"`
 }
 
+type Session struct {
+	IDSession    pgtype.UUID        `json:"id_session"`
+	IssuedAt     pgtype.Timestamptz `json:"issued_at"`
+	ExpiredAt    pgtype.Timestamptz `json:"expired_at"`
+	RefreshToken string             `json:"refresh_token"`
+	IDUser       int32              `json:"id_user"`
+	ClientIp     string             `json:"client_ip"`
+	Blocked      bool               `json:"blocked"`
+}
+
 type User struct {
 	IDUser       int32              `json:"id_user"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`

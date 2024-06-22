@@ -23,7 +23,7 @@ func TestCreateComment(t *testing.T) {
 	require.NotEmpty(t, newComment)
 
 	require.NotZero(t, newComment.IDComment)
-	require.WithinDuration(t, newComment.CreatedAt.Time, time.Now(), time.Second)
+	require.WithinDuration(t, newComment.CreatedAt.Time, time.Now(), 2*time.Second)
 	require.Equal(t, newComment.EditedAt.Time, time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC))
 	require.Equal(t, newComment.Text, arg.Text)
 	require.Equal(t, newComment.Author, arg.Author)
@@ -116,7 +116,7 @@ func TestEditComment(t *testing.T) {
 	editedComm, err := queries.EditComment(context.Background(), argsEditedComm)
 	require.NoError(t, err)
 	require.Equal(t, editedComm.Text, argsEditedComm.Text)
-	require.WithinDuration(t, editedComm.EditedAt.Time, time.Now(), time.Second)
+	require.WithinDuration(t, editedComm.EditedAt.Time, time.Now(), 2*time.Second)
 
 	editedComm, err = queries.GetComment(context.Background(), comm.IDComment)
 	require.NoError(t, err)

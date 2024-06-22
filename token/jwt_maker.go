@@ -13,15 +13,16 @@ type JWTMaker struct {
 	secretKey string
 }
 
-func (maker *JWTMaker) CreateToken(IDUser int32, duration time.Duration) (string, error) {
+func (maker *JWTMaker) CreateToken(IDUser int32, duration time.Duration) (string, *Payload, error) {
 	payload, err := NewPayload(IDUser, duration)
 	if err != nil {
-		return "", err
+		return "", payload, err
 	}
 
 	// Создаём сам токен, подавая метод подписи и полезную нагрузку
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	return jwtToken.SignedString([]byte(maker.secretKey))
+	token, err := jwtToken.SignedString([]byte(maker.secretKey))
+	return token, payload, err
 }
 
 func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {

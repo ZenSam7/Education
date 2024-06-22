@@ -21,7 +21,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		if len(authHeader) == 0 {
 			ctx.AbortWithStatusJSON(
 				http.StatusUnauthorized,
-				errorResponse(errors.New("authorization header is not provided")),
+				errorResponse(errors.New("заголовок авторизации не предоставлен")),
 			)
 			return
 		}
@@ -30,7 +30,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		if len(fields) < 2 {
 			ctx.AbortWithStatusJSON(
 				http.StatusUnauthorized,
-				errorResponse(errors.New("wrong authorization header")),
+				errorResponse(errors.New("неправильный заголовок токена")),
 			)
 			return
 		}
@@ -39,7 +39,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		if authType != supportedAuthType {
 			ctx.AbortWithStatusJSON(
 				http.StatusUnauthorized,
-				errorResponse(errors.New("unsupported authorization type")),
+				errorResponse(errors.New("тип авторизации пока не поддерживается")),
 			)
 		}
 

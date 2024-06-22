@@ -1,6 +1,6 @@
-DROP TABLE IF EXIST users;
-DROP TABLE IF EXIST articles;
-DROP TABLE IF EXIST comments;
+DROP TABLE users;
+DROP TABLE articles;
+DROP TABLE comments;
 
 DROP INDEX user_indx;
 DROP INDEX article_indx;

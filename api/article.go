@@ -34,7 +34,7 @@ func (proc *Process) createArticle(ctx *gin.Context) {
 		Text:    req.Text,
 		Authors: []int32{payload.IDUser},
 	}
-	article, err := proc.queries.CreateArticle(context.Background(), arg)
+	article, err := proc.queries.CreateArticle(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -76,7 +76,7 @@ func (proc *Process) deleteArticle(ctx *gin.Context) {
 	}
 
 	// Удаляем статью
-	article, err := proc.queries.DeleteArticle(context.Background(), req.IDArticle)
+	article, err := proc.queries.DeleteArticle(ctx, req.IDArticle)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -99,7 +99,7 @@ func (proc *Process) getArticle(ctx *gin.Context) {
 	}
 
 	// Получаем статью
-	article, err := proc.queries.GetArticle(context.Background(), req.IDArticle)
+	article, err := proc.queries.GetArticle(ctx, req.IDArticle)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -144,7 +144,7 @@ func (proc *Process) getManySortedArticles(ctx *gin.Context) {
 		Limit:      req.PageSize,
 		Offset:     (req.PageNum - 1) * req.PageSize,
 	}
-	articles, err := proc.queries.GetManySortedArticles(context.Background(), arg)
+	articles, err := proc.queries.GetManySortedArticles(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -198,7 +198,7 @@ func (proc *Process) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 		Limit:            req.PageSize,
 		Offset:           (req.PageNum - 1) * req.PageSize,
 	}
-	articles, err := proc.queries.GetManySortedArticlesWithAttribute(context.Background(), arg)
+	articles, err := proc.queries.GetManySortedArticlesWithAttribute(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -243,7 +243,7 @@ func (proc *Process) editArticle(ctx *gin.Context) {
 		Authors:   req.Authors,
 	}
 
-	editedArticle, err := proc.queries.EditArticle(context.Background(), arg)
+	editedArticle, err := proc.queries.EditArticle(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

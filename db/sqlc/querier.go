@@ -6,19 +6,27 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	// BlockSession Блокируем сессию по id
+	BlockSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// CreateArticle Создаём статью
 	CreateArticle(ctx context.Context, arg CreateArticleParams) (Article, error)
 	// CreateComment Создаём комментарий к статье
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
+	// CreateSession Создаём сессию
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	// CreateUser Создаём пользователя
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// DeleteArticle Удаляем статью и комментарии к ней
 	DeleteArticle(ctx context.Context, idArticle int32) (Article, error)
 	// DeleteComment Удаляем комментарий к статье
 	DeleteComment(ctx context.Context, idComment int32) (Article, error)
+	// DeleteSession Удаляем сессию по id
+	DeleteSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// DeleteUser Удаляем пользователя
 	DeleteUser(ctx context.Context, idUser int32) (User, error)
 	// EditArticle Изменяем параметр(ы) статьи
@@ -43,6 +51,8 @@ type Querier interface {
 	// GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 	// (можно поставить: id_user, и сортировки не будет)
 	GetManySortedUsers(ctx context.Context, arg GetManySortedUsersParams) ([]User, error)
+	// GetSession Получаем сессиб по id
+	GetSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// GetUser Возвращаем пользователя
 	GetUser(ctx context.Context, idUser int32) (User, error)
 	// GetUserForName Возвращаем пользователя по имени

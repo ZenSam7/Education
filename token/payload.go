@@ -1,12 +1,14 @@
 package token
 
 import (
+	"github.com/google/uuid"
 	"time"
 )
 
 // Payload структура полезной нагрузки токена
 type Payload struct {
-	IDUser int32 `json:"id_user"`
+	IDSession uuid.UUID `json:"id_session"`
+	IDUser    int32     `json:"id_user"`
 	// IssuedAt Когда токен создался
 	IssuedAt time.Time `json:"issued_at"`
 	// ExpiredAt Когда токен просрочится
@@ -24,6 +26,7 @@ func (p *Payload) Valid() error {
 // NewPayload Просто создаём новый токен
 func NewPayload(IDUser int32, duration time.Duration) (*Payload, error) {
 	payload := &Payload{
+		IDSession: uuid.New(),
 		IDUser:    IDUser,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
