@@ -15,8 +15,8 @@ type Payload struct {
 	ExpiredAt time.Time `json:"expired_at"`
 }
 
+// Valid Проверяем, истекло ли время токена
 func (p *Payload) Valid() error {
-	// Если время токена истекло
 	if time.Now().After(p.ExpiredAt) {
 		return ErrorExpiredToken
 	}

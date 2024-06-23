@@ -8,7 +8,6 @@ import (
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"net/http"
 	"time"
@@ -204,7 +203,6 @@ type loginUserResponse struct {
 	AccessTokenExpiredAt  time.Time `json:"access_token_expired_at"`
 	RefreshToken          string    `json:"resfresh_token"`
 	RefreshTokenExpiredAt time.Time `json:"refresh_token_expired_at"`
-	SessionID             uuid.UUID `json:"session_id"`
 	User                  db.User   `json:"user"`
 }
 
@@ -236,24 +234,23 @@ func (proc *Process) loginUser(ctx *gin.Context) {
 
 	// Проверяем пароль
 	if !tools.CheckPassword(req.Password, user.PasswordHash) {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("wrong password")))
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("неправильный пароль")))
 		return
 	}
 
-	// Залогиненному пользователю даём простой токен и refresh token
-	newAccessToken, tokenPayload, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.AccessTokenDuration)
+	// Залогиненному пользователю даём access и refresh токены
+	accessToken, accessTokenPayload, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.AccessTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	refreshToken, refreshPayload, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.RefreshTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	refreshToken, refreshPayload, err := proc.tokenMaker.CreateToken(tokenPayload.IDUser, proc.config.RefreshTokenDuration)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	session, err := proc.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = proc.queries.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true},
 		IDUser:       user.IDUser,
 		RefreshToken: refreshToken,
@@ -266,11 +263,10 @@ func (proc *Process) loginUser(ctx *gin.Context) {
 	}
 
 	response := loginUserResponse{
-		AccessToken:           newAccessToken,
-		AccessTokenExpiredAt:  tokenPayload.ExpiredAt,
+		AccessToken:           accessToken,
+		AccessTokenExpiredAt:  accessTokenPayload.ExpiredAt,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiredAt: refreshPayload.ExpiredAt,
-		SessionID:             session.IDSession.Bytes,
 		User:                  user,
 	}
 
@@ -283,11 +279,13 @@ type renewAccessTokenRequest struct {
 }
 
 type renewAccessTokenResponse struct {
-	AccessToken          string    `json:"access_token"`
-	AccessTokenExpiredAt time.Time `json:"access_token_expired_at"`
+	AccessToken           string    `json:"access_token"`
+	AccessTokenExpiredAt  time.Time `json:"access_token_expired_at"`
+	RefreshToken          string    `json:"resfresh_token"`
+	RefreshTokenExpiredAt time.Time `json:"refresh_token_expired_at"`
 }
 
-// renewAccessToken Входим по refresh токену и обновляем старый токен
+// renewAccessToken Входим по refresh токену и обновляем ОБА токена
 func (proc *Process) renewAccessToken(ctx *gin.Context) {
 	var req renewAccessTokenRequest
 
@@ -297,48 +295,65 @@ func (proc *Process) renewAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	refreshPayload, err := proc.tokenMaker.VerifyToken(req.RefreshToken)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusUnauthorized, fmt.Errorf("необходимо залогиниться"))
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
+	refreshPayload, errVerifyToken := proc.tokenMaker.VerifyToken(req.RefreshToken)
 
-	session, err := proc.queries.GetSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+	// Пересоздаём и сессию (refresh токен) и access токен
+	oldSession, err := proc.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+
+	// Тут проверяем что этот refresh токен валидный
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
-	}
-
-	if session.Blocked {
+	} else if oldSession.Blocked {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("сессия заблокирована")))
-	}
-
-	if session.IDUser != refreshPayload.IDUser {
+		return
+	} else if oldSession.IDUser != refreshPayload.IDUser {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("некорректная сессия пользователя")))
 		return
-	}
-
-	if session.RefreshToken != req.RefreshToken {
+	} else if oldSession.RefreshToken != req.RefreshToken {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("некорректный refresh токен")))
 		return
 	}
-
-	// Т.к. мы тут вызаваем не refreshPayload.Valid() это позволяет нам продливать сессии
-	if time.Now().After(session.ExpiredAt.Time) {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("сессия завершена")))
+	// Если токен просрочен или ip не соответствует ранее залогиневшему устройству, то перенаправляем на ввод пароля
+	if errVerifyToken == token.ErrorExpiredToken || oldSession.ClientIp != ctx.ClientIP() {
+		ctx.JSON(http.StatusUnauthorized, fmt.Errorf("необходимо залогиниться"))
 		return
 	}
 
-	// Теперь пересоздаём токен
-	newAccessToken, tokenPayload, err := proc.tokenMaker.CreateToken(session.IDUser, proc.config.AccessTokenDuration)
+	// Создаём новые access и refresh токены (и сессию)
+	newRefreshToken, newRefreshPayload, err := proc.tokenMaker.CreateToken(
+		refreshPayload.IDUser,
+		proc.config.RefreshTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	newAccessToken, newAccessPayload, err := proc.tokenMaker.CreateToken(
+		refreshPayload.IDUser,
+		proc.config.AccessTokenDuration,
+	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, renewAccessTokenResponse{AccessToken: newAccessToken, AccessTokenExpiredAt: tokenPayload.ExpiredAt})
+	_, err = proc.queries.CreateSession(ctx, db.CreateSessionParams{
+		IDSession:    pgtype.UUID{Bytes: newRefreshPayload.IDSession, Valid: true},
+		IDUser:       newRefreshPayload.IDUser,
+		RefreshToken: newRefreshToken,
+		ExpiredAt:    pgtype.Timestamptz{Time: newRefreshPayload.ExpiredAt, Valid: true},
+		ClientIp:     ctx.ClientIP(),
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, renewAccessTokenResponse{
+		AccessToken:           newAccessToken,
+		AccessTokenExpiredAt:  newAccessPayload.ExpiredAt,
+		RefreshToken:          newRefreshToken,
+		RefreshTokenExpiredAt: newRefreshPayload.ExpiredAt,
+	})
 }
