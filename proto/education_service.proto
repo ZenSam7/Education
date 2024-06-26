@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// Всё как в go
+package protobuf;
+option go_package = "github.com/ZenSam7/Education/protobuf";
+import "user_create.proto";
+import "user_login.proto";
+
+// Описываем что-то типа интерфейса (типа как Querier interface)
+// TODO: описать остальные функции
+service Education {
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
+  rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {}
+}

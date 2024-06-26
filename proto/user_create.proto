@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+// Всё как в go
+package protobuf;
+option go_package = "github.com/ZenSam7/Education/protobuf";
+import "user.proto";
+
+// Описываем какие данные передаём под именем "пользователь"
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}

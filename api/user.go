@@ -199,11 +199,11 @@ type loginUserRequest struct {
 
 // loginUserResponse Отправляем токен
 type loginUserResponse struct {
+	User                  db.User   `json:"user"`
 	AccessToken           string    `json:"access_token"`
 	AccessTokenExpiredAt  time.Time `json:"access_token_expired_at"`
 	RefreshToken          string    `json:"resfresh_token"`
 	RefreshTokenExpiredAt time.Time `json:"refresh_token_expired_at"`
-	User                  db.User   `json:"user"`
 }
 
 // userToResponse Заменяем PasswordHash, т.к. передавать его не безопасно

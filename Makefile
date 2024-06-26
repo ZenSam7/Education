@@ -6,9 +6,12 @@
 
 include .env
 
+POSTGRES_URL = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}"
+
 # Создаём новый контейнер
 postgres:
-	docker run --name postgres -p 5432:5432 --net edu_net -e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
+	docker run --name postgres -p 5432:5432 --net edu_net -e POSTGRES_USER=${POSTGRES_USER} \
+ 		-e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
 # Создаём новую бд
 createdb:
 	docker exec postgres createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} education
@@ -18,14 +21,14 @@ dropdb:
 
 # Поднимаем миграции (т.е. переходим к новой версии бд)
 migrateup:
-	migrate -path ./db/migration/ -database "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}" up
+	migrate -path ./db/migration/ -database ${POSTGRES_URL} up
 migrateup1:
-	migrate -path ./db/migration/ -database "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}" up 1
+	migrate -path ./db/migration/ -database ${POSTGRES_URL} up 1
 # Опускаем миграции (т.е. переходим к прошлой версии бд)
 migratedown:
-	migrate -path ./db/migration/ -database "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}" down
+	migrate -path ./db/migration/ -database ${POSTGRES_URL} down
 migratedown1:
-	migrate -path ./db/migration/ -database "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}" down 1
+	migrate -path ./db/migration/ -database ${POSTGRES_URL} down 1
 # Создаём новую миграцию
 makemigrate:
 	migrate create -ext sql -dir migration -seq
@@ -64,6 +67,10 @@ runimage:
 net:
 	docker network create edu_net
 
+proto:
+	rm protobuf/*.go
+	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
+		--go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/*.proto
 
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate
-.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net
+.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto

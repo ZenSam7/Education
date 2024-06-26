@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// Всё как в go
+package protobuf;
+option go_package = "github.com/ZenSam7/Education/protobuf";
+import "google/protobuf/timestamp.proto";
+
+// Описываем какие данные передаём под именем "пользователь"
+message User {
+  int32 id_user = 1;
+  string name = 2;
+  string description = 3;
+  string email = 4;
+  int32  karma = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
