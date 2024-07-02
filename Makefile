@@ -68,9 +68,12 @@ net:
 	docker network create edu_net
 
 proto:
-	rm protobuf/*.go
-	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
+	rm pb/*.go
+	protoc --proto_path=proto --go_out=pb --go-grpc_out=pb \
 		--go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/*.proto
 
+evans:
+	evans --host localhost --port 1213 -r repl
+
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate
-.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto
+.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto evans

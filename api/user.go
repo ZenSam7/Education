@@ -22,7 +22,7 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-func (proc *Process) createUser(ctx *gin.Context) {
+func (server *Server) createUser(ctx *gin.Context) {
 	var req createUserRequest
 
 	// Проверяем чтобы все теги соответсвовали (в gin есть валидатор)
@@ -44,11 +44,11 @@ func (proc *Process) createUser(ctx *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 	}
-	user, err := proc.queries.CreateUser(ctx, arg)
+	user, err := server.queries.CreateUser(ctx, arg)
 	if err != nil {
 		// Если пользователь с таким именем уже есть, то выдаем ошибку
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
-			ctx.JSON(http.StatusConflict, errorResponse(errors.New("user with this name or email already exists")))
+			ctx.JSON(http.StatusConflict, errorResponse(errors.New("пользователь с таким именем или email уже существует")))
 			return
 		}
 
@@ -58,7 +58,6 @@ func (proc *Process) createUser(ctx *gin.Context) {
 
 	userToResponse(&user)
 	ctx.JSON(http.StatusOK, user)
-
 }
 
 // getUserRequest Нам нужен парамерт URI id_user который >= 1
@@ -67,7 +66,7 @@ type getUserRequest struct {
 	IDUser int32 `uri:"id_user" binding:"required,min=1"`
 }
 
-func (proc *Process) getUser(ctx *gin.Context) {
+func (server *Server) getUser(ctx *gin.Context) {
 	var req getUserRequest
 
 	// Проверяем чтобы все теги соответсвовали (в gin есть валидатор)
@@ -78,7 +77,7 @@ func (proc *Process) getUser(ctx *gin.Context) {
 	}
 
 	// Получаем пользователя
-	user, err := proc.queries.GetUser(ctx, req.IDUser)
+	user, err := server.queries.GetUser(ctx, req.IDUser)
 	if err != nil {
 		// Если у нас просто нет такого пользователя, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
@@ -104,7 +103,7 @@ type getManySortedUsersRequest struct {
 	PageNum     int32 `json:"page_num" binding:"required,min=1"`
 }
 
-func (proc *Process) getManySortedUsers(ctx *gin.Context) {
+func (server *Server) getManySortedUsers(ctx *gin.Context) {
 	var req getManySortedUsersRequest
 
 	// Проверяем чтобы все теги соответсвовали
@@ -122,7 +121,7 @@ func (proc *Process) getManySortedUsers(ctx *gin.Context) {
 		Limit:       req.PageSize,
 		Offset:      (req.PageNum - 1) * req.PageSize,
 	}
-	users, err := proc.queries.GetManySortedUsers(ctx, arg)
+	users, err := server.queries.GetManySortedUsers(ctx, arg)
 	if err != nil {
 		// Если у нас просто нет таких пользователей, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
@@ -148,7 +147,7 @@ type editUserParamRequest struct {
 	Name        string `json:"name"`
 }
 
-func (proc *Process) editUserParam(ctx *gin.Context) {
+func (server *Server) editUserParam(ctx *gin.Context) {
 	var req editUserParamRequest
 
 	// Проверяем чтобы все теги соответствовали
@@ -168,7 +167,7 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 		Karma:       req.Karma,
 	}
 
-	editedUser, err := proc.queries.EditUser(ctx, arg)
+	editedUser, err := server.queries.EditUser(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -178,10 +177,10 @@ func (proc *Process) editUserParam(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, editedUser)
 }
 
-func (proc *Process) deleteUser(ctx *gin.Context) {
+func (server *Server) deleteUser(ctx *gin.Context) {
 	// Удаляем авторизованного пользователя
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
-	deletedUser, err := proc.queries.DeleteUser(ctx, payload.IDUser)
+	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -212,7 +211,7 @@ func userToResponse(user *db.User) *db.User {
 	return user
 }
 
-func (proc *Process) loginUser(ctx *gin.Context) {
+func (server *Server) loginUser(ctx *gin.Context) {
 	var req loginUserRequest
 
 	// Проверяем чтобы все теги соответствовали
@@ -222,7 +221,7 @@ func (proc *Process) loginUser(ctx *gin.Context) {
 	}
 
 	// Входим в систему
-	user, err := proc.queries.GetUserForName(ctx, req.Name)
+	user, err := server.queries.GetUserForName(ctx, req.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -239,18 +238,18 @@ func (proc *Process) loginUser(ctx *gin.Context) {
 	}
 
 	// Залогиненному пользователю даём access и refresh токены
-	accessToken, accessTokenPayload, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.AccessTokenDuration)
+	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	refreshToken, refreshPayload, err := proc.tokenMaker.CreateToken(user.IDUser, proc.config.RefreshTokenDuration)
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.RefreshTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	_, err = proc.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true},
 		IDUser:       user.IDUser,
 		RefreshToken: refreshToken,
@@ -286,7 +285,7 @@ type renewAccessTokenResponse struct {
 }
 
 // renewAccessToken Входим по refresh токену и обновляем ОБА токена
-func (proc *Process) renewAccessToken(ctx *gin.Context) {
+func (server *Server) renewAccessToken(ctx *gin.Context) {
 	var req renewAccessTokenRequest
 
 	// Проверяем чтобы все теги соответствовали
@@ -295,10 +294,10 @@ func (proc *Process) renewAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	refreshPayload, errVerifyToken := proc.tokenMaker.VerifyToken(req.RefreshToken)
+	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.RefreshToken)
 
 	// Пересоздаём и сессию (refresh токен) и access токен
-	oldSession, err := proc.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
 
 	// Тут проверяем что этот refresh токен валидный
 	if err != nil {
@@ -321,24 +320,24 @@ func (proc *Process) renewAccessToken(ctx *gin.Context) {
 	}
 
 	// Создаём новые access и refresh токены (и сессию)
-	newRefreshToken, newRefreshPayload, err := proc.tokenMaker.CreateToken(
+	newRefreshToken, newRefreshPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
-		proc.config.RefreshTokenDuration,
+		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	newAccessToken, newAccessPayload, err := proc.tokenMaker.CreateToken(
+	newAccessToken, newAccessPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
-		proc.config.AccessTokenDuration,
+		server.config.AccessTokenDuration,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	_, err = proc.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: newRefreshPayload.IDSession, Valid: true},
 		IDUser:       newRefreshPayload.IDUser,
 		RefreshToken: newRefreshToken,

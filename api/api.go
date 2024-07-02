@@ -9,70 +9,70 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Process Обрабатываем запросы от API
-type Process struct {
+// Server Обрабатываем запросы от API
+type Server struct {
 	queries    *db.Queries
 	router     *gin.Engine
 	tokenMaker token.Maker
 	config     tools.Config
 }
 
-// Run Начинаем прослушивать запросы к API
-func (proc *Process) Run(address string) error {
-	return proc.router.Run(address)
+// Run Начинаем прослушивать запросы к API по HTTP
+func (server *Server) Run(address string) error {
+	return server.router.Run(address)
 }
 
-// NewProcess Новый HTTP процесс для обработки запросов и роутер (который просто
+// NewServer Новый HTTP процесс для обработки запросов и роутер (который просто
 // вызывает определёную функцию при каком-либо запросе на конкретный URI)
-func NewProcess(config tools.Config, queries *db.Queries) (*Process, error) {
+func NewServer(config tools.Config, queries *db.Queries) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, err
 	}
-	proc := &Process{
+	server := &Server{
 		queries:    queries,
 		tokenMaker: tokenMaker,
 		config:     config,
 	}
 
 	router := gin.Default()
-	proc.setupRouter(router)
+	server.setupRouter(router)
 
-	return proc, nil
+	return server, nil
 }
 
 // setupRouter Устанавливаем все возможные url для обработки, а также делим
 // их для авторизованных и не авторизованных пользователей
-func (proc *Process) setupRouter(router *gin.Engine) {
+func (server *Server) setupRouter(router *gin.Engine) {
 	// Добавляем сайты только для авторизованных пользователей ("/" - общий префикс)
-	authRouter := router.Group("/").Use(authMiddleware(proc.tokenMaker))
+	authRouter := router.Group("/").Use(authMiddleware(server.tokenMaker))
 
 	// Обрабатываем запросы для действий с пользователями:
-	router.POST("/user/register", proc.createUser)
-	router.POST("/user/login", proc.loginUser)
-	router.POST("/token/renew_access", proc.renewAccessToken)
+	router.POST("/user/register", server.createUser)
+	router.POST("/user/login", server.loginUser)
+	router.POST("/token/renew_access", server.renewAccessToken)
 	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
-	router.GET("/user/:id_user", proc.getUser)
-	router.GET("/user/list", proc.getManySortedUsers)
-	authRouter.PATCH("/user/", proc.editUserParam)
-	authRouter.DELETE("/user/", proc.deleteUser)
+	router.GET("/user/:id_user", server.getUser)
+	router.GET("/user/list", server.getManySortedUsers)
+	authRouter.PATCH("/user/", server.editUserParam)
+	authRouter.DELETE("/user/", server.deleteUser)
 
 	// Обрабатываем запросы для действий со статьями:
-	authRouter.POST("/article", proc.createArticle)
-	authRouter.DELETE("/article/:id_article", proc.deleteArticle)
-	router.GET("/article/:id_article", proc.getArticle)
-	router.GET("/article/list", proc.getManySortedArticles)
-	router.GET("/article/comments/:id_article", proc.getCommentsOfArticle)
-	authRouter.PATCH("/article/:id_article", proc.editArticle)
-	router.GET("/article/search", proc.getManySortedArticlesWithAttributes)
+	authRouter.POST("/article", server.createArticle)
+	authRouter.DELETE("/article/:id_article", server.deleteArticle)
+	router.GET("/article/:id_article", server.getArticle)
+	router.GET("/article/list", server.getManySortedArticles)
+	router.GET("/article/comments/:id_article", server.getCommentsOfArticle)
+	authRouter.PATCH("/article/:id_article", server.editArticle)
+	router.GET("/article/search", server.getManySortedArticlesWithAttributes)
 
 	// Обрабатываем запросы для действий с комментариями:
-	authRouter.POST("/comment", proc.createComment)
-	router.GET("/comment/:id_comment", proc.getComment)
-	authRouter.PATCH("/comment/:id_comment", proc.editComment)
-	authRouter.DELETE("/comment/:id_comment", proc.deleteComment)
+	authRouter.POST("/comment", server.createComment)
+	router.GET("/comment/:id_comment", server.getComment)
+	authRouter.PATCH("/comment/:id_comment", server.editComment)
+	authRouter.DELETE("/comment/:id_comment", server.deleteComment)
 
-	proc.router = router
+	server.router = router
 }
 
 // errorResponse Превpящаем ошибку в нужный объект чтобы использовать его в gin

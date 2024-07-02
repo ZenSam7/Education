@@ -16,7 +16,7 @@ type createArticleRequest struct {
 	Authors []int32 `json:"authors"`
 }
 
-func (proc *Process) createArticle(ctx *gin.Context) {
+func (server *Server) createArticle(ctx *gin.Context) {
 	var req createArticleRequest
 
 	// Делаем операцию только для авторизованного пользователя
@@ -34,7 +34,7 @@ func (proc *Process) createArticle(ctx *gin.Context) {
 		Text:    req.Text,
 		Authors: []int32{payload.IDUser},
 	}
-	article, err := proc.queries.CreateArticle(ctx, arg)
+	article, err := server.queries.CreateArticle(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -44,8 +44,8 @@ func (proc *Process) createArticle(ctx *gin.Context) {
 }
 
 // userIsAuthorArticle Проверяем является ли пользователь автором статьи
-func isAuthorArticle(IDArticle, IDUser int32, proc *Process) bool {
-	targetArticle, _ := proc.queries.GetArticle(context.Background(), IDArticle)
+func isAuthorArticle(IDArticle, IDUser int32, server *Server) bool {
+	targetArticle, _ := server.queries.GetArticle(context.Background(), IDArticle)
 	for _, authorID := range targetArticle.Authors {
 		if authorID == IDUser {
 			return true
@@ -58,13 +58,13 @@ type deleteArticleRequest struct {
 	IDArticle int32 `uri:"id_article" binding:"required,min=1"`
 }
 
-func (proc *Process) deleteArticle(ctx *gin.Context) {
+func (server *Server) deleteArticle(ctx *gin.Context) {
 	var req deleteArticleRequest
 
 	// Делаем операцию только для создателя статьи
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
-	if !isAuthorArticle(req.IDArticle, payload.IDUser, proc) {
+	if !isAuthorArticle(req.IDArticle, payload.IDUser, server) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("вы не являетесь автором статьи")))
 		return
 	}
@@ -76,7 +76,7 @@ func (proc *Process) deleteArticle(ctx *gin.Context) {
 	}
 
 	// Удаляем статью
-	article, err := proc.queries.DeleteArticle(ctx, req.IDArticle)
+	article, err := server.queries.DeleteArticle(ctx, req.IDArticle)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -89,7 +89,7 @@ type getArticleRequest struct {
 	IDArticle int32 `uri:"id_article" binding:"required,min=1"`
 }
 
-func (proc *Process) getArticle(ctx *gin.Context) {
+func (server *Server) getArticle(ctx *gin.Context) {
 	var req getArticleRequest
 
 	// Проверяем теги
@@ -99,7 +99,7 @@ func (proc *Process) getArticle(ctx *gin.Context) {
 	}
 
 	// Получаем статью
-	article, err := proc.queries.GetArticle(ctx, req.IDArticle)
+	article, err := server.queries.GetArticle(ctx, req.IDArticle)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -122,7 +122,7 @@ type getManyArticlesRequest struct {
 	PageSize   int32 `json:"page_size" binding:"required,min=1"`
 }
 
-func (proc *Process) getManySortedArticles(ctx *gin.Context) {
+func (server *Server) getManySortedArticles(ctx *gin.Context) {
 	var req getManyArticlesRequest
 
 	// Проверяем теги
@@ -144,7 +144,7 @@ func (proc *Process) getManySortedArticles(ctx *gin.Context) {
 		Limit:      req.PageSize,
 		Offset:     (req.PageNum - 1) * req.PageSize,
 	}
-	articles, err := proc.queries.GetManySortedArticles(ctx, arg)
+	articles, err := server.queries.GetManySortedArticles(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -173,7 +173,7 @@ type getManySortedArticlesWithAttributesRequest struct {
 	PageSize         int32            `json:"page_size" binding:"required,min=1"`
 }
 
-func (proc *Process) getManySortedArticlesWithAttributes(ctx *gin.Context) {
+func (server *Server) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 	var req getManySortedArticlesWithAttributesRequest
 
 	// Проверяем теги
@@ -198,7 +198,7 @@ func (proc *Process) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 		Limit:            req.PageSize,
 		Offset:           (req.PageNum - 1) * req.PageSize,
 	}
-	articles, err := proc.queries.GetManySortedArticlesWithAttribute(ctx, arg)
+	articles, err := server.queries.GetManySortedArticlesWithAttribute(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -217,13 +217,13 @@ type editArticleRequest struct {
 	EditedAt  pgtype.Timestamp `json:"edited_at"`
 }
 
-func (proc *Process) editArticle(ctx *gin.Context) {
+func (server *Server) editArticle(ctx *gin.Context) {
 	var req editArticleRequest
 
 	// Делаем операцию только для создателя статьи
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
-	if !isAuthorArticle(req.IDArticle, payload.IDUser, proc) {
+	if !isAuthorArticle(req.IDArticle, payload.IDUser, server) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("вы не являетесь автором статьи")))
 		return
 	}
@@ -243,7 +243,7 @@ func (proc *Process) editArticle(ctx *gin.Context) {
 		Authors:   req.Authors,
 	}
 
-	editedArticle, err := proc.queries.EditArticle(ctx, arg)
+	editedArticle, err := server.queries.EditArticle(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

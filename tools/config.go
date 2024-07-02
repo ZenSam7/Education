@@ -8,7 +8,8 @@ import (
 
 // Config Какие переменные среды вытаскиваем из .env
 type Config struct {
-	ServerAddress        string        `mapstructure:"SERVER_ADDRESS"`
+	HttpServerAddress    string        `mapstructure:"HTTP_SERVER_ADDRESS"`
+	GrpcServerAddress    string        `mapstructure:"GRPC_SERVER_ADDRESS"`
 	DBUserName           string        `mapstructure:"POSTGRES_USER"`
 	DBPassword           string        `mapstructure:"POSTGRES_PASSWORD"`
 	DBHost               string        `mapstructure:"DB_HOST"`

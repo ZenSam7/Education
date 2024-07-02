@@ -39,6 +39,7 @@ func GetQueries() (*Queries, func()) {
 	closeConnect := func() {
 		func(ctx context.Context, conn *pgx.Conn) {
 			if err := conn.Close(ctx); err != nil {
+				log.Println("Закрыли соединение")
 				log.Fatal("Не получается закрыть соединение:", err)
 			}
 		}(ctx, conn)

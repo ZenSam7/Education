@@ -15,7 +15,7 @@ type getCommentsOfArticleRequest struct {
 	PageSize  int32 `uri:"page_size" binding:"required,min=1"`
 }
 
-func (proc *Process) getCommentsOfArticle(ctx *gin.Context) {
+func (server *Server) getCommentsOfArticle(ctx *gin.Context) {
 	var req getCommentsOfArticleRequest
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -29,7 +29,7 @@ func (proc *Process) getCommentsOfArticle(ctx *gin.Context) {
 		Limit:     req.PageSize,
 		Offset:    (req.PageNum - 1) * req.PageSize,
 	}
-	comments, err := proc.queries.GetCommentsOfArticle(ctx, args)
+	comments, err := server.queries.GetCommentsOfArticle(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -44,7 +44,7 @@ type createCommentRequest struct {
 	Author    int32  `json:"author" binding:"required"`
 }
 
-func (proc *Process) createComment(ctx *gin.Context) {
+func (server *Server) createComment(ctx *gin.Context) {
 	var req createCommentRequest
 
 	// Комментарии может создать только авторизованный пользователь
@@ -61,7 +61,7 @@ func (proc *Process) createComment(ctx *gin.Context) {
 		Text:      req.Text,
 		Author:    payload.IDUser,
 	}
-	comment, err := proc.queries.CreateComment(ctx, args)
+	comment, err := server.queries.CreateComment(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -74,17 +74,17 @@ type deleteCommentRequest struct {
 	IDComment int32 `uri:"id_comment" binding:"required,min=1"`
 }
 
-func isAuthorComment(IDUser, IDComment int32, proc *Process) bool {
-	comment, _ := proc.queries.GetComment(context.Background(), IDComment)
+func isAuthorComment(IDUser, IDComment int32, server *Server) bool {
+	comment, _ := server.queries.GetComment(context.Background(), IDComment)
 	return comment.Author == IDUser
 }
 
-func (proc *Process) deleteComment(ctx *gin.Context) {
+func (server *Server) deleteComment(ctx *gin.Context) {
 	var req deleteCommentRequest
 
 	// Выявляем автора
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
-	if !isAuthorComment(payload.IDUser, req.IDComment, proc) {
+	if !isAuthorComment(payload.IDUser, req.IDComment, server) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("вы не автор комментария")))
 		return
 	}
@@ -95,7 +95,7 @@ func (proc *Process) deleteComment(ctx *gin.Context) {
 	}
 
 	// Удаляем комментарий
-	comment, err := proc.queries.DeleteComment(ctx, req.IDComment)
+	comment, err := server.queries.DeleteComment(ctx, req.IDComment)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -108,7 +108,7 @@ type getCommentRequest struct {
 	IDComment int32 `uri:"id_comment" binding:"required,min=1"`
 }
 
-func (proc *Process) getComment(ctx *gin.Context) {
+func (server *Server) getComment(ctx *gin.Context) {
 	var req getCommentRequest
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -117,7 +117,7 @@ func (proc *Process) getComment(ctx *gin.Context) {
 	}
 
 	// Возвращаем комментарий
-	comment, err := proc.queries.GetComment(ctx, req.IDComment)
+	comment, err := server.queries.GetComment(ctx, req.IDComment)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -131,12 +131,12 @@ type editCommentRequest struct {
 	Text      string `json:"text" binding:"required"`
 }
 
-func (proc *Process) editComment(ctx *gin.Context) {
+func (server *Server) editComment(ctx *gin.Context) {
 	var req editCommentRequest
 
 	// Выявляем авторcтво
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
-	if !isAuthorComment(payload.IDUser, req.IDComment, proc) {
+	if !isAuthorComment(payload.IDUser, req.IDComment, server) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("вы не автор комментария")))
 		return
 	}
@@ -151,7 +151,7 @@ func (proc *Process) editComment(ctx *gin.Context) {
 		Text:      req.Text,
 		IDComment: req.IDComment,
 	}
-	comment, err := proc.queries.EditComment(ctx, args)
+	comment, err := server.queries.EditComment(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
