@@ -23,14 +23,14 @@ func main() {
 func runGrpcServer(config tools.Config, queries *db.Queries) {
 	server, err := api_grpc.NewServer(config, queries)
 	if err != nil {
-		log.Fatal("Ошибка в создании роутера:", err.Error())
+		log.Fatal("Ошибка в создании сервера:", err.Error())
 	}
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterEducationServer(grpcServer, server)
 	reflection.Register(grpcServer)
 
-	listener, err := net.Listen("tcp", config.GrpcServerAddress)
+	listener, err := net.Listen("tcp4", config.GrpcServerAddress)
 	if err != nil {
 		log.Fatal("не получилось создать listener:", err.Error())
 	}
@@ -45,7 +45,7 @@ func runGrpcServer(config tools.Config, queries *db.Queries) {
 func runGinServer(config tools.Config, queries *db.Queries) {
 	server, err := api.NewServer(config, queries)
 	if err != nil {
-		log.Fatal("Ошибка в создании роутера:", err.Error())
+		log.Fatal("Ошибка в создании сервера:", err.Error())
 	}
 
 	if err := server.Run(config.HttpServerAddress); err != nil {
