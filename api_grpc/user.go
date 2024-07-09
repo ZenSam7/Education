@@ -9,16 +9,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (server *Server) LoginUser(ctx context.Context, request *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (server *Server) mustEmbedUnimplementedEducationServer() {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
 	passwordHash, err := tools.GetPasswordHash(req.GetPassword())
 	if err != nil {

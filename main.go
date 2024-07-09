@@ -27,10 +27,10 @@ func runGrpcServer(config tools.Config, queries *db.Queries) {
 	}
 
 	grpcServer := grpc.NewServer()
-	pb.RegisterEducationServer(grpcServer, server)
 	reflection.Register(grpcServer)
+	pb.RegisterEducationServer(grpcServer, server)
 
-	listener, err := net.Listen("tcp4", config.GrpcServerAddress)
+	listener, err := net.Listen("tcp", config.GrpcServerAddress)
 	if err != nil {
 		log.Fatal("не получилось создать listener:", err.Error())
 	}
