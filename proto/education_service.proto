@@ -3,12 +3,16 @@ syntax = "proto3";
 // Всё как в go
 package protobuf;
 option go_package = "github.com/ZenSam7/Education/protobuf";
-import "user_create.proto";
-import "user_login.proto";
+import "user.proto";
 
 // Описываем что-то типа интерфейса (типа как Querier interface)
-// TODO: описать остальные функции
 service Education {
-  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
-  rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {}
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetManySortedUsers(GetManySortedUsersRequest) returns (GetManySortedUsersResponse);
+  rpc EditUserParam(EditUserParamRequest) returns (EditUserParamResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+  rpc RenewAccessToken(RenewAccessTokenRequest) returns (RenewAccessTokenResponse);
 }
+

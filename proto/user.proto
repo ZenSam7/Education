@@ -7,10 +7,81 @@ import "google/protobuf/timestamp.proto";
 
 // Описываем какие данные передаём под именем "пользователь"
 message User {
-  int32 id_user = 1;
+  int32  id_user = 1;
   string name = 2;
-  string description = 3;
-  string email = 4;
+  string email = 3;
+  string description = 4;
   int32  karma = 5;
   google.protobuf.Timestamp created_at = 6;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message GetUserRequest {
+  int32 id_user = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message GetManySortedUsersRequest {
+  bool  id_user = 1;
+  bool  name = 2;
+  bool  description = 3;
+  bool  karma = 4;
+  int32 page_size = 5;
+  int32 page_num = 6;
+}
+
+message GetManySortedUsersResponse {
+  repeated User users = 1;
+}
+
+message EditUserParamRequest {
+  string name = 1;
+  int32  karma = 2;
+  string description = 3;
+}
+
+message EditUserParamResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {}
+
+message DeleteUserResponse {
+  User user = 1;
+}
+
+message LoginUserRequest {
+  string name = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  User   user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  google.protobuf.Timestamp access_token_expired_at = 4;
+  google.protobuf.Timestamp refresh_token_expired_at = 5;
+}
+
+message RenewAccessTokenRequest {
+  string refresh_token = 1;
+}
+
+message RenewAccessTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp access_token_expired_at = 3;
+  google.protobuf.Timestamp refresh_token_expired_at = 4;
 }

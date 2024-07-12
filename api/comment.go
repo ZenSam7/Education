@@ -48,7 +48,7 @@ func (server *Server) createComment(ctx *gin.Context) {
 	var req createCommentRequest
 
 	// Комментарии может создать только авторизованный пользователь
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -83,7 +83,7 @@ func (server *Server) deleteComment(ctx *gin.Context) {
 	var req deleteCommentRequest
 
 	// Выявляем автора
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
 	if !isAuthorComment(payload.IDUser, req.IDComment, server) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("вы не автор комментария")))
 		return
@@ -135,7 +135,7 @@ func (server *Server) editComment(ctx *gin.Context) {
 	var req editCommentRequest
 
 	// Выявляем авторcтво
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
 	if !isAuthorComment(payload.IDUser, req.IDComment, server) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("вы не автор комментария")))
 		return

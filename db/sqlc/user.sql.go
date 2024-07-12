@@ -178,13 +178,13 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 	return i, err
 }
 
-const getUserForName = `-- name: GetUserForName :one
+const getUserForName = `-- name: GetUserFromName :one
 SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
 WHERE name = $1
 `
 
-// GetUserForName Возвращаем пользователя по имени
-func (q *Queries) GetUserForName(ctx context.Context, name string) (User, error) {
+// GetUserFromName Возвращаем пользователя по имени
+func (q *Queries) GetUserFromName(ctx context.Context, name string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserForName, name)
 	var i User
 	err := row.Scan(

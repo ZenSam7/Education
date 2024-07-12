@@ -15,8 +15,8 @@ RETURNING *;
 SELECT * FROM users
 WHERE id_user = $1;
 
--- GetUserForName Возвращаем пользователя по имени
--- name: GetUserForName :one
+-- GetUserFromName Возвращаем пользователя по имени
+-- name: GetUserFromName :one
 SELECT * FROM users
 WHERE name = $1;
 

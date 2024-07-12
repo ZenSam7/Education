@@ -157,7 +157,7 @@ func (server *Server) editUserParam(ctx *gin.Context) {
 	}
 
 	// Делаем операцию только для авторизованного пользователя
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
 
 	// Изменяем параметр(ы) пользователя
 	arg := db.EditUserParams{
@@ -179,7 +179,7 @@ func (server *Server) editUserParam(ctx *gin.Context) {
 
 func (server *Server) deleteUser(ctx *gin.Context) {
 	// Удаляем авторизованного пользователя
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
 	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -221,7 +221,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	// Входим в систему
-	user, err := server.queries.GetUserForName(ctx, req.Name)
+	user, err := server.queries.GetUserFromName(ctx, req.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))

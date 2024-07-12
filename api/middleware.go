@@ -8,10 +8,11 @@ import (
 	"strings"
 )
 
-// authTypes Все типы авторизации которые поддерживает API
 const (
-	supportedAuthType = "bearer"
-	authPayloadKey    = "authorization_payload"
+	// SupportedAuthType Все типы авторизации которые поддерживает API
+	SupportedAuthType = "bearer"
+	// AuthPayloadKey Ключ для взятия токена
+	AuthPayloadKey = "authorization_payload"
 )
 
 // authMiddleware Создаём промежуточную функцию авторизации
@@ -36,7 +37,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		}
 
 		authType := strings.ToLower(fields[0])
-		if authType != supportedAuthType {
+		if authType != SupportedAuthType {
 			ctx.AbortWithStatusJSON(
 				http.StatusUnauthorized,
 				errorResponse(errors.New("тип авторизации пока не поддерживается")),
@@ -54,7 +55,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		}
 
 		// Всё проверели, значит теперь токен действителен
-		ctx.Set(authPayloadKey, payload)
+		ctx.Set(AuthPayloadKey, payload)
 		ctx.Next()
 	}
 }

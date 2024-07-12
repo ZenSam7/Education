@@ -55,8 +55,8 @@ type Querier interface {
 	GetSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// GetUser Возвращаем пользователя
 	GetUser(ctx context.Context, idUser int32) (User, error)
-	// GetUserForName Возвращаем пользователя по имени
-	GetUserForName(ctx context.Context, name string) (User, error)
+	// GetUserFromName Возвращаем пользователя по имени
+	GetUserFromName(ctx context.Context, name string) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
