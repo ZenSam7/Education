@@ -4,15 +4,48 @@ syntax = "proto3";
 package protobuf;
 option go_package = "github.com/ZenSam7/Education/protobuf";
 import "user.proto";
+import "google/api/annotations.proto";
 
 // Описываем что-то типа интерфейса (типа как Querier interface)
 service Education {
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc GetManySortedUsers(GetManySortedUsersRequest) returns (GetManySortedUsersResponse);
-  rpc EditUserParam(EditUserParamRequest) returns (EditUserParamResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
-  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
-  rpc RenewAccessToken(RenewAccessTokenRequest) returns (RenewAccessTokenResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+        option (google.api.http) = {
+          post: "/create_user"
+          body: "*"
+        };
+  };
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+        option (google.api.http) = {
+          get: "/get_user"
+        };
+  };
+  rpc GetManySortedUsers(GetManySortedUsersRequest) returns (GetManySortedUsersResponse) {
+        option (google.api.http) = {
+          get: "/get_many_sorted_users"
+        };
+  };
+  rpc EditUser(EditUserRequest) returns (EditUserResponse) {
+        option (google.api.http) = {
+          patch: "/edit_user"
+          body: "*"
+        };
+  };
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+        option (google.api.http) = {
+          delete: "/delete_user"
+        };
+  };
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse) {
+        option (google.api.http) = {
+          post: "/login_user"
+          body: "*"
+        };
+  };
+  rpc RenewAccessToken(RenewAccessTokenRequest) returns (RenewAccessTokenResponse) {
+        option (google.api.http) = {
+          post: "/renew_access_token"
+          body: "*"
+        };
+  };
 }
 

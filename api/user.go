@@ -141,14 +141,14 @@ func (server *Server) getManySortedUsers(ctx *gin.Context) {
 }
 
 // Надо разделить данные которые получаем с url и данные которые получаем с uri
-type editUserParamRequest struct {
+type editUserRequest struct {
 	Description string `json:"description"`
 	Karma       int32  `json:"karma"`
 	Name        string `json:"name"`
 }
 
-func (server *Server) editUserParam(ctx *gin.Context) {
-	var req editUserParamRequest
+func (server *Server) editUser(ctx *gin.Context) {
+	var req editUserRequest
 
 	// Проверяем чтобы все теги соответствовали
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -160,7 +160,7 @@ func (server *Server) editUserParam(ctx *gin.Context) {
 	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
 
 	// Изменяем параметр(ы) пользователя
-	arg := db.EditUserParams{
+	arg := db.EditUsers{
 		IDUser:      payload.IDUser,
 		Name:        req.Name,
 		Description: req.Description,

@@ -84,10 +84,10 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 	return response, nil
 }
 
-func (server *Server) EditUserParam(ctx context.Context, req *pb.EditUserParamRequest) (*pb.EditUserParamResponse, error) {
+func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
 	payload := ctx.Value(api.AuthPayloadKey).(*token.Payload)
 
-	arg := db.EditUserParams{
+	arg := db.EditUsers{
 		IDUser:      payload.IDUser,
 		Name:        req.GetName(),
 		Description: req.GetDescription(),
@@ -99,7 +99,7 @@ func (server *Server) EditUserParam(ctx context.Context, req *pb.EditUserParamRe
 		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %s", err)
 	}
 
-	response := &pb.EditUserParamResponse{
+	response := &pb.EditUserResponse{
 		User: convUser(editedUser),
 	}
 	return response, nil

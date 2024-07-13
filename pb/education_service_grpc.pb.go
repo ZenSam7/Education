@@ -24,7 +24,7 @@ const (
 	Education_CreateUser_FullMethodName         = "/protobuf.Education/CreateUser"
 	Education_GetUser_FullMethodName            = "/protobuf.Education/GetUser"
 	Education_GetManySortedUsers_FullMethodName = "/protobuf.Education/GetManySortedUsers"
-	Education_EditUserParam_FullMethodName      = "/protobuf.Education/EditUserParam"
+	Education_EditUser_FullMethodName           = "/protobuf.Education/EditUser"
 	Education_DeleteUser_FullMethodName         = "/protobuf.Education/DeleteUser"
 	Education_LoginUser_FullMethodName          = "/protobuf.Education/LoginUser"
 	Education_RenewAccessToken_FullMethodName   = "/protobuf.Education/RenewAccessToken"
@@ -39,7 +39,7 @@ type EducationClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	GetManySortedUsers(ctx context.Context, in *GetManySortedUsersRequest, opts ...grpc.CallOption) (*GetManySortedUsersResponse, error)
-	EditUserParam(ctx context.Context, in *EditUserParamRequest, opts ...grpc.CallOption) (*EditUserParamResponse, error)
+	EditUser(ctx context.Context, in *EditUserRequest, opts ...grpc.CallOption) (*EditUserResponse, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
 	RenewAccessToken(ctx context.Context, in *RenewAccessTokenRequest, opts ...grpc.CallOption) (*RenewAccessTokenResponse, error)
@@ -83,10 +83,10 @@ func (c *educationClient) GetManySortedUsers(ctx context.Context, in *GetManySor
 	return out, nil
 }
 
-func (c *educationClient) EditUserParam(ctx context.Context, in *EditUserParamRequest, opts ...grpc.CallOption) (*EditUserParamResponse, error) {
+func (c *educationClient) EditUser(ctx context.Context, in *EditUserRequest, opts ...grpc.CallOption) (*EditUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EditUserParamResponse)
-	err := c.cc.Invoke(ctx, Education_EditUserParam_FullMethodName, in, out, cOpts...)
+	out := new(EditUserResponse)
+	err := c.cc.Invoke(ctx, Education_EditUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ type EducationServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	GetManySortedUsers(context.Context, *GetManySortedUsersRequest) (*GetManySortedUsersResponse, error)
-	EditUserParam(context.Context, *EditUserParamRequest) (*EditUserParamResponse, error)
+	EditUser(context.Context, *EditUserRequest) (*EditUserResponse, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
 	RenewAccessToken(context.Context, *RenewAccessTokenRequest) (*RenewAccessTokenResponse, error)
@@ -152,8 +152,8 @@ func (UnimplementedEducationServer) GetUser(context.Context, *GetUserRequest) (*
 func (UnimplementedEducationServer) GetManySortedUsers(context.Context, *GetManySortedUsersRequest) (*GetManySortedUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetManySortedUsers not implemented")
 }
-func (UnimplementedEducationServer) EditUserParam(context.Context, *EditUserParamRequest) (*EditUserParamResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method EditUserParam not implemented")
+func (UnimplementedEducationServer) EditUser(context.Context, *EditUserRequest) (*EditUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditUser not implemented")
 }
 func (UnimplementedEducationServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
@@ -231,20 +231,20 @@ func _Education_GetManySortedUsers_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Education_EditUserParam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EditUserParamRequest)
+func _Education_EditUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EducationServer).EditUserParam(ctx, in)
+		return srv.(EducationServer).EditUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Education_EditUserParam_FullMethodName,
+		FullMethod: Education_EditUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EducationServer).EditUserParam(ctx, req.(*EditUserParamRequest))
+		return srv.(EducationServer).EditUser(ctx, req.(*EditUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -323,8 +323,8 @@ var Education_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Education_GetManySortedUsers_Handler,
 		},
 		{
-			MethodName: "EditUserParam",
-			Handler:    _Education_EditUserParam_Handler,
+			MethodName: "EditUser",
+			Handler:    _Education_EditUser_Handler,
 		},
 		{
 			MethodName: "DeleteUser",

@@ -71,7 +71,7 @@ WHERE id_user = $4::integer
 RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
-type EditUserParams struct {
+type EditUsers struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Karma       int32  `json:"karma"`
@@ -79,7 +79,7 @@ type EditUserParams struct {
 }
 
 // EditUser Изменяем параметр(ы) пользователя
-func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error) {
+func (q *Queries) EditUser(ctx context.Context, arg EditUsers) (User, error) {
 	row := q.db.QueryRow(ctx, editUser,
 		arg.Name,
 		arg.Description,

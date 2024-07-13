@@ -54,7 +54,7 @@ func (server *Server) setupRouter(router *gin.Engine) {
 	// ":id_user" Даём gin понять что нам нужен парамерт URI id_user
 	router.GET("/user/:id_user", server.getUser)
 	router.GET("/user/list", server.getManySortedUsers)
-	authRouter.PATCH("/user/", server.editUserParam)
+	authRouter.PATCH("/user/", server.editUser)
 	authRouter.DELETE("/user/", server.deleteUser)
 
 	// Обрабатываем запросы для действий со статьями:
