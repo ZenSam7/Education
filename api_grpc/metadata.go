@@ -4,14 +4,17 @@ import (
 	"context"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"strings"
 )
 
 const (
 	xForwardedForHeader = "x-forwarded-for"
+	authHeader          = "authorization"
 )
 
 type Metadata struct {
-	ClientIP string
+	ClientIP    string
+	AccessToken string
 }
 
 func (server *Server) extractMetadata(ctx context.Context) *Metadata {
@@ -22,12 +25,17 @@ func (server *Server) extractMetadata(ctx context.Context) *Metadata {
 		return mtdt
 	}
 
-	if clientIPs := md.Get(xForwardedForHeader); len(clientIPs) > 0 {
+	// Запасной вариант для получения ip
+	if p, ok := peer.FromContext(ctx); ok {
+		mtdt.ClientIP = p.Addr.String()
+	}
+
+	if clientIPs := md.Get(xForwardedForHeader); len(clientIPs) != 0 {
 		mtdt.ClientIP = clientIPs[0]
 	}
 
-	if p, ok := peer.FromContext(ctx); ok {
-		mtdt.ClientIP = p.Addr.String()
+	if token := md.Get(authHeader); len(token) != 0 {
+		mtdt.AccessToken = strings.Split(token[0], " ")[1]
 	}
 
 	return mtdt

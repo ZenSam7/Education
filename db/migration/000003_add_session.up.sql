@@ -1,5 +1,5 @@
 CREATE TABLE "sessions" (
-    id_session      uuid PRIMARY KEY NOT NULL,  -- Его мы создаём при вызове loginUser
+    id_session      uuid PRIMARY KEY NOT NULL,  -- id_session мы создаём при вызове loginUser
     issued_at       timestamptz DEFAULT now(),
     expired_at      timestamptz NOT NULL,
     refresh_token   VARCHAR NOT NULL,

@@ -157,7 +157,7 @@ func (server *Server) editUser(ctx *gin.Context) {
 	}
 
 	// Делаем операцию только для авторизованного пользователя
-	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
 	// Изменяем параметр(ы) пользователя
 	arg := db.EditUsers{
@@ -179,7 +179,7 @@ func (server *Server) editUser(ctx *gin.Context) {
 
 func (server *Server) deleteUser(ctx *gin.Context) {
 	// Удаляем авторизованного пользователя
-	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))

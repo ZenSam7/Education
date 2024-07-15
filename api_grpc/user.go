@@ -3,7 +3,7 @@ package api_grpc
 import (
 	"context"
 	"database/sql"
-	"github.com/ZenSam7/Education/api"
+	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/pb"
 	"github.com/ZenSam7/Education/token"
@@ -85,10 +85,18 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 }
 
 func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
-	payload := ctx.Value(api.AuthPayloadKey).(*token.Payload)
+	info := server.extractMetadata(ctx)
+	if len(info.AccessToken) == 0 {
+		return nil, fmt.Errorf("не указан токен авторизации")
+	}
+
+	accessPayload, err := server.tokenMaker.VerifyToken(info.AccessToken)
+	if err != nil {
+		return nil, err
+	}
 
 	arg := db.EditUsers{
-		IDUser:      payload.IDUser,
+		IDUser:      accessPayload.IDUser,
 		Name:        req.GetName(),
 		Description: req.GetDescription(),
 		Karma:       req.GetKarma(),
@@ -108,8 +116,8 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	_ = req.String() // Просто чтобы не было предупреждений
 
-	payload := ctx.Value(api.AuthPayloadKey).(*token.Payload)
-	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
+	//payload := ctx.Value(api.authPayloadKey).(*token.Payload)
+	deletedUser, err := server.queries.DeleteUser(ctx, 1)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %s", err)
 	}

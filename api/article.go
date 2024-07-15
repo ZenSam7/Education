@@ -20,7 +20,7 @@ func (server *Server) createArticle(ctx *gin.Context) {
 	var req createArticleRequest
 
 	// Делаем операцию только для авторизованного пользователя
-	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
 	// Проверяем теги
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -62,7 +62,7 @@ func (server *Server) deleteArticle(ctx *gin.Context) {
 	var req deleteArticleRequest
 
 	// Делаем операцию только для создателя статьи
-	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
 	if !isAuthorArticle(req.IDArticle, payload.IDUser, server) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("вы не являетесь автором статьи")))
@@ -221,7 +221,7 @@ func (server *Server) editArticle(ctx *gin.Context) {
 	var req editArticleRequest
 
 	// Делаем операцию только для создателя статьи
-	payload := ctx.MustGet(AuthPayloadKey).(*token.Payload)
+	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
 	if !isAuthorArticle(req.IDArticle, payload.IDUser, server) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("вы не являетесь автором статьи")))
