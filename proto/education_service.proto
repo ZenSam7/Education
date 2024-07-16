@@ -5,6 +5,7 @@ package protobuf;
 option go_package = "github.com/ZenSam7/Education/protobuf";
 import "user.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/option/annotations.proto";
 
 // Описываем что-то типа интерфейса (типа как Querier interface)
 service Education {
@@ -49,3 +50,15 @@ service Education {
   };
 }
 
+
+// Это уже настройки для автогенерации документации
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Education";
+    version: "1.0";
+    contact: {
+      name: "ZenSam7";
+      url: "https://github.com/ZenSam7";
+    }
+  };
+};
