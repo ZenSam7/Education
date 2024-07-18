@@ -5,16 +5,40 @@ import (
 	"database/sql"
 	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
-	pb "github.com/ZenSam7/Education/pb"
+	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
+	"github.com/ZenSam7/Education/validator"
 	"github.com/jackc/pgx/v5/pgtype"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+func validateCreateUserRequest(req *pb.CreateUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := validator.ValidateString(req.GetName(), 1, 99); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("name", err))
+	}
+
+	if err := validator.ValidateString(req.GetPassword(), 1, 999); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("password", err))
+	}
+
+	if err := validator.ValidateEmail(req.GetEmail()); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("email", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+
 func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	if err := validateCreateUserRequest(req); err != nil {
+		return nil, err
+	}
+
 	passwordHash, err := tools.GetPasswordHash(req.GetPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "ошибка при хешировании: %s", err)
@@ -41,7 +65,21 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	return response, nil
 }
 
+func validateGetUserRequest(req *pb.GetUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := validator.ValidateNaturalNum(int(req.GetIdUser())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("id_user", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+
 func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	if err := validateGetUserRequest(req); err != nil {
+		return nil, err
+	}
+
 	user, err := server.queries.GetUser(ctx, req.GetIdUser())
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -56,7 +94,25 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	return response, nil
 }
 
+func validateGetManySortedUsersRequest(req *pb.GetManySortedUsersRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := validator.ValidateNaturalNum(int(req.GetPageNum())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("page_num", err))
+	}
+
+	if err := validator.ValidateNaturalNum(int(req.GetPageSize())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("page_size", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+
 func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySortedUsersRequest) (*pb.GetManySortedUsersResponse, error) {
+	if err := validateGetManySortedUsersRequest(req); err != nil {
+		return nil, err
+	}
+
 	arg := db.GetManySortedUsersParams{
 		IDUser:      req.GetIdUser(),
 		Name:        req.GetName(),
@@ -84,7 +140,21 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 	return response, nil
 }
 
+func validateEditUserRequest(req *pb.EditUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := validator.ValidateString(req.GetName(), 1, 99); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("name", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+
 func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
+	if err := validateEditUserRequest(req); err != nil {
+		return nil, err
+	}
+
 	info := server.extractMetadata(ctx)
 	if len(info.AccessToken) == 0 {
 		return nil, fmt.Errorf("не указан токен авторизации")
@@ -128,7 +198,25 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 	return response, nil
 }
 
+func validateLoginUserRequest(req *pb.LoginUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := validator.ValidateString(req.GetPassword(), 1, 999); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("password", err))
+	}
+
+	if err := validator.ValidateString(req.GetName(), 1, 99); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("name", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+
 func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	if err := validateLoginUserRequest(req); err != nil {
+		return nil, err
+	}
+
 	user, err := server.queries.GetUserFromName(ctx, req.GetName())
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -173,7 +261,21 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	return response, nil
 }
 
+func validateRenewAccessTokenRequest(req *pb.RenewAccessTokenRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := validator.ValidateString(req.GetRefreshToken(), 1, 9999); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("password", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+
 func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessTokenRequest) (*pb.RenewAccessTokenResponse, error) {
+	if err := validateRenewAccessTokenRequest(req); err != nil {
+		return nil, err
+	}
+
 	info := server.extractMetadata(ctx)
 
 	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.GetRefreshToken())

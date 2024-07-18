@@ -2,7 +2,7 @@ package api_grpc
 
 import (
 	db "github.com/ZenSam7/Education/db/sqlc"
-	pb "github.com/ZenSam7/Education/pb"
+	pb "github.com/ZenSam7/Education/protobuf"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

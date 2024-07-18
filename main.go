@@ -5,7 +5,7 @@ import (
 	"github.com/ZenSam7/Education/api"
 	"github.com/ZenSam7/Education/api_grpc"
 	db "github.com/ZenSam7/Education/db/sqlc"
-	pb "github.com/ZenSam7/Education/pb"
+	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"

@@ -67,13 +67,15 @@ runimage:
 net:
 	docker network create edu_net
 
+# Если не работает proto, надо сделать эти 2 команды
 #export GOPATH=$HOME/go
 #PATH=$PATH:$GOPATH/bin
 proto:
-	protoc --proto_path=proto --go_out=pb --go-grpc_out=pb \
-		   --openapiv2_out docs --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
-		   --grpc-gateway_out=pb --grpc-gateway_opt=paths=source_relative \
-		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/*.proto
+	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
+		   --openapiv2_out=docs --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
+		   --grpc-gateway_out=protobuf --grpc-gateway_opt=paths=source_relative \
+		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative \
+		   proto/*.proto
 
 evans:
 	evans --host localhost --port 1213 -r repl
