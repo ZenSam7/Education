@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/ZenSam7/Education/api"
 	"github.com/ZenSam7/Education/api_grpc"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/tools"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -21,8 +25,30 @@ func main() {
 	queries, closeConn := db.GetQueries()
 	defer closeConn()
 
+	runDBMigration(config)
+
 	go runGatewayServer(config, queries)
 	runGrpcServer(config, queries)
+}
+
+// runDBMigration Запускаем миграции через Go
+func runDBMigration(config tools.Config) {
+	migration, err := migrate.New(config.MigrationUrl, fmt.Sprintf(
+		"postgresql://%s:%s@%s:5432/education?sslmode=%s",
+		config.DBUserName,
+		config.DBPassword,
+		config.DBHost,
+		config.DBSSLMode,
+	))
+	if err != nil {
+		log.Fatal("не получилось создать миграцию:", err)
+	}
+
+	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Println("не получилось поднять миграцию:", err)
+	}
+
+	log.Println("миграция завершена")
 }
 
 // runGatewayServer Сервер на gRPC, но с поддержкой HTTP
@@ -58,7 +84,7 @@ func runGatewayServer(config tools.Config, queries *db.Queries) {
 		log.Fatal("не получилось создать listener:", err.Error())
 	}
 
-	log.Printf("gRPC сервер поднят на %s", listener.Addr().String())
+	log.Printf("gRPC Gateway сервер поднят на %s", listener.Addr().String())
 	err = http.Serve(listener, mux)
 	if err != nil {
 		log.Fatal("не получилось поднять gRPC Gateway сервер:", err)

@@ -14,12 +14,14 @@ type Config struct {
 	DBPassword           string        `mapstructure:"POSTGRES_PASSWORD"`
 	DBHost               string        `mapstructure:"DB_HOST"`
 	DBSSLMode            string        `mapstructure:"DB_SSL_MODE"`
+	MigrationUrl         string        `mapstructure:"MIGRATION_URL"`
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 }
 
-// LoadConfig Загружаем переменные среды (надо подавать путь к .env относительно текущей папки)
+// LoadConfig Загружаем переменные среды (надо подавать путь к .env относительно
+// файла из текущей папки (откуда эта функция вызывается))
 func LoadConfig(path string) (config Config) {
 	// Указываем файл
 	viper.AddConfigPath(path)

@@ -19,13 +19,14 @@ services:
     environment:
       GIN_MODE: release
       DB_HOST: postgres
+      MIGRATION_URL: file://migration
     ports:
+      - "1213:1213"
       - "8080:8080"
     depends_on:
       - postgres
     networks:
       - edu_net
-    entrypoint: [ "./run.sh" ]
     command: [ "./main" ]
 
 
