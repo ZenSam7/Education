@@ -160,7 +160,7 @@ func (server *Server) editUser(ctx *gin.Context) {
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
 
 	// Изменяем параметр(ы) пользователя
-	arg := db.EditUsers{
+	arg := db.EditUserParams{
 		IDUser:      payload.IDUser,
 		Name:        req.Name,
 		Description: req.Description,

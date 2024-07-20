@@ -66,12 +66,12 @@ SET
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
   name = CASE WHEN $1::text <> '' THEN $1::text ELSE name END,
   description = CASE WHEN $2::text <> '' THEN $2::text ELSE description END,
-  karma = COALESCE($3::integer, karma)
+  karma = CASE WHEN $3::integer <> 0 THEN $3::integer ELSE karma END
 WHERE id_user = $4::integer
 RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
-type EditUsers struct {
+type EditUserParams struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Karma       int32  `json:"karma"`
@@ -79,7 +79,7 @@ type EditUsers struct {
 }
 
 // EditUser Изменяем параметр(ы) пользователя
-func (q *Queries) EditUser(ctx context.Context, arg EditUsers) (User, error) {
+func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, editUser,
 		arg.Name,
 		arg.Description,
@@ -178,14 +178,14 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 	return i, err
 }
 
-const getUserForName = `-- name: GetUserFromName :one
+const getUserFromName = `-- name: GetUserFromName :one
 SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
 WHERE name = $1
 `
 
 // GetUserFromName Возвращаем пользователя по имени
 func (q *Queries) GetUserFromName(ctx context.Context, name string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserForName, name)
+	row := q.db.QueryRow(ctx, getUserFromName, name)
 	var i User
 	err := row.Scan(
 		&i.IDUser,

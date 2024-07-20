@@ -140,21 +140,7 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 	return response, nil
 }
 
-func validateEditUserRequest(req *pb.EditUserRequest) error {
-	var errorsFields []*errdetails.BadRequest_FieldViolation
-
-	if err := validator.ValidateString(req.GetName(), 1, 99); err != nil {
-		errorsFields = append(errorsFields, fieldViolation("name", err))
-	}
-
-	return wrapFeildErrors(errorsFields)
-}
-
 func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
-	if err := validateEditUserRequest(req); err != nil {
-		return nil, err
-	}
-
 	info := server.extractMetadata(ctx)
 	if len(info.AccessToken) == 0 {
 		return nil, fmt.Errorf("не указан токен авторизации")
@@ -165,7 +151,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 		return nil, err
 	}
 
-	arg := db.EditUsers{
+	arg := db.EditUserParams{
 		IDUser:      accessPayload.IDUser,
 		Name:        req.GetName(),
 		Description: req.GetDescription(),

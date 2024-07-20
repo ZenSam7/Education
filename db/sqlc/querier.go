@@ -34,7 +34,7 @@ type Querier interface {
 	// EditComment Изменяем параметр(ы) пользователя
 	EditComment(ctx context.Context, arg EditCommentParams) (Comment, error)
 	// EditUser Изменяем параметр(ы) пользователя
-	EditUser(ctx context.Context, arg EditUsers) (User, error)
+	EditUser(ctx context.Context, arg EditUserParams) (User, error)
 	// GetArticle Возвращаем статью по id
 	GetArticle(ctx context.Context, idArticle int32) (Article, error)
 	// GetArticlesWithAttribute Возвращаем много статей взятых по какому-то признаку(ам)

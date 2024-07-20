@@ -54,7 +54,7 @@ func TestEditUser(t *testing.T) {
 	defer closeConn()
 
 	// Изменяем Имя
-	agr := EditUsers{
+	agr := EditUserParams{
 		Name:   tools.GetRandomString(),
 		IDUser: user.IDUser,
 	}
@@ -71,7 +71,7 @@ func TestEditUser(t *testing.T) {
 	user = editedUser // Обновляем пользователя с которым сравниваем
 
 	// Изменяем Описание
-	agr = EditUsers{
+	agr = EditUserParams{
 		Description: tools.GetRandomString(),
 		IDUser:      user.IDUser,
 	}
@@ -88,7 +88,7 @@ func TestEditUser(t *testing.T) {
 	user = editedUser // Обновляем пользователя с которым сравниваем
 
 	// Изменяем Карму
-	agr = EditUsers{
+	agr = EditUserParams{
 		Karma:  tools.GetRandomInt(),
 		IDUser: user.IDUser,
 	}
