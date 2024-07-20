@@ -2,6 +2,8 @@ package api_grpc
 
 import (
 	"context"
+	"fmt"
+	"github.com/ZenSam7/Education/token"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"strings"
@@ -34,9 +36,23 @@ func (server *Server) extractMetadata(ctx context.Context) *Metadata {
 		mtdt.ClientIP = clientIPs[0]
 	}
 
-	if token := md.Get(authHeader); len(token) != 0 {
-		mtdt.AccessToken = strings.Split(token[0], " ")[1]
+	if tkn := md.Get(authHeader); len(tkn) != 0 {
+		mtdt.AccessToken = strings.Split(tkn[0], " ")[1]
 	}
 
 	return mtdt
+}
+
+func (server *Server) authUser(ctx context.Context) (*token.Payload, error) {
+	info := server.extractMetadata(ctx)
+	if len(info.AccessToken) == 0 {
+		return nil, fmt.Errorf("не указан токен авторизации")
+	}
+
+	payload, err := server.tokenMaker.VerifyToken(info.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
 }

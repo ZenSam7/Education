@@ -34,10 +34,10 @@ message GetUserResponse {
 }
 
 message GetManySortedUsersRequest {
-  bool  id_user = 1;
-  bool  name = 2;
-  bool  description = 3;
-  bool  karma = 4;
+  optional bool  id_user = 1;
+  optional bool  name = 2;
+  optional bool  description = 3;
+  optional bool  karma = 4;
   int32 page_size = 5;
   int32 page_num = 6;
 }
@@ -47,9 +47,9 @@ message GetManySortedUsersResponse {
 }
 
 message EditUserRequest {
-  string name = 1;
-  int32  karma = 2;
-  string description = 3;
+  optional string name = 1;
+  optional int32  karma = 2;
+  optional string description = 3;
 }
 
 message EditUserResponse {

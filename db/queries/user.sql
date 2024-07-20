@@ -39,8 +39,9 @@ UPDATE users
 SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  -- CASE WHEN используется когда нельзя указать нулевое значение (пустую строку), COALESCE когда можно
   name = CASE WHEN @name::text <> '' THEN @name::text ELSE name END,
-  description = CASE WHEN @description::text <> '' THEN @description::text ELSE description END,
-  karma = CASE WHEN @karma::integer <> 0 THEN @karma::integer ELSE karma END
+  description = COALESCE(sqlc.narg(description)::text, description),
+  karma = COALESCE(sqlc.narg(karma)::integer, karma)
 WHERE id_user = @id_user::integer
 RETURNING *;

@@ -72,7 +72,7 @@ func (q *Queries) DeleteComment(ctx context.Context, idComment int32) (Article, 
 const editComment = `-- name: EditComment :one
 UPDATE comments
 SET
-    -- Если изменили текст или автора польщователя то обновляем его
+    -- Если изменили текст или автора пользователя, то обновляем его
     edited_at = CASE WHEN $1::text <> '' THEN NOW()
                      WHEN $2::integer <> author THEN NOW()
                      ELSE edited_at END,
@@ -80,9 +80,7 @@ SET
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
     text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
-    author = CASE WHEN $2::integer <> author
-                     THEN $2::integer
-                     ELSE author END
+    author = CASE WHEN $2::integer <> author THEN $2::integer ELSE author END
 WHERE id_comment = $3::integer
 RETURNING id_comment, created_at, edited_at, text, author, evaluation
 `

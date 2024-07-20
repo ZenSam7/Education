@@ -64,6 +64,7 @@ WHERE
         THEN @select_evaluation::integer
         ELSE evaluation END
 ORDER BY
+        -- Объединяем в группы столбцы одного типа (в один большой CASE WHEN нельзя разные типы)
         CASE WHEN @sorted_id_article::boolean THEN id_article::integer
              WHEN @sorted_evaluation::boolean THEN evaluation::integer END
         , -- запятая
@@ -91,10 +92,11 @@ SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
   -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
+  -- CASE WHEN используется когда нельзя указать нулевое значение (пустую строку), COALESCE когда можно
   title = CASE WHEN @title::text <> '' THEN @title::text ELSE title END,
   text = CASE WHEN @text::text <> '' THEN @text::text ELSE text END,
-  comments = COALESCE(@comments, comments),
-  authors = COALESCE(@authors, authors)
+  comments = COALESCE(@comments::integer[], comments),
+  authors = CASE WHEN cardinality(@authors::integer[]) <> 0 THEN @authors ELSE authors END
 WHERE id_article = @id_article::integer
 RETURNING *;
 

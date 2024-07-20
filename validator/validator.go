@@ -5,18 +5,14 @@ import (
 	"net/mail"
 )
 
-type anyNumber interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
-		~float32 | ~float64 |
-		~complex64 | ~complex128
-}
-
 // ValidateString Контролируем размер строки
 // minLenght по умолчанию 0, maxLenght по умолчанию ∞
 func ValidateString(s string, minLenght, maxLenght int) error {
 	if len(s) < minLenght || (maxLenght != 0 && len(s) > maxLenght) {
-		return fmt.Errorf("строка должна содержать %d-%d символов", minLenght, maxLenght)
+		if maxLenght != 0 {
+			return fmt.Errorf("строка должна содержать от %d до %d символов", minLenght, maxLenght)
+		}
+		return fmt.Errorf("строка должна содержать минимум %d символов", minLenght)
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -72,7 +73,7 @@ func TestEditUser(t *testing.T) {
 
 	// Изменяем Описание
 	agr = EditUserParams{
-		Description: tools.GetRandomString(),
+		Description: pgtype.Text{String: tools.GetRandomString(), Valid: true},
 		IDUser:      user.IDUser,
 	}
 
@@ -89,7 +90,7 @@ func TestEditUser(t *testing.T) {
 
 	// Изменяем Карму
 	agr = EditUserParams{
-		Karma:  tools.GetRandomInt(),
+		Karma:  pgtype.Int4{Int32: tools.GetRandomInt(), Valid: true},
 		IDUser: user.IDUser,
 	}
 

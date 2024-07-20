@@ -19,7 +19,7 @@ import (
 type createUserRequest struct {
 	Name     string `json:"name" binding:"required,alphanum"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required"`
 }
 
 func (server *Server) createUser(ctx *gin.Context) {
@@ -141,23 +141,48 @@ func (server *Server) getManySortedUsers(ctx *gin.Context) {
 }
 
 // Надо разделить данные которые получаем с url и данные которые получаем с uri
+// (оно разделяет пустые строки, полученные из json'а от пустых строк вставленные go автоматически
+// (поэтому тут такие костыли))
 type editUserRequest struct {
-	Description string `json:"description"`
-	Karma       int32  `json:"karma"`
-	Name        string `json:"name"`
+	Name        string
+	Description pgtype.Text
+	Karma       pgtype.Int4
 }
 
 func (server *Server) editUser(ctx *gin.Context) {
-	var req editUserRequest
+	var body map[string]interface{}
 
-	// Проверяем чтобы все теги соответствовали
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	// Связываем все поля которые нам нужны
+	if err := ctx.BindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	// Делаем операцию только для авторизованного пользователя
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+
+	// Тут мы разделяем поля которые содержат пустые строки от полей которые вообще не указаны в теле
+	var req editUserRequest
+	bodyText := make(map[string]string)
+	bodyInt := make(map[string]int32)
+	for key, val := range body {
+		switch v := val.(type) {
+		case string:
+			bodyText[key] = v
+		case float64:
+			bodyInt[key] = int32(v)
+		}
+	}
+
+	if val, ok := bodyText["name"]; ok {
+		req.Name = val
+	}
+
+	val, ok := bodyText["description"]
+	req.Description = pgtype.Text{String: val, Valid: ok}
+
+	num, ok := bodyInt["karma"]
+	req.Karma = pgtype.Int4{Int32: num, Valid: ok}
 
 	// Изменяем параметр(ы) пользователя
 	arg := db.EditUserParams{
@@ -193,7 +218,7 @@ func (server *Server) deleteUser(ctx *gin.Context) {
 // loginUserRequest Логиним пользователя
 type loginUserRequest struct {
 	Name     string `json:"name" binding:"required,alphanum"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required"`
 }
 
 // loginUserResponse Отправляем токен

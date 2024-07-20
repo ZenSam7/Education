@@ -29,7 +29,7 @@ WHERE id_comment = @id_comment::integer;
 -- name: EditComment :one
 UPDATE comments
 SET
-    -- Если изменили текст или автора польщователя то обновляем его
+    -- Если изменили текст или автора пользователя, то обновляем его
     edited_at = CASE WHEN @text::text <> '' THEN NOW()
                      WHEN @author::integer <> author THEN NOW()
                      ELSE edited_at END,
@@ -37,9 +37,7 @@ SET
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
     text = CASE WHEN @text::text <> '' THEN @text::text ELSE text END,
-    author = CASE WHEN @author::integer <> author
-                     THEN @author::integer
-                     ELSE author END
+    author = CASE WHEN @author::integer <> author THEN @author::integer ELSE author END
 WHERE id_comment = @id_comment::integer
 RETURNING *;
 

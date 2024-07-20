@@ -3,7 +3,6 @@ package api_grpc
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/token"
@@ -140,22 +139,35 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 	return response, nil
 }
 
-func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
-	info := server.extractMetadata(ctx)
-	if len(info.AccessToken) == 0 {
-		return nil, fmt.Errorf("не указан токен авторизации")
+func validateEditUserRequest(req *pb.EditUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if req.Name != nil {
+		if err := validator.ValidateString(req.GetName(), 1, 0); err != nil {
+			errorsFields = append(errorsFields, fieldViolation("page_num", err))
+		}
 	}
 
-	accessPayload, err := server.tokenMaker.VerifyToken(info.AccessToken)
+	return wrapFeildErrors(errorsFields)
+}
+
+func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
+	if err := validateEditUserRequest(req); err != nil {
+		return nil, err
+	}
+
+	accessPayload, err := server.authUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	arg := db.EditUserParams{
-		IDUser:      accessPayload.IDUser,
-		Name:        req.GetName(),
-		Description: req.GetDescription(),
-		Karma:       req.GetKarma(),
+		IDUser: accessPayload.IDUser,
+		Name:   req.GetName(),
+		// Разделяем пустое значение и значение которое вообще не указывали
+		// (Т.е. имеем возможность указать '' или 0 как валидный параметр)
+		Description: pgtype.Text{String: req.GetDescription(), Valid: req.Description != nil},
+		Karma:       pgtype.Int4{Int32: req.GetKarma(), Valid: req.Karma != nil},
 	}
 
 	editedUser, err := server.queries.EditUser(ctx, arg)
@@ -172,8 +184,12 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	_ = req.String() // Просто чтобы не было предупреждений
 
-	//payload := ctx.Value(api.authPayloadKey).(*token.Payload)
-	deletedUser, err := server.queries.DeleteUser(ctx, 1)
+	payload, err := server.authUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %s", err)
 	}

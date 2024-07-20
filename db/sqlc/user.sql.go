@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -64,18 +66,19 @@ UPDATE users
 SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  -- CASE WHEN используется когда нельзя указать нулевое значение (пустую строку), COALESCE когда можно
   name = CASE WHEN $1::text <> '' THEN $1::text ELSE name END,
-  description = CASE WHEN $2::text <> '' THEN $2::text ELSE description END,
-  karma = CASE WHEN $3::integer <> 0 THEN $3::integer ELSE karma END
+  description = COALESCE($2::text, description),
+  karma = COALESCE($3::integer, karma)
 WHERE id_user = $4::integer
 RETURNING id_user, created_at, name, description, karma, email, password_hash
 `
 
 type EditUserParams struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Karma       int32  `json:"karma"`
-	IDUser      int32  `json:"id_user"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+	Karma       pgtype.Int4 `json:"karma"`
+	IDUser      int32       `json:"id_user"`
 }
 
 // EditUser Изменяем параметр(ы) пользователя
