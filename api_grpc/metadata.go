@@ -3,56 +3,50 @@ package api_grpc
 import (
 	"context"
 	"fmt"
-	"github.com/ZenSam7/Education/token"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
 	"strings"
 )
 
 const (
+	// supportedAuthType Все типы авторизации которые поддерживает API
+	supportedAuthType   = "Bearer"
 	xForwardedForHeader = "x-forwarded-for"
+	userAgentHeader     = "user-agent"
 	authHeader          = "authorization"
 )
 
 type Metadata struct {
 	ClientIP    string
+	ClientAgent string
 	AccessToken string
 }
 
-func (server *Server) extractMetadata(ctx context.Context) *Metadata {
+func (server *Server) extractMetadata(ctx context.Context) (*Metadata, error) {
 	mtdt := &Metadata{}
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return mtdt
-	}
-
-	// Запасной вариант для получения ip
-	if p, ok := peer.FromContext(ctx); ok {
-		mtdt.ClientIP = p.Addr.String()
+		return nil, fmt.Errorf("ошибка в извлечении метаданных из контекста")
 	}
 
 	if clientIPs := md.Get(xForwardedForHeader); len(clientIPs) != 0 {
 		mtdt.ClientIP = clientIPs[0]
 	}
 
-	if tkn := md.Get(authHeader); len(tkn) != 0 {
-		mtdt.AccessToken = strings.Split(tkn[0], " ")[1]
+	if clientAgents := md.Get(userAgentHeader); len(clientAgents) != 0 {
+		mtdt.ClientAgent = clientAgents[0]
 	}
 
-	return mtdt
-}
+	if tkn := md.Get(authHeader); len(tkn) > 0 {
+		tokenInfo := strings.Fields(tkn[0])
+		if len(tokenInfo) < 2 {
+			return nil, fmt.Errorf("неправильный формат токена авторизации")
+		} else if tokenInfo[0] != supportedAuthType {
+			return nil, fmt.Errorf("неподдерживаемый тип токена: %s", tokenInfo[0])
+		}
 
-func (server *Server) authUser(ctx context.Context) (*token.Payload, error) {
-	info := server.extractMetadata(ctx)
-	if len(info.AccessToken) == 0 {
-		return nil, fmt.Errorf("не указан токен авторизации")
+		mtdt.AccessToken = tokenInfo[1]
 	}
 
-	payload, err := server.tokenMaker.VerifyToken(info.AccessToken)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
+	return mtdt, nil
 }

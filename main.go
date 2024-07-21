@@ -98,7 +98,11 @@ func runGrpcServer(config tools.Config, queries *db.Queries) {
 		log.Fatal("Ошибка в создании сервера:", err.Error())
 	}
 
-	grpcServer := grpc.NewServer()
+	// Настраиваем логгер
+	api_grpc.SettingLogger()
+	logger := grpc.UnaryInterceptor(api_grpc.GrpcLogger)
+
+	grpcServer := grpc.NewServer(logger)
 	reflection.Register(grpcServer)
 	pb.RegisterEducationServer(grpcServer, server)
 

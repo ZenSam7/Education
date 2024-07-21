@@ -6,10 +6,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func fieldViolation(field string, err error) *errdetails.BadRequest_FieldViolation {
-	return &errdetails.BadRequest_FieldViolation{Field: field, Description: err.Error()}
-}
-
 func wrapFeildErrors(violation []*errdetails.BadRequest_FieldViolation) error {
 	if len(violation) != 0 {
 		statusInvalid := status.New(codes.InvalidArgument, "неправильные параметры")
@@ -23,4 +19,12 @@ func wrapFeildErrors(violation []*errdetails.BadRequest_FieldViolation) error {
 	}
 
 	return nil
+}
+
+func unauthenticatedError(err error) error {
+	return status.Errorf(codes.Unauthenticated, "пользователь не авторизовался: %s", err)
+}
+
+func fieldViolation(field string, err error) *errdetails.BadRequest_FieldViolation {
+	return &errdetails.BadRequest_FieldViolation{Field: field, Description: err.Error()}
 }

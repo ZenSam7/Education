@@ -158,7 +158,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 
 	accessPayload, err := server.authUser(ctx)
 	if err != nil {
-		return nil, err
+		return nil, unauthenticatedError(err)
 	}
 
 	arg := db.EditUserParams{
@@ -186,7 +186,7 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	payload, err := server.authUser(ctx)
 	if err != nil {
-		return nil, err
+		return nil, unauthenticatedError(err)
 	}
 
 	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
@@ -240,7 +240,11 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %s", err)
 	}
 
-	info := server.extractMetadata(ctx)
+	info, err := server.extractMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true},
 		IDUser:       user.IDUser,
@@ -278,7 +282,10 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		return nil, err
 	}
 
-	info := server.extractMetadata(ctx)
+	info, err := server.extractMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.GetRefreshToken())
 
