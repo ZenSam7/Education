@@ -32,9 +32,10 @@ services:
 
 volumes:
   db_data:
+    external: true
 
 networks:
   edu_net:
     name: edu_net
     driver: bridge
-    # external: true  # Используем существующую сеть
+    external: true  # Используем существующую сеть

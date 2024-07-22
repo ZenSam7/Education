@@ -83,9 +83,10 @@ func runGatewayServer(config tools.Config, queries *db.Queries) {
 	if err != nil {
 		log.Fatal("не получилось создать listener:", err.Error())
 	}
-
 	log.Printf("gRPC Gateway сервер поднят на %s", listener.Addr().String())
-	err = http.Serve(listener, mux)
+
+	handler := api_grpc.HttpLogger(mux)
+	err = http.Serve(listener, handler)
 	if err != nil {
 		log.Fatal("не получилось поднять gRPC Gateway сервер:", err)
 	}

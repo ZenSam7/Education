@@ -8,10 +8,10 @@ include .env
 
 POSTGRES_URL = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}"
 
-# Создаём новый контейнер
+# Создаём новый контейнер с бд
 postgres:
-	docker run --name postgres -p 5432:5432 --net edu_net -e POSTGRES_USER=${POSTGRES_USER} \
- 		-e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
+	docker run --name postgres -p 5432:5432 --net edu_net -v db_data:/var/lib/postgresql/data \
+ 		-e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
 # Создаём новую бд
 createdb:
 	docker exec postgres createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} education

@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -38,24 +39,68 @@ func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo
 	duration := time.Since(startTime)
 
 	fullMethod := strings.Split(info.FullMethod, "/")
-	methodName := fullMethod[len(fullMethod)-1]
+	calledFunc := fullMethod[len(fullMethod)-1]
 
 	statusCode := codes.Unknown
 	if sc, ok := status.FromError(err); ok {
 		statusCode = sc.Code()
 	}
 
-	var msgType *zerolog.Event
+	msgType := sendLog.Info()
 	if err != nil {
 		msgType = sendLog.Error().Err(err)
-	} else {
-		msgType = sendLog.Info()
 	}
 
-	msgType.Dur("duration", duration).
+	msgType.
+		Int("duration", int(duration.Milliseconds())).
 		Int("code", int(statusCode)).
 		Str("status", statusCode.String()).
-		Msgf("%s |", methodName)
+		Str("protocol", "grpc").
+		Msgf("%s |", calledFunc)
 
 	return
+}
+
+// Response откладываем внутреннюю информацию ответа в кастомную структуру, чтобы её можно было достать
+type Response struct {
+	http.ResponseWriter
+	StatusCode int
+	Body       []byte
+}
+
+// WriteHeader перехватываем хедер и записываем к себе код статуса
+func (r *Response) WriteHeader(statusCode int) {
+	r.StatusCode = statusCode
+	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (r *Response) Write(body []byte) (int, error) {
+	r.Body = body
+	return r.ResponseWriter.Write(body)
+}
+
+func HttpLogger(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// Засекаем время и откладываем код статуса к себе в кармашек (в Response.StatusCode)
+		startTime := time.Now()
+		recorder := &Response{ResponseWriter: res, StatusCode: http.StatusOK}
+		handler.ServeHTTP(recorder, req)
+		duration := time.Since(startTime)
+
+		fullMethod := strings.Split(req.RequestURI, "/")
+		calledFunc := fullMethod[len(fullMethod)-1]
+
+		msgType := sendLog.Info()
+		if recorder.StatusCode != http.StatusOK {
+			msgType = sendLog.Error().Bytes("body", recorder.Body)
+		}
+
+		msgType.
+			Int("duration", int(duration.Milliseconds())).
+			Str("method", req.Method).
+			Str("protocol", "http").
+			Int("code", recorder.StatusCode).
+			Str("status", http.StatusText(recorder.StatusCode)).
+			Msgf("%s |", calledFunc)
+	})
 }
