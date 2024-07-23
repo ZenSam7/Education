@@ -8,10 +8,12 @@ import (
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/tools"
+	"github.com/ZenSam7/Education/worker"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -23,12 +25,33 @@ import (
 func main() {
 	config := tools.LoadConfig(".")
 	queries, closeConn := db.GetQueries()
-	defer closeConn()
+	defer closeConn() // На самом деле оно не вызывается
+	tools.MakeLogger()
 
 	runDBMigration(config)
+	redisOpt, taskDistributor := makeRedis(config)
 
-	go runGatewayServer(config, queries)
-	runGrpcServer(config, queries)
+	go startTaskProcessor(redisOpt, queries)
+	go runGatewayServer(config, queries, taskDistributor)
+	runGrpcServer(config, queries, taskDistributor)
+}
+
+// startTaskProcessor Запускаем обработчик процессов
+func startTaskProcessor(options asynq.RedisClientOpt, queries *db.Queries) {
+	processor := worker.NewRedisTaskProcessor(options, queries)
+	err := processor.Start()
+	if err != nil {
+		log.Fatalf("task-процессор не хочет создаваться: %s", err)
+	}
+}
+
+// makeRedis Запускаем сервер редиски
+func makeRedis(config tools.Config) (asynq.RedisClientOpt, worker.TaskDistributor) {
+	options := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+
+	return options, worker.NewRedisTaskDistributor(options)
 }
 
 // runDBMigration Запускаем миграции через Go
@@ -52,8 +75,8 @@ func runDBMigration(config tools.Config) {
 }
 
 // runGatewayServer Сервер на gRPC, но с поддержкой HTTP
-func runGatewayServer(config tools.Config, queries *db.Queries) {
-	server, err := api_grpc.NewServer(config, queries)
+func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
+	server, err := api_grpc.NewServer(config, queries, taskDistributor)
 	if err != nil {
 		log.Fatal("Ошибка в создании сервера:", err.Error())
 	}
@@ -85,7 +108,9 @@ func runGatewayServer(config tools.Config, queries *db.Queries) {
 	}
 	log.Printf("gRPC Gateway сервер поднят на %s", listener.Addr().String())
 
-	handler := api_grpc.HttpLogger(mux)
+	// Создаём специальный логгер для http
+	handler := tools.HttpLogger(mux)
+
 	err = http.Serve(listener, handler)
 	if err != nil {
 		log.Fatal("не получилось поднять gRPC Gateway сервер:", err)
@@ -93,17 +118,16 @@ func runGatewayServer(config tools.Config, queries *db.Queries) {
 }
 
 // runGrpcServer Стандартный сервер на gRPC
-func runGrpcServer(config tools.Config, queries *db.Queries) {
-	server, err := api_grpc.NewServer(config, queries)
+func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
+	server, err := api_grpc.NewServer(config, queries, taskDistributor)
 	if err != nil {
 		log.Fatal("Ошибка в создании сервера:", err.Error())
 	}
 
 	// Настраиваем логгер
-	api_grpc.SettingLogger()
-	logger := grpc.UnaryInterceptor(api_grpc.GrpcLogger)
+	lggr := grpc.UnaryInterceptor(tools.GrpcLogger)
 
-	grpcServer := grpc.NewServer(logger)
+	grpcServer := grpc.NewServer(lggr)
 	reflection.Register(grpcServer)
 	pb.RegisterEducationServer(grpcServer, server)
 

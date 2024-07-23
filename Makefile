@@ -77,5 +77,8 @@ proto:
 		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional \
 		   proto/*.proto
 
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7
+
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate
-.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto evans
+.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis

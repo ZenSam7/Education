@@ -10,6 +10,7 @@ import (
 type Config struct {
 	HttpServerAddress    string        `mapstructure:"HTTP_SERVER_ADDRESS"`
 	GrpcServerAddress    string        `mapstructure:"GRPC_SERVER_ADDRESS"`
+	RedisAddress         string        `mapstructure:"REDIS_ADDRESS"`
 	DBUserName           string        `mapstructure:"POSTGRES_USER"`
 	DBPassword           string        `mapstructure:"POSTGRES_PASSWORD"`
 	DBHost               string        `mapstructure:"DB_HOST"`

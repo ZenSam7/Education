@@ -3,30 +3,33 @@ package api_grpc
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
-	"github.com/ZenSam7/Education/validator"
+	"github.com/ZenSam7/Education/worker"
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 )
 
 func validateCreateUserRequest(req *pb.CreateUserRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-	if err := validator.ValidateString(req.GetName(), 1, 99); err != nil {
+	if err := tools.ValidateString(req.GetName(), 1, 99); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("name", err))
 	}
 
-	if err := validator.ValidateString(req.GetPassword(), 1, 999); err != nil {
+	if err := tools.ValidateString(req.GetPassword(), 1, 999); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("password", err))
 	}
 
-	if err := validator.ValidateEmail(req.GetEmail()); err != nil {
+	if err := tools.ValidateEmail(req.GetEmail()); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("email", err))
 	}
 
@@ -40,7 +43,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 	passwordHash, err := tools.GetPasswordHash(req.GetPassword())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "ошибка при хешировании: %s", err)
+		return nil, status.Errorf(codes.Internal, "ошибка при хешировании: %w", err)
 	}
 
 	// Создаём пользователя
@@ -55,7 +58,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
 			return nil, status.Errorf(codes.AlreadyExists, "пользователь с таким именем или email уже существует")
 		}
-		return nil, status.Errorf(codes.Internal, "не получилось создать пользователя: %s", err)
+		return nil, status.Errorf(codes.Internal, "не получилось создать пользователя: %w", err)
 	}
 
 	response := &pb.CreateUserResponse{
@@ -67,7 +70,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 func validateGetUserRequest(req *pb.GetUserRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-	if err := validator.ValidateNaturalNum(int(req.GetIdUser())); err != nil {
+	if err := tools.ValidateNaturalNum(int(req.GetIdUser())); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("id_user", err))
 	}
 
@@ -87,6 +90,21 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 
+	// Отдельно от запроса создаём ещё и задачу (которую потом распределяем редиской)
+	payload := &worker.PayloadSendGetUser{IdUser: req.GetIdUser()}
+
+	// Дополнительные конфигурации
+	options := []asynq.Option{
+		asynq.MaxRetry(2),                // Максимальное количество повторений запроса при ошибках
+		asynq.ProcessIn(0 * time.Second), // После какого времени процессору можно закрыть задачу
+		asynq.Queue(worker.QueueDefault), // Можем распределить важные задачи в отдельный поток (см. processor.go)
+	}
+
+	err = server.taskDistributor.DistributeTaskGetUser(ctx, payload, options...)
+	if err != nil {
+		return nil, fmt.Errorf("не получилось создать задачу: %s", err)
+	}
+
 	response := &pb.GetUserResponse{
 		User: convUser(user),
 	}
@@ -96,11 +114,11 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 func validateGetManySortedUsersRequest(req *pb.GetManySortedUsersRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-	if err := validator.ValidateNaturalNum(int(req.GetPageNum())); err != nil {
+	if err := tools.ValidateNaturalNum(int(req.GetPageNum())); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("page_num", err))
 	}
 
-	if err := validator.ValidateNaturalNum(int(req.GetPageSize())); err != nil {
+	if err := tools.ValidateNaturalNum(int(req.GetPageSize())); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("page_size", err))
 	}
 
@@ -125,7 +143,7 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователи не найдены")
 		}
-		return nil, status.Errorf(codes.Internal, "не удалось получить пользователей: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователей: %w", err)
 	}
 
 	var pbUsers []*pb.User
@@ -143,7 +161,7 @@ func validateEditUserRequest(req *pb.EditUserRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
 	if req.Name != nil {
-		if err := validator.ValidateString(req.GetName(), 1, 0); err != nil {
+		if err := tools.ValidateString(req.GetName(), 1, 0); err != nil {
 			errorsFields = append(errorsFields, fieldViolation("page_num", err))
 		}
 	}
@@ -172,7 +190,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 
 	editedUser, err := server.queries.EditUser(ctx, arg)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %w", err)
 	}
 
 	response := &pb.EditUserResponse{
@@ -191,7 +209,7 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %w", err)
 	}
 
 	response := &pb.DeleteUserResponse{
@@ -203,11 +221,11 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 func validateLoginUserRequest(req *pb.LoginUserRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-	if err := validator.ValidateString(req.GetPassword(), 1, 999); err != nil {
+	if err := tools.ValidateString(req.GetPassword(), 1, 999); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("password", err))
 	}
 
-	if err := validator.ValidateString(req.GetName(), 1, 99); err != nil {
+	if err := tools.ValidateString(req.GetName(), 1, 99); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("name", err))
 	}
 
@@ -224,7 +242,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
-		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %w", err)
 	}
 
 	if !tools.CheckPassword(req.GetPassword(), user.PasswordHash) {
@@ -233,11 +251,11 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %w", err)
 	}
 	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.RefreshTokenDuration)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %w", err)
 	}
 
 	info, err := server.extractMetadata(ctx)
@@ -253,7 +271,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		ClientIp:     info.ClientIP,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать сессию: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать сессию: %w", err)
 	}
 
 	response := &pb.LoginUserResponse{
@@ -270,7 +288,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 func validateRenewAccessTokenRequest(req *pb.RenewAccessTokenRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-	if err := validator.ValidateString(req.GetRefreshToken(), 1, 9999); err != nil {
+	if err := tools.ValidateString(req.GetRefreshToken(), 1, 9999); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("password", err))
 	}
 
@@ -291,7 +309,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 
 	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось удалить сессию: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось удалить сессию: %w", err)
 	} else if oldSession.Blocked {
 		return nil, status.Errorf(codes.Unauthenticated, "сессия заблокирована")
 	} else if oldSession.IDUser != refreshPayload.IDUser {
@@ -308,14 +326,14 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать новый refresh token: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать новый refresh token: %w", err)
 	}
 	newAccessToken, newAccessPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать новый access token: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать новый access token: %w", err)
 	}
 
 	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
@@ -326,7 +344,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		ClientIp:     info.ClientIP,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать новую сессию: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать новую сессию: %w", err)
 	}
 
 	response := &pb.RenewAccessTokenResponse{

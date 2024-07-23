@@ -1,4 +1,4 @@
-package api_grpc
+package tools
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 	"time"
 )
 
-var sendLog zerolog.Logger
+var Log zerolog.Logger
 
-// SettingLogger Настраиваем и создаём логгер
-func SettingLogger() {
+// MakeLogger Настраиваем и создаём логгер
+func MakeLogger() {
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC822}
 	output.FormatLevel = func(i interface{}) string {
 		return strings.ToUpper(fmt.Sprintf("| %s |", i))
@@ -28,11 +28,10 @@ func SettingLogger() {
 		return strings.ToUpper(fmt.Sprintf("%s", i))
 	}
 
-	sendLog = zerolog.New(output).With().Timestamp().Logger()
+	Log = zerolog.New(output).With().Timestamp().Logger()
 }
 
-func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
-) (resp interface{}, err error) {
+func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	// Засекаем время
 	startTime := time.Now()
 	resp, err = handler(ctx, req)
@@ -46,9 +45,9 @@ func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo
 		statusCode = sc.Code()
 	}
 
-	msgType := sendLog.Info()
+	msgType := Log.Info()
 	if err != nil {
-		msgType = sendLog.Error().Err(err)
+		msgType = Log.Error().Err(err)
 	}
 
 	msgType.
@@ -61,38 +60,38 @@ func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo
 	return
 }
 
-// Response откладываем внутреннюю информацию ответа в кастомную структуру, чтобы её можно было достать
-type Response struct {
+// response откладываем внутреннюю информацию ответа в кастомную структуру, чтобы её можно было достать
+type response struct {
 	http.ResponseWriter
 	StatusCode int
 	Body       []byte
 }
 
 // WriteHeader перехватываем хедер и записываем к себе код статуса
-func (r *Response) WriteHeader(statusCode int) {
+func (r *response) WriteHeader(statusCode int) {
 	r.StatusCode = statusCode
 	r.ResponseWriter.WriteHeader(statusCode)
 }
 
-func (r *Response) Write(body []byte) (int, error) {
+func (r *response) Write(body []byte) (int, error) {
 	r.Body = body
 	return r.ResponseWriter.Write(body)
 }
 
 func HttpLogger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		// Засекаем время и откладываем код статуса к себе в кармашек (в Response.StatusCode)
+		// Засекаем время и откладываем код статуса к себе в кармашек (в response.StatusCode)
 		startTime := time.Now()
-		recorder := &Response{ResponseWriter: res, StatusCode: http.StatusOK}
+		recorder := &response{ResponseWriter: res, StatusCode: http.StatusOK}
 		handler.ServeHTTP(recorder, req)
 		duration := time.Since(startTime)
 
 		fullMethod := strings.Split(req.RequestURI, "/")
 		calledFunc := fullMethod[len(fullMethod)-1]
 
-		msgType := sendLog.Info()
+		msgType := Log.Info()
 		if recorder.StatusCode != http.StatusOK {
-			msgType = sendLog.Error().Bytes("body", recorder.Body)
+			msgType = Log.Error().Bytes("body", recorder.Body)
 		}
 
 		msgType.
