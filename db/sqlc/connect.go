@@ -38,8 +38,8 @@ func GetQueries() (*Queries, func()) {
 	// Создаём лямбда-замыкание для закрытия соединения
 	closeConnect := func() {
 		func(ctx context.Context, conn *pgx.Conn) {
+			log.Println("Закрыли соединение")
 			if err := conn.Close(ctx); err != nil {
-				log.Println("Закрыли соединение")
 				log.Fatal("Не получается закрыть соединение:", err)
 			}
 		}(ctx, conn)

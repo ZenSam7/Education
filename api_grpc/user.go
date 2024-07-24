@@ -3,7 +3,6 @@ package api_grpc
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/token"
@@ -82,7 +81,24 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, err
 	}
 
-	user, err := server.queries.GetUser(ctx, req.GetIdUser())
+	argTx := db.TxGetUserParams{
+		IdUser: req.GetIdUser(),
+		AfterCreate: func(user db.User) error {
+			// Отдельно от запроса создаём ещё и задачу (которую потом распределяем редиской)
+			payload := &worker.PayloadSendGetUser{IdUser: req.GetIdUser()}
+
+			// Дополнительные конфигурации
+			options := []asynq.Option{
+				asynq.MaxRetry(2),                // Максимальное количество повторений запроса при ошибках
+				asynq.ProcessIn(0 * time.Second), // После какого времени процессору можно закрыть задачу
+				asynq.Queue(worker.QueueDefault), // Можем распределить важные задачи в отдельный поток (см. processor.go)
+			}
+
+			return server.taskDistributor.DistributeTaskGetUser(ctx, payload, options...)
+		},
+	}
+
+	response, err := server.queries.GetUserTx(ctx, argTx)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
@@ -90,25 +106,7 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 
-	// Отдельно от запроса создаём ещё и задачу (которую потом распределяем редиской)
-	payload := &worker.PayloadSendGetUser{IdUser: req.GetIdUser()}
-
-	// Дополнительные конфигурации
-	options := []asynq.Option{
-		asynq.MaxRetry(2),                // Максимальное количество повторений запроса при ошибках
-		asynq.ProcessIn(0 * time.Second), // После какого времени процессору можно закрыть задачу
-		asynq.Queue(worker.QueueDefault), // Можем распределить важные задачи в отдельный поток (см. processor.go)
-	}
-
-	err = server.taskDistributor.DistributeTaskGetUser(ctx, payload, options...)
-	if err != nil {
-		return nil, fmt.Errorf("не получилось создать задачу: %s", err)
-	}
-
-	response := &pb.GetUserResponse{
-		User: convUser(user),
-	}
-	return response, nil
+	return &pb.GetUserResponse{User: convUser(response.User)}, nil
 }
 
 func validateGetManySortedUsersRequest(req *pb.GetManySortedUsersRequest) error {

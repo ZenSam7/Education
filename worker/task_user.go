@@ -58,3 +58,5 @@ func (p *RedisTaskProcessor) ProcessTaskSendGetUser(ctx context.Context, task *a
 
 	return nil
 }
+
+// TODO: добавить все остальные функции для user
