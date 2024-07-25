@@ -34,3 +34,5 @@ func (q *Queries) GetUserTx(ctx context.Context, arg TxGetUserParams) (TxGetUser
 
 	return result, err
 }
+
+// TODO: сделать остальные запросы в виде транзакций

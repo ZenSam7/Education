@@ -2,7 +2,6 @@ package tools
 
 import (
 	"github.com/spf13/viper"
-	"log"
 	"time"
 )
 
@@ -39,7 +38,7 @@ func LoadConfig(path string) (config Config) {
 
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		log.Fatal("Не получилось загрузить конфигурации:", err)
+		Log.Fatal().Err(err).Msg("Не получилось загрузить конфигурации")
 	}
 
 	return

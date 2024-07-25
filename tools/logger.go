@@ -2,8 +2,8 @@ package tools
 
 import (
 	"context"
-	"fmt"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,22 +13,12 @@ import (
 	"time"
 )
 
-var Log zerolog.Logger
-
 // MakeLogger Настраиваем и создаём логгер
 func MakeLogger() {
-	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC822}
-	output.FormatLevel = func(i interface{}) string {
-		return strings.ToUpper(fmt.Sprintf("| %s |", i))
-	}
-	output.FormatFieldName = func(i interface{}) string {
-		return fmt.Sprintf("%s:", i)
-	}
-	output.FormatFieldValue = func(i interface{}) string {
-		return strings.ToUpper(fmt.Sprintf("%s", i))
-	}
-
-	Log = zerolog.New(output).With().Timestamp().Logger()
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: "15:04",
+	})
 }
 
 func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
@@ -45,9 +35,9 @@ func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo
 		statusCode = sc.Code()
 	}
 
-	msgType := Log.Info()
+	msgType := log.Info()
 	if err != nil {
-		msgType = Log.Error().Err(err)
+		msgType = log.Error().Err(err)
 	}
 
 	msgType.
@@ -55,7 +45,7 @@ func GrpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo
 		Int("code", int(statusCode)).
 		Str("status", statusCode.String()).
 		Str("protocol", "grpc").
-		Msgf("%s |", calledFunc)
+		Msgf("| %s |", calledFunc)
 
 	return
 }
@@ -89,9 +79,9 @@ func HttpLogger(handler http.Handler) http.Handler {
 		fullMethod := strings.Split(req.RequestURI, "/")
 		calledFunc := fullMethod[len(fullMethod)-1]
 
-		msgType := Log.Info()
+		msgType := log.Info()
 		if recorder.StatusCode != http.StatusOK {
-			msgType = Log.Error().Bytes("body", recorder.Body)
+			msgType = log.Error().Bytes("body", recorder.Body)
 		}
 
 		msgType.
@@ -100,6 +90,6 @@ func HttpLogger(handler http.Handler) http.Handler {
 			Str("protocol", "http").
 			Int("code", recorder.StatusCode).
 			Str("status", http.StatusText(recorder.StatusCode)).
-			Msgf("%s |", calledFunc)
+			Msgf("| %s |", calledFunc)
 	})
 }

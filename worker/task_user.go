@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/ZenSam7/Education/tools"
 	"github.com/hibiken/asynq"
+	"github.com/rs/zerolog/log"
 )
 
 const TaskSendGetUser = "task:send_get_user"
@@ -27,11 +27,11 @@ func (d *RedisTaskDistributor) DistributeTaskGetUser(ctx context.Context, payloa
 		return fmt.Errorf("не получилось создать задачу: %w", err)
 	}
 
-	tools.Log.Info().
+	log.Info().
 		Str("type", task.Type()).
 		Bytes("payload", bytePayload).
 		Str("queue", info.Queue).
-		Msg("GetUser")
+		Msg("enqueued GetUser")
 
 	return nil
 }
@@ -50,11 +50,11 @@ func (p *RedisTaskProcessor) ProcessTaskSendGetUser(ctx context.Context, task *a
 		return fmt.Errorf("не удалось получить пользователя: %w", err)
 	}
 
-	tools.Log.Info().
+	log.Info().
 		Str("type", task.Type()).
 		Bytes("payload", task.Payload()).
 		Int("user", int(user.IDUser)).
-		Msgf("GetUser")
+		Msg("processed GetUser")
 
 	return nil
 }

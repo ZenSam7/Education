@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/jackc/pgx/v5"
-	"log"
+	"github.com/rs/zerolog/log"
 )
 
 // GetQueries Возвращаем переменую через которую можно отправить запросы,
@@ -29,7 +29,7 @@ func GetQueries() (*Queries, func()) {
 		dbConnectParameters,
 	)
 	if err != nil {
-		log.Fatal("Не получается подключиться к бд:", err)
+		log.Fatal().Err(err).Msg("Не получается подключиться к бд")
 	}
 
 	// Создаём переменную для отправки запросов
@@ -38,9 +38,9 @@ func GetQueries() (*Queries, func()) {
 	// Создаём лямбда-замыкание для закрытия соединения
 	closeConnect := func() {
 		func(ctx context.Context, conn *pgx.Conn) {
-			log.Println("Закрыли соединение")
+			log.Info().Msg("Закрыли соединение")
 			if err := conn.Close(ctx); err != nil {
-				log.Fatal("Не получается закрыть соединение:", err)
+				log.Fatal().Err(err).Msg("Не получается закрыть соединение")
 			}
 		}(ctx, conn)
 	}

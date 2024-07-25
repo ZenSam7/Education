@@ -14,10 +14,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hibiken/asynq"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
-	"log"
 	"net"
 	"net/http"
 )
@@ -25,7 +25,7 @@ import (
 func main() {
 	config := tools.LoadConfig(".")
 	queries, closeConn := db.GetQueries()
-	defer closeConn() // На самом деле оно не вызывается
+	defer closeConn() // (На самом деле оно не вызывается)
 	tools.MakeLogger()
 
 	runDBMigration(config)
@@ -41,7 +41,7 @@ func startTaskProcessor(options asynq.RedisClientOpt, queries *db.Queries) {
 	processor := worker.NewRedisTaskProcessor(options, queries)
 	err := processor.Start()
 	if err != nil {
-		log.Fatalf("task-процессор не хочет создаваться: %s", err)
+		log.Fatal().Err(err).Msg("task-процессор не хочет создаваться")
 	}
 }
 
@@ -64,21 +64,21 @@ func runDBMigration(config tools.Config) {
 		config.DBSSLMode,
 	))
 	if err != nil {
-		log.Fatal("не получилось создать миграцию:", err)
+		log.Fatal().Err(err).Msg("не получилось создать миграцию")
 	}
 
 	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Println("не получилось поднять миграцию:", err)
+		log.Error().Err(err).Msg("не получилось поднять миграцию")
 	}
 
-	log.Println("миграция завершена")
+	log.Info().Msg("миграция завершена")
 }
 
 // runGatewayServer Сервер на gRPC, но с поддержкой HTTP
 func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
 	server, err := api_grpc.NewServer(config, queries, taskDistributor)
 	if err != nil {
-		log.Fatal("Ошибка в создании сервера:", err.Error())
+		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}
 
 	// Важная штука, которая не изменяет названия в json'е (названия остаются в snake_style)
@@ -95,7 +95,7 @@ func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor 
 
 	err = pb.RegisterEducationHandlerServer(context.Background(), grpcMux, server)
 	if err != nil {
-		log.Fatal("не получилось поднять gRPC Gateway сервер:", err)
+		log.Fatal().Err(err).Msg("не получилось поднять gRPC Gateway сервер")
 	}
 
 	// Прослушиваем все адреса (т.к. корневой узел)
@@ -104,16 +104,16 @@ func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor 
 
 	listener, err := net.Listen("tcp", config.HttpServerAddress)
 	if err != nil {
-		log.Fatal("не получилось создать listener:", err.Error())
+		log.Fatal().Err(err).Msg("не получилось создать listener")
 	}
-	log.Printf("gRPC Gateway сервер поднят на %s", listener.Addr().String())
+	log.Info().Msgf("gRPC Gateway сервер поднят на %s", listener.Addr().String())
 
 	// Создаём специальный логгер для http
 	handler := tools.HttpLogger(mux)
 
 	err = http.Serve(listener, handler)
 	if err != nil {
-		log.Fatal("не получилось поднять gRPC Gateway сервер:", err)
+		log.Fatal().Err(err).Msg("не получилось поднять gRPC Gateway сервер")
 	}
 }
 
@@ -121,7 +121,7 @@ func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor 
 func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
 	server, err := api_grpc.NewServer(config, queries, taskDistributor)
 	if err != nil {
-		log.Fatal("Ошибка в создании сервера:", err.Error())
+		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}
 
 	// Настраиваем логгер
@@ -133,13 +133,13 @@ func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor wor
 
 	listener, err := net.Listen("tcp", config.GrpcServerAddress)
 	if err != nil {
-		log.Fatal("не получилось создать listener:", err.Error())
+		log.Fatal().Err(err).Msg("не получилось создать listener")
 	}
 
-	log.Printf("gRPC сервер поднят на %s", listener.Addr().String())
+	log.Info().Msgf("gRPC сервер поднят на %s", listener.Addr().String())
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatal("не получилось поднять gRPC сервер:", err)
+		log.Fatal().Err(err).Msg("не получилось поднять gRPC сервер")
 	}
 }
 
@@ -147,10 +147,10 @@ func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor wor
 func runGinServer(config tools.Config, queries *db.Queries) {
 	server, err := api.NewServer(config, queries)
 	if err != nil {
-		log.Fatal("Ошибка в создании сервера:", err.Error())
+		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}
 
 	if err := server.Run(config.HttpServerAddress); err != nil {
-		log.Fatal("Не получилось поднять Gin сервер:", err)
+		log.Fatal().Err(err).Msg("Не получилось поднять Gin сервер:")
 	}
 }

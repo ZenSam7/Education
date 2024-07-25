@@ -4,6 +4,7 @@ import (
 	"context"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	"github.com/hibiken/asynq"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -31,6 +32,15 @@ func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskPr
 				QueueDefault:  3,
 				QueueLow:      1,
 			},
+			// Чтобы было удобно парсить логи (и смотреть на них) реализовал их в мой tools.Log
+			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
+				log.Error().
+					Err(err).
+					Str("type", task.Type()).
+					Bytes("payload", task.Payload()).
+					Msg("ошибка в task")
+			}),
+			Logger: NewLogger(),
 		}),
 		queries: queries,
 	}
