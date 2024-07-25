@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -38,7 +39,7 @@ func LoadConfig(path string) (config Config) {
 
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		Log.Fatal().Err(err).Msg("Не получилось загрузить конфигурации")
+		log.Fatal().Err(err).Msg("Не получилось загрузить конфигурации")
 	}
 
 	return

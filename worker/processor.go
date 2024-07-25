@@ -15,7 +15,7 @@ const (
 
 type TaskProcessor interface {
 	Start() error
-	ProcessTaskSendGetUser(ctx context.Context, task *asynq.Task) error
+	ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error
 }
 
 type RedisTaskProcessor struct {
@@ -49,7 +49,8 @@ func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskPr
 func (p *RedisTaskProcessor) Start() error {
 	mux := asynq.NewServeMux()
 
-	mux.HandleFunc(TaskSendGetUser, p.ProcessTaskSendGetUser)
+	mux.HandleFunc(TaskSendGetUser, p.ProcessTaskSendVerifyEmail)
+	// TODO: добавить какие-нибудь ещё функции
 
 	return p.server.Start(mux)
 }

@@ -46,14 +46,29 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	// Создаём пользователя
-	arg := db.CreateUserParams{
+	arg := db.TxCreateUserParams{
 		Name:         req.GetName(),
 		Email:        req.GetEmail(),
 		PasswordHash: passwordHash,
+		AfterCreate: func(user db.User) error {
+			// Отдельно от запроса создаём ещё и задачу (которую потом распределяем редиской)
+			payload := &worker.PayloadSendVerifyEmail{IdUser: user.IDUser}
+
+			// Дополнительные конфигурации
+			options := []asynq.Option{
+				asynq.MaxRetry(10), // Максимальное количество повторений запроса при ошибках
+				// (задержка нужна чтобы эта транзакция завершилась до того, как начнётся таска верификации почты)
+				asynq.ProcessIn(1 * time.Second), // После какого времени процессору можно начать задачу
+				asynq.Queue(worker.QueueDefault), // Можем распределить важные задачи в отдельный поток (см. processor.go)
+			}
+
+			return server.taskDistributor.DistributeTaskVerifyEmail(ctx, payload, options...)
+		},
 	}
-	user, err := server.queries.CreateUser(ctx, arg)
+
+	responseTx, err := server.queries.CreateUserTx(ctx, arg)
 	if err != nil {
-		// Если пользователь с таким именем уже есть, то выдаем ошибку
+		// Если пользователь уже есть, то выдаем ошибку
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
 			return nil, status.Errorf(codes.AlreadyExists, "пользователь с таким именем или email уже существует")
 		}
@@ -61,7 +76,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	response := &pb.CreateUserResponse{
-		User: convUser(user),
+		User: convUser(responseTx.User),
 	}
 	return response, nil
 }
@@ -81,32 +96,18 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, err
 	}
 
-	argTx := db.TxGetUserParams{
-		IdUser: req.GetIdUser(),
-		AfterCreate: func(user db.User) error {
-			// Отдельно от запроса создаём ещё и задачу (которую потом распределяем редиской)
-			payload := &worker.PayloadSendGetUser{IdUser: req.GetIdUser()}
-
-			// Дополнительные конфигурации
-			options := []asynq.Option{
-				asynq.MaxRetry(2),                // Максимальное количество повторений запроса при ошибках
-				asynq.ProcessIn(0 * time.Second), // После какого времени процессору можно закрыть задачу
-				asynq.Queue(worker.QueueDefault), // Можем распределить важные задачи в отдельный поток (см. processor.go)
-			}
-
-			return server.taskDistributor.DistributeTaskGetUser(ctx, payload, options...)
-		},
-	}
-
-	response, err := server.queries.GetUserTx(ctx, argTx)
+	user, err := server.queries.GetUser(ctx, req.GetIdUser())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
-		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %w", err)
 	}
 
-	return &pb.GetUserResponse{User: convUser(response.User)}, nil
+	response := &pb.GetUserResponse{
+		User: convUser(user),
+	}
+	return response, nil
 }
 
 func validateGetManySortedUsersRequest(req *pb.GetManySortedUsersRequest) error {
@@ -247,6 +248,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, status.Errorf(codes.Unauthenticated, "неправильный пароль")
 	}
 
+	// Если с паролем со входом всё ок, то создаём новую сессию
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %w", err)

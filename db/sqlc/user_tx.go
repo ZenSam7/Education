@@ -6,25 +6,32 @@ import (
 
 // Транзакции на все случаи жизни
 
-type TxGetUserParams struct {
-	IdUser int32 `json:"id_user"`
-	// AfterCreate Вызываем эту функцию после выполнения основного запроса (в пределах одной транзакции)
+type TxCreateUserParams struct {
+	Name         string `json:"name" binding:"required,alphanum"`
+	Email        string `json:"email" binding:"required,email"`
+	PasswordHash string `json:"password" binding:"required"`
+	// AfterCreate Вызываем эту функцию после выполнения основного запроса
+	// (в пределах одной транзакции) (отсюда вызываем создание таски)
 	AfterCreate func(user User) error
 }
 
-type TxGetUserResponse struct {
+type TxCreateUserResponse struct {
 	User User `json:"user"`
 }
 
-// GetUserTx Выполняем получение пользователя в одной транзакции с записью задачи в редиску
-func (q *Queries) GetUserTx(ctx context.Context, arg TxGetUserParams) (TxGetUserResponse, error) {
-	var result TxGetUserResponse
+// CreateUserTx Выполняем создание пользователя в одной транзакции с записью задачи в редиску
+func (q *Queries) CreateUserTx(ctx context.Context, arg TxCreateUserParams) (TxCreateUserResponse, error) {
+	var result TxCreateUserResponse
 
 	err := q.MakeTx(ctx, func(qtx *Queries) error {
 		var err error
 
-		// Получение пользователя
-		result.User, err = qtx.GetUser(ctx, arg.IdUser)
+		// Создание пользователя
+		result.User, err = qtx.CreateUser(ctx, CreateUserParams{
+			Name:         arg.Name,
+			PasswordHash: arg.PasswordHash,
+			Email:        arg.Email,
+		})
 		if err != nil {
 			return err
 		}
@@ -34,5 +41,3 @@ func (q *Queries) GetUserTx(ctx context.Context, arg TxGetUserParams) (TxGetUser
 
 	return result, err
 }
-
-// TODO: сделать остальные запросы в виде транзакций

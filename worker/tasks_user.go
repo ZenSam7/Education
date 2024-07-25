@@ -11,11 +11,11 @@ import (
 
 const TaskSendGetUser = "task:send_get_user"
 
-type PayloadSendGetUser struct {
+type PayloadSendVerifyEmail struct {
 	IdUser int32 `json:"id_user"`
 }
 
-func (d *RedisTaskDistributor) DistributeTaskGetUser(ctx context.Context, payload *PayloadSendGetUser, opts ...asynq.Option) error {
+func (d *RedisTaskDistributor) DistributeTaskVerifyEmail(ctx context.Context, payload *PayloadSendVerifyEmail, opts ...asynq.Option) error {
 	bytePayload, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("не получилось конвертировать payload в byte: %w", err)
@@ -36,19 +36,24 @@ func (d *RedisTaskDistributor) DistributeTaskGetUser(ctx context.Context, payloa
 	return nil
 }
 
-func (p *RedisTaskProcessor) ProcessTaskSendGetUser(ctx context.Context, task *asynq.Task) error {
-	var payload PayloadSendGetUser
+// ProcessTaskSendVerifyEmail Обрабатываем в брокере сообщений (в редиске) задачу на верифицирование почты при создании пользователя
+func (p *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error {
+	var payload PayloadSendVerifyEmail
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+		// Если у нас не получается достать информацию, то не даём повторить запрос
 		return fmt.Errorf("не получилось конвертировать byte в payload: %w", asynq.SkipRetry)
 	}
 
 	user, err := p.queries.GetUser(ctx, payload.IdUser)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			// Если пользователя нету, то не даём повторить запрос
 			return fmt.Errorf("пользователь не найден")
 		}
 		return fmt.Errorf("не удалось получить пользователя: %w", err)
 	}
+
+	// TODO: сделать отправку сообщений для верификации почты
 
 	log.Info().
 		Str("type", task.Type()).
@@ -58,5 +63,3 @@ func (p *RedisTaskProcessor) ProcessTaskSendGetUser(ctx context.Context, task *a
 
 	return nil
 }
-
-// TODO: добавить все остальные функции для user
