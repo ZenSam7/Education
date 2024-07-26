@@ -13,6 +13,14 @@ import (
 type Querier interface {
 	// BlockSession Блокируем сессию по id
 	BlockSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
+	// CountRowsArticle Считаем количество строк в таблице
+	CountRowsArticle(ctx context.Context) (int64, error)
+	// CountRowsComment Считаем количество строк в таблице
+	CountRowsComment(ctx context.Context) (int64, error)
+	// CountRowsSessions Считаем количество строк в таблице
+	CountRowsSessions(ctx context.Context) (int64, error)
+	// CountRowsUser Считаем количество строк в таблице
+	CountRowsUser(ctx context.Context) (int64, error)
 	// CreateArticle Создаём статью
 	CreateArticle(ctx context.Context, arg CreateArticleParams) (Article, error)
 	// CreateComment Создаём комментарий к статье

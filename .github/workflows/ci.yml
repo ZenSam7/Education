@@ -54,5 +54,6 @@ jobs:
 
     # Тут нельзя использовать make test, т.к. в make test вызывается sqlc, который сюда хрен установишь
     # ./... тоже нельзя использовать
+    # "-short" Пропускаем тесты, которые не выполнятся в Github Actions (типа проверка email)
     - name: Testing
-      run: go test ./db/sqlc ./tools ./token ./api
+      run: go test -short ./db/sqlc ./tools ./token ./api ./api_grpc ./worker

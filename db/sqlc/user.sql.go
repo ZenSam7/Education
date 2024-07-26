@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countRowsUser = `-- name: CountRowsUser :one
+SELECT COUNT(*) FROM users
+`
+
+// CountRowsUser Считаем количество строк в таблице
+func (q *Queries) CountRowsUser(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countRowsUser)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, email, password_hash)
 VALUES ($1::text, $2::text, $3::text)

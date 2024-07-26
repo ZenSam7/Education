@@ -18,13 +18,13 @@ type PayloadSendVerifyEmail struct {
 func (d *RedisTaskDistributor) DistributeTaskVerifyEmail(ctx context.Context, payload *PayloadSendVerifyEmail, opts ...asynq.Option) error {
 	bytePayload, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("не получилось конвертировать payload в byte: %w", err)
+		return fmt.Errorf("не получилось конвертировать payload в byte: %s", err)
 	}
 
 	task := asynq.NewTask(TaskSendGetUser, bytePayload, opts...)
 	info, err := d.client.EnqueueContext(ctx, task, opts...)
 	if err != nil {
-		return fmt.Errorf("не получилось создать задачу: %w", err)
+		return fmt.Errorf("не получилось создать задачу: %s", err)
 	}
 
 	log.Info().
@@ -41,7 +41,7 @@ func (p *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Context, tas
 	var payload PayloadSendVerifyEmail
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		// Если у нас не получается достать информацию, то не даём повторить запрос
-		return fmt.Errorf("не получилось конвертировать byte в payload: %w", asynq.SkipRetry)
+		return fmt.Errorf("не получилось конвертировать byte в payload: %s", asynq.SkipRetry)
 	}
 
 	user, err := p.queries.GetUser(ctx, payload.IdUser)
@@ -50,7 +50,7 @@ func (p *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Context, tas
 			// Если пользователя нету, то не даём повторить запрос
 			return fmt.Errorf("пользователь не найден")
 		}
-		return fmt.Errorf("не удалось получить пользователя: %w", err)
+		return fmt.Errorf("не удалось получить пользователя: %s", err)
 	}
 
 	// TODO: сделать отправку сообщений для верификации почты

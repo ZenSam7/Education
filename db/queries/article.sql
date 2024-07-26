@@ -114,3 +114,7 @@ WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
 DELETE FROM articles
 WHERE id_article = @id_article::integer
 RETURNING *;
+
+-- CountRowsComment Считаем количество строк в таблице
+-- name: CountRowsComment :one
+SELECT COUNT(*) FROM comments;

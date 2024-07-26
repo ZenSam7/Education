@@ -45,3 +45,7 @@ SET
   karma = COALESCE(sqlc.narg(karma)::integer, karma)
 WHERE id_user = @id_user::integer
 RETURNING *;
+
+-- CountRowsUser Считаем количество строк в таблице
+-- name: CountRowsUser :one
+SELECT COUNT(*) FROM users;

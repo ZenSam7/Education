@@ -42,7 +42,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 	passwordHash, err := tools.GetPasswordHash(req.GetPassword())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "ошибка при хешировании: %w", err)
+		return nil, status.Errorf(codes.Internal, "ошибка при хешировании: %s", err)
 	}
 
 	// Создаём пользователя
@@ -72,7 +72,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
 			return nil, status.Errorf(codes.AlreadyExists, "пользователь с таким именем или email уже существует")
 		}
-		return nil, status.Errorf(codes.Internal, "не получилось создать пользователя: %w", err)
+		return nil, status.Errorf(codes.Internal, "не получилось создать пользователя: %s", err)
 	}
 
 	response := &pb.CreateUserResponse{
@@ -101,7 +101,7 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
-		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 
 	response := &pb.GetUserResponse{
@@ -142,7 +142,7 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователи не найдены")
 		}
-		return nil, status.Errorf(codes.Internal, "не удалось получить пользователей: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователей: %s", err)
 	}
 
 	var pbUsers []*pb.User
@@ -189,7 +189,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 
 	editedUser, err := server.queries.EditUser(ctx, arg)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %s", err)
 	}
 
 	response := &pb.EditUserResponse{
@@ -208,7 +208,7 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %s", err)
 	}
 
 	response := &pb.DeleteUserResponse{
@@ -241,7 +241,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
-		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 
 	if !tools.CheckPassword(req.GetPassword(), user.PasswordHash) {
@@ -251,11 +251,11 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	// Если с паролем со входом всё ок, то создаём новую сессию
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %s", err)
 	}
 	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.RefreshTokenDuration)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %s", err)
 	}
 
 	info, err := server.extractMetadata(ctx)
@@ -271,7 +271,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		ClientIp:     info.ClientIP,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать сессию: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать сессию: %s", err)
 	}
 
 	response := &pb.LoginUserResponse{
@@ -309,7 +309,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 
 	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось удалить сессию: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось удалить сессию: %s", err)
 	} else if oldSession.Blocked {
 		return nil, status.Errorf(codes.Unauthenticated, "сессия заблокирована")
 	} else if oldSession.IDUser != refreshPayload.IDUser {
@@ -326,14 +326,14 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать новый refresh token: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать новый refresh token: %s", err)
 	}
 	newAccessToken, newAccessPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать новый access token: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать новый access token: %s", err)
 	}
 
 	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
@@ -344,7 +344,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		ClientIp:     info.ClientIP,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "не удалось создать новую сессию: %w", err)
+		return nil, status.Errorf(codes.Internal, "не удалось создать новую сессию: %s", err)
 	}
 
 	response := &pb.RenewAccessTokenResponse{

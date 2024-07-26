@@ -7,6 +7,7 @@ import (
 	"github.com/ZenSam7/Education/tools"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -157,17 +158,21 @@ func TestGetManySortedUsers(t *testing.T) {
 		createdUsers[i] = usr
 	}
 
+	countRows, err := queries.CountRowsUser(context.Background())
+	require.NoError(t, err)
+
 	arg := GetManySortedUsersParams{
-		Offset: createdUsers[0].IDUser - 1,
+		Offset: int32(countRows) - 10,
 		Limit:  10,
 		IDUser: true,
 	}
 
-	user, err := queries.GetManySortedUsers(context.Background(), arg)
+	log.Info().Int64("", countRows).Msg("")
+	users, err := queries.GetManySortedUsers(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, user)
+	require.NotEmpty(t, users)
 
-	for _, usr := range user {
+	for _, usr := range users {
 		require.NotEmpty(t, usr.IDUser)
 		require.NotEmpty(t, usr.CreatedAt)
 		require.NotEmpty(t, usr.Name)

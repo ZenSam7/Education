@@ -9,6 +9,18 @@ import (
 	"context"
 )
 
+const countRowsComment = `-- name: CountRowsComment :one
+SELECT COUNT(*) FROM comments
+`
+
+// CountRowsComment Считаем количество строк в таблице
+func (q *Queries) CountRowsComment(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countRowsComment)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createArticle = `-- name: CreateArticle :one
 INSERT INTO articles (title, text, authors)
 VALUES ($1, $2, $3)

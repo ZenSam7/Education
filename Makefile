@@ -45,7 +45,7 @@ sqlc:
 	sqlc generate
 # Запускаем все тесты с подробным описанием, проверкой на полное покрытие тестов и без кеширования
 test:
-	sudo go test -count=1 -cover ./...
+	sudo go test -count=1 -short -cover ./...
 
 # Пересоздаём нахер всё
 RESET:

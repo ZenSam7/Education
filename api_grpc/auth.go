@@ -18,7 +18,7 @@ func (server *Server) authUser(ctx context.Context) (*token.Payload, error) {
 
 	payload, err := server.tokenMaker.VerifyToken(mtdt.AccessToken)
 	if err != nil {
-		return nil, fmt.Errorf("указан неправильный токен авторизации: %w", err)
+		return nil, fmt.Errorf("указан неправильный токен авторизации: %s", err)
 	}
 
 	return payload, nil

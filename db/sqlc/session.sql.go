@@ -34,6 +34,18 @@ func (q *Queries) BlockSession(ctx context.Context, idSession pgtype.UUID) (Sess
 	return i, err
 }
 
+const countRowsSessions = `-- name: CountRowsSessions :one
+SELECT COUNT(*) FROM sessions
+`
+
+// CountRowsSessions Считаем количество строк в таблице
+func (q *Queries) CountRowsSessions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countRowsSessions)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (expired_at, refresh_token, id_user, id_session, client_ip)
 VALUES ($1::timestamptz,

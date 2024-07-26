@@ -25,3 +25,7 @@ RETURNING *;
 -- name: GetSession :one
 SELECT * FROM sessions
 WHERE id_session = @id_session::uuid;
+
+-- CountRowsSessions Считаем количество строк в таблице
+-- name: CountRowsSessions :one
+SELECT COUNT(*) FROM sessions;

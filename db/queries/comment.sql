@@ -51,3 +51,7 @@ SELECT * FROM comments
 WHERE id_comment IN (SELECT id_comment FROM the_article)
 OFFSET sqlc.arg('Offset')::integer
 LIMIT sqlc.arg('Limit')::integer;
+
+-- CountRowsArticle Считаем количество строк в таблице
+-- name: CountRowsArticle :one
+SELECT COUNT(*) FROM articles;
