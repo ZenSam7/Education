@@ -12,7 +12,7 @@ import (
 // и функцию для закрытия соединения с бд
 func GetQueries() (*Queries, func()) {
 	ctx := context.Background()
-	config := tools.LoadConfig("../..")
+	config := tools.LoadConfig()
 
 	// Создаём url для соединения через pgx
 	dbConnectParameters := fmt.Sprintf(

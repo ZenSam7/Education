@@ -23,10 +23,20 @@ import (
 )
 
 func main() {
-	config := tools.LoadConfig(".")
+	config := tools.LoadConfig()
 	queries, closeConn := db.GetQueries()
 	defer closeConn() // (На самом деле оно не вызывается)
 	tools.MakeLogger()
+
+	//gmail := tools.GmailSender{
+	//	Config:         config,
+	//	TemplateFile:   "email_verify.html",
+	//	TemplateValues: map[string]string{"": ""},
+	//}
+	//err := gmail.SendMail("samkirich@yandex.ru")
+	//if err != nil {
+	//	log.Fatal().Msg(err.Error())
+	//}
 
 	runDBMigration(config)
 	redisOpt, taskDistributor := makeRedis(config)

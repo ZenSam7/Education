@@ -3,6 +3,9 @@ package tools
 import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -19,13 +22,68 @@ type Config struct {
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	EmailHost            string        `mapstructure:"EMAIL_HOST"`
+	EmailPort            int           `mapstructure:"EMAIL_PORT"`
+	EmailUser            string        `mapstructure:"EMAIL_USER"`
+	EmailPassword        string        `mapstructure:"EMAIL_PASSWORD"`
+	EmailSender          string        `mapstructure:"EMAIL_SENDER"`
 }
 
-// LoadConfig Загружаем переменные среды (надо подавать путь к .env относительно
-// файла из текущей папки (откуда эта функция вызывается))
-func LoadConfig(path string) (config Config) {
+// absolutePath Абсолютный путь к корневому каталогу проекта
+var absolutePath string
+
+// PathSeparator "/" или "\"
+var PathSeparator string
+
+// findAbsolutePath Вне зависимости откуда вызываем функцию (хоть из теста,
+// хоть из пакета), находим путь к корневому проекту
+func findAbsolutePath() {
+	// Если у нас пока нету полного пути к корню, то значит, мы в первый раз вызвали эту функцию
+	if len(absolutePath) != 0 {
+		return
+	}
+
+	currentPath, err := filepath.Abs(".")
+	if err != nil {
+		log.Fatal().Err(err).Msg("не получилось узнать абсолютный путь")
+	}
+
+	// В зависимости от ОС разные разделители
+	if strings.Contains(currentPath, "/") {
+		PathSeparator = "/"
+	} else {
+		PathSeparator = "\\"
+	}
+
+	// Постепенно движимся от текущего пакета всё ближе к корневому каталогу, где находится файл main.go
+	// (я специально сделал посложнее, чтобы можно было проект переименовать проект как угодно и этот алгоритм
+	// не зависел от названия проекта (названия папки корневой директории))
+	tempPath := strings.Split(currentPath, PathSeparator)
+	for i := len(tempPath); i > 0; i-- {
+		checkDir := strings.Join(tempPath[:i], PathSeparator)
+		filesInCheckDir, err := os.ReadDir(checkDir)
+		if err != nil {
+			log.Fatal().Err(err).Msg("не получилось узнать абсолютный путь")
+		}
+
+		// Содержит ли checkDir main.go
+		for _, file := range filesInCheckDir {
+			if file.Name() == "main.go" {
+				absolutePath = checkDir
+				return
+			}
+		}
+	}
+
+	log.Fatal().Msgf("не получилось узнать корневую директорию каталога, проблема в алгоритме")
+}
+
+// LoadConfig Загружаем переменные среды
+func LoadConfig() (config Config) {
+	findAbsolutePath()
+
 	// Указываем файл
-	viper.AddConfigPath(path)
+	viper.AddConfigPath(absolutePath)
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
 
