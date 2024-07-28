@@ -1,6 +1,6 @@
 -- CreateComment Создаём комментарий к статье
 -- name: CreateComment :one
-WITH add_comment AS ( -- Я знаю что есть тразнакции
+WITH add_comment AS ( -- TODO: переделать в транзакцию
     UPDATE articles
     SET comments = array_append(comments, lastval())
     WHERE id_article = $1
@@ -11,7 +11,7 @@ RETURNING *;
 
 -- DeleteComment Удаляем комментарий к статье
 -- name: DeleteComment :one
-WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
+WITH deleted_comment_id AS ( -- TODO: переделать в транзакцию
     DELETE FROM comments
     WHERE id_comment = @id_comment::integer
 )
@@ -43,7 +43,7 @@ RETURNING *;
 
 -- GetCommentsOfArticle Возвращаем комментарии
 -- name: GetCommentsOfArticle :many
-WITH the_article AS (
+WITH the_article AS ( -- TODO: переделать в транзакцию
     SELECT unnest(comments) AS id_comment FROM articles
     WHERE id_article = @id_article::integer
 )

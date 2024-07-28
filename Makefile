@@ -29,9 +29,15 @@ migratedown:
 	migrate -path ./db/migration/ -database ${POSTGRES_URL} down
 migratedown1:
 	migrate -path ./db/migration/ -database ${POSTGRES_URL} down 1
-# Создаём новую миграцию
+# Создаём пустую миграцию
 makemigrate:
-	migrate create -ext sql -dir migration -seq
+	migrate create -ext sql -dir ./db/migration -seq $(name)
+
+# Экспортируем схему из контейнера postgres в .sql
+# Дальше при помощи https://dbdiagram.io/d уже делаем что захотим
+db_schema:
+	docker exec -it postgres pg_dump -h localhost -p 5432 -d education -U root -s -F p -E UTF-8 -f /bin/abc.sql
+	docker cp postgres:/bin/abc.sql ./documentation/schema.sql
 
 # Подключаемся к бд
 connect:
@@ -72,7 +78,7 @@ net:
 # PATH=$PATH:$GOPATH/bin
 proto:
 	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
-		   --openapiv2_out=docs --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
+		   --openapiv2_out=documentation --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
 		   --grpc-gateway_out=protobuf --grpc-gateway_opt=paths=source_relative \
 		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional \
 		   proto/*.proto
@@ -80,5 +86,5 @@ proto:
 redis:
 	docker run --name redis -p 6379:6379 -d redis:7
 
-.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate
+.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_schema
 .PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis

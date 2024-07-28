@@ -26,7 +26,7 @@ func (q *Queries) CountRowsUser(ctx context.Context) (int64, error) {
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, email, password_hash)
 VALUES ($1::text, $2::text, $3::text)
-RETURNING id_user, created_at, name, description, karma, email, password_hash
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
 `
 
 type CreateUserParams struct {
@@ -47,6 +47,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Karma,
 		&i.Email,
 		&i.PasswordHash,
+		&i.EmailVerified,
 	)
 	return i, err
 }
@@ -54,7 +55,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
 WHERE id_user = $1::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
 `
 
 // DeleteUser Удаляем пользователя
@@ -69,6 +70,7 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 		&i.Karma,
 		&i.Email,
 		&i.PasswordHash,
+		&i.EmailVerified,
 	)
 	return i, err
 }
@@ -83,7 +85,7 @@ SET
   description = COALESCE($2::text, description),
   karma = COALESCE($3::integer, karma)
 WHERE id_user = $4::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
 `
 
 type EditUserParams struct {
@@ -110,12 +112,13 @@ func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error
 		&i.Karma,
 		&i.Email,
 		&i.PasswordHash,
+		&i.EmailVerified,
 	)
 	return i, err
 }
 
 const getManySortedUsers = `-- name: GetManySortedUsers :many
-SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified FROM users
 ORDER BY
         CASE WHEN $1::boolean THEN id_user::integer
              WHEN $2::boolean THEN karma::integer END
@@ -161,6 +164,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 			&i.Karma,
 			&i.Email,
 			&i.PasswordHash,
+			&i.EmailVerified,
 		); err != nil {
 			return nil, err
 		}
@@ -173,7 +177,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified FROM users
 WHERE id_user = $1
 `
 
@@ -189,12 +193,13 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 		&i.Karma,
 		&i.Email,
 		&i.PasswordHash,
+		&i.EmailVerified,
 	)
 	return i, err
 }
 
 const getUserFromName = `-- name: GetUserFromName :one
-SELECT id_user, created_at, name, description, karma, email, password_hash FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified FROM users
 WHERE name = $1
 `
 
@@ -210,6 +215,7 @@ func (q *Queries) GetUserFromName(ctx context.Context, name string) (User, error
 		&i.Karma,
 		&i.Email,
 		&i.PasswordHash,
+		&i.EmailVerified,
 	)
 	return i, err
 }

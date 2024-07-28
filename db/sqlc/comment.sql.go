@@ -22,7 +22,7 @@ func (q *Queries) CountRowsArticle(ctx context.Context) (int64, error) {
 }
 
 const createComment = `-- name: CreateComment :one
-WITH add_comment AS ( -- Я знаю что есть тразнакции
+WITH add_comment AS ( -- TODO: переделать в транзакцию
     UPDATE articles
     SET comments = array_append(comments, lastval())
     WHERE id_article = $1
@@ -54,7 +54,7 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 }
 
 const deleteComment = `-- name: DeleteComment :one
-WITH deleted_comment_id AS ( -- Я знаю что есть тразнакции
+WITH deleted_comment_id AS ( -- TODO: переделать в транзакцию
     DELETE FROM comments
     WHERE id_comment = $1::integer
 )
@@ -139,7 +139,7 @@ func (q *Queries) GetComment(ctx context.Context, idComment int32) (Comment, err
 }
 
 const getCommentsOfArticle = `-- name: GetCommentsOfArticle :many
-WITH the_article AS (
+WITH the_article AS ( -- TODO: переделать в транзакцию
     SELECT unnest(comments) AS id_comment FROM articles
     WHERE id_article = $3::integer
 )

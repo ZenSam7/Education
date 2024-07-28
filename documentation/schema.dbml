@@ -1,0 +1,70 @@
+Table "articles" {
+  "id_article" integer [pk, not null]
+  "created_at" timestamp [default: `now()`]
+  "edited_at" timestamp
+  "title" "character varying" [not null]
+  "text" text [not null]
+  "comments" "integer[]"
+  "authors" "integer[]" [not null]
+  "evaluation" integer [not null, default: 0]
+
+  Indexes {
+    id_article [type: btree, name: "article_indx"]
+  }
+}
+
+Table "comments" {
+  "id_comment" integer [pk, not null]
+  "created_at" timestamp [default: `now()`]
+  "edited_at" timestamp
+  "text" text [not null]
+  "author" integer [not null]
+  "evaluation" integer [not null, default: 0]
+
+  Indexes {
+    id_comment [type: btree, name: "comment_indx"]
+  }
+}
+
+Table "schema_migrations" {
+  "version" bigint [pk, not null]
+  "dirty" boolean [not null]
+}
+
+Table "sessions" {
+  "id_session" uuid [pk, not null]
+  "issued_at" timestamp [default: `now()`]
+  "expired_at" timestamp [not null]
+  "refresh_token" "character varying" [not null]
+  "id_user" integer [not null]
+  "client_ip" "character varying" [not null]
+  "blocked" boolean [not null, default: false]
+}
+
+Table "users" {
+  "id_user" integer [pk, not null]
+  "created_at" timestamp [default: `now()`]
+  "name" "character varying" [not null]
+  "description" text
+  "karma" integer [not null, default: 0]
+  "email" "character varying" [unique, not null]
+  "password_hash" "character varying" [unique, not null]
+  "email_verified" boolean [not null, default: false]
+
+  Indexes {
+    id_user [type: btree, name: "user_indx"]
+  }
+}
+
+Table "verify_emails" {
+  "id_verify_email" integer [pk, not null]
+  "id_user" integer [not null]
+  "secret_key" "character varying" [not null]
+  "expired_at" timestamp [not null, default: `now()+'00:10:00'::interval`]
+}
+
+Ref "comments_author_fkey":"users"."id_user" < "comments"."author"
+
+Ref "sessions_id_user_fkey":"users"."id_user" < "sessions"."id_user"
+
+Ref "verify_emails_id_user_fkey":"users"."id_user" < "verify_emails"."id_user"

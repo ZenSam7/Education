@@ -29,6 +29,8 @@ type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	// CreateUser Создаём пользователя
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	// CreateVerifyRequest Создаём новый запрос на верификацию почты
+	CreateVerifyRequest(ctx context.Context, arg CreateVerifyRequestParams) (VerifyEmail, error)
 	// DeleteArticle Удаляем статью и комментарии к ней
 	DeleteArticle(ctx context.Context, idArticle int32) (Article, error)
 	// DeleteComment Удаляем комментарий к статье
@@ -37,6 +39,8 @@ type Querier interface {
 	DeleteSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// DeleteUser Удаляем пользователя
 	DeleteUser(ctx context.Context, idUser int32) (User, error)
+	// DeleteVerifyRequest Удаляем запрос на верификацию
+	DeleteVerifyRequest(ctx context.Context, idUser int32) (VerifyEmail, error)
 	// EditArticle Изменяем параметр(ы) статьи
 	EditArticle(ctx context.Context, arg EditArticleParams) (Article, error)
 	// EditComment Изменяем параметр(ы) пользователя
@@ -65,6 +69,8 @@ type Querier interface {
 	GetUser(ctx context.Context, idUser int32) (User, error)
 	// GetUserFromName Возвращаем пользователя по имени
 	GetUserFromName(ctx context.Context, name string) (User, error)
+	// GetVerifyRequest Возвращаем запрос на верификацию
+	GetVerifyRequest(ctx context.Context, idUser int32) (VerifyEmail, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -5,5 +5,6 @@ CREATE TABLE "sessions" (
     refresh_token   VARCHAR NOT NULL,
     id_user         integer NOT NULL,
     client_ip       VARCHAR NOT NULL,
-    blocked         boolean NOT NULL DEFAULT FALSE
+    blocked         boolean NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (id_user) REFERENCES "users" (id_user)
 );

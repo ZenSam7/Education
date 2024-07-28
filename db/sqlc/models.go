@@ -39,11 +39,19 @@ type Session struct {
 }
 
 type User struct {
-	IDUser       int32              `json:"id_user"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Name         string             `json:"name"`
-	Description  pgtype.Text        `json:"description"`
-	Karma        int32              `json:"karma"`
-	Email        string             `json:"email"`
-	PasswordHash string             `json:"password_hash"`
+	IDUser        int32              `json:"id_user"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	Name          string             `json:"name"`
+	Description   pgtype.Text        `json:"description"`
+	Karma         int32              `json:"karma"`
+	Email         string             `json:"email"`
+	PasswordHash  string             `json:"password_hash"`
+	EmailVerified bool               `json:"email_verified"`
+}
+
+type VerifyEmail struct {
+	IDVerifyEmail int32              `json:"id_verify_email"`
+	IDUser        int32              `json:"id_user"`
+	SecretKey     string             `json:"secret_key"`
+	ExpiredAt     pgtype.Timestamptz `json:"expired_at"`
 }

@@ -51,7 +51,7 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 }
 
 const deleteArticle = `-- name: DeleteArticle :one
-WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
+WITH deleted_comments AS ( -- Объединяем 2 запроса в 1 -- TODO: переделать в транзакцию
     DELETE FROM comments
     WHERE id_comment = ANY ((SELECT comments FROM articles
                             WHERE id_article = $1::integer)::text::integer[])

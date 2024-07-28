@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"github.com/ZenSam7/Education/tools"
 )
 
 // Транзакции на все случаи жизни
@@ -19,18 +20,27 @@ type TxCreateUserResponse struct {
 	User User `json:"user"`
 }
 
-// CreateUserTx Выполняем создание пользователя в одной транзакции с записью задачи в редиску
+// CreateUserTx Выполняем создание пользователя в одной транзакции с записью задачи на верификацию почты в редиску
 func (q *Queries) CreateUserTx(ctx context.Context, arg TxCreateUserParams) (TxCreateUserResponse, error) {
 	var result TxCreateUserResponse
 
-	err := q.MakeTx(ctx, func(qtx *Queries) error {
+	err := q.MakeTx(ctx, func(q *Queries) error {
 		var err error
 
 		// Создание пользователя
-		result.User, err = qtx.CreateUser(ctx, CreateUserParams{
+		result.User, err = q.CreateUser(ctx, CreateUserParams{
 			Name:         arg.Name,
 			PasswordHash: arg.PasswordHash,
 			Email:        arg.Email,
+		})
+		if err != nil {
+			return err
+		}
+
+		// Запрос на верификацию
+		_, err = q.CreateVerifyRequest(ctx, CreateVerifyRequestParams{
+			IDUser:    result.User.IDUser,
+			SecretKey: tools.GetRandomString(32),
 		})
 		if err != nil {
 			return err

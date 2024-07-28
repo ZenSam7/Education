@@ -1,7 +1,7 @@
-DROP TABLE users;
-DROP TABLE articles;
-DROP TABLE comments;
+DROP TABLE users    CASCADE;
+DROP TABLE articles CASCADE;
+DROP TABLE comments CASCADE;
 
-DROP INDEX user_indx;
-DROP INDEX article_indx;
-DROP INDEX comment_indx;
+DROP INDEX IF EXISTS user_indx;
+DROP INDEX IF EXISTS article_indx;
+DROP INDEX IF EXISTS comment_indx;
