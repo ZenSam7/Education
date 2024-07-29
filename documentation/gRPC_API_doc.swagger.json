@@ -262,6 +262,43 @@
           "Education"
         ]
       }
+    },
+    "/verify_email": {
+      "get": {
+        "operationId": "Education_VerifyEmail",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufVerifyEmailRequest"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idUser",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "secretKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
     }
   },
   "definitions": {
@@ -433,6 +470,9 @@
         }
       },
       "title": "Описываем какие данные передаём под именем \"пользователь\""
+    },
+    "protobufVerifyEmailRequest": {
+      "type": "object"
     },
     "rpcStatus": {
       "type": "object",

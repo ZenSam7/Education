@@ -48,10 +48,15 @@ service Education {
           body: "*"
         };
   };
+  rpc VerifyEmail(VerifyEmailResponse) returns (VerifyEmailRequest) {
+        option (google.api.http) = {
+          get: "/verify_email"
+        };
+  };
 }
 
 
-// Это уже настройки для автогенерации документации
+// Это уже дополнительная инфа для автогенерации документации
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Education";

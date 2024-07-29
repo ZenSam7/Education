@@ -46,6 +46,13 @@ SET
 WHERE id_user = @id_user::integer
 RETURNING *;
 
+-- SetEmailIsVerified Ставим состояние почту как подтверждённую для какого-то пользователя
+-- name: SetEmailIsVerified :one
+UPDATE users
+SET email_verified = true
+WHERE id_user = @id_user::integer
+RETURNING *;
+
 -- CountRowsUser Считаем количество строк в таблице
 -- name: CountRowsUser :one
 SELECT COUNT(*) FROM users;

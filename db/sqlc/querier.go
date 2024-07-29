@@ -71,6 +71,8 @@ type Querier interface {
 	GetUserFromName(ctx context.Context, name string) (User, error)
 	// GetVerifyRequest Возвращаем запрос на верификацию
 	GetVerifyRequest(ctx context.Context, idUser int32) (VerifyEmail, error)
+	// SetEmailIsVerified Ставим состояние почту как подтверждённую для какого-то пользователя
+	SetEmailIsVerified(ctx context.Context, idUser int32) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

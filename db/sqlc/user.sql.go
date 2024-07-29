@@ -219,3 +219,27 @@ func (q *Queries) GetUserFromName(ctx context.Context, name string) (User, error
 	)
 	return i, err
 }
+
+const setEmailIsVerified = `-- name: SetEmailIsVerified :one
+UPDATE users
+SET email_verified = true
+WHERE id_user = $1::integer
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
+`
+
+// SetEmailIsVerified Ставим состояние почту как подтверждённую для какого-то пользователя
+func (q *Queries) SetEmailIsVerified(ctx context.Context, idUser int32) (User, error) {
+	row := q.db.QueryRow(ctx, setEmailIsVerified, idUser)
+	var i User
+	err := row.Scan(
+		&i.IDUser,
+		&i.CreatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Karma,
+		&i.Email,
+		&i.PasswordHash,
+		&i.EmailVerified,
+	)
+	return i, err
+}

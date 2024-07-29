@@ -29,8 +29,7 @@ CREATE TABLE "comments" (
     edited_at   timestamptz DEFAULT NULL,
     text        text NOT NULL CHECK ( text <> '' ),
     author      integer NOT NULL,
-    evaluation  integer NOT NULL DEFAULT 0,
-    FOREIGN KEY (author) REFERENCES "users" (id_user)
+    evaluation  integer NOT NULL DEFAULT 0
 );
 
 CREATE INDEX user_indx ON "users" ("id_user");

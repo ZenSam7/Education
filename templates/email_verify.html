@@ -9,11 +9,12 @@
             font-family: Arial, sans-serif;
             background-color: #f2f2f2;
             margin: 0;
-            padding: 0;
+            padding: 40px; /* Отступы по всем сторонам */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            box-sizing: border-box;
         }
         .container {
             background-color: #ffffff;
@@ -42,6 +43,7 @@
             text-decoration: none;
             border-radius: 5px;
             font-size: 18px;
+            cursor: pointer;
         }
         .button:hover {
             background-color: #45a049;
@@ -49,12 +51,14 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">Верификация почти отправителю</div>
-        <div class="message">
-            Спасибо за вашу регистрацию! Пожалуйста, подтвердите свой адрес электронной почты, нажав на кнопку ниже.
+    <center>
+        <div class="container" align="center">
+            <div class="header">Верификация почты</div>
+            <div class="message">
+                Спасибо за вашу регистрацию! Пожалуйста, подтвердите свой адрес электронной почты, нажав на кнопку ниже.
+            </div>
+            <a href="{{ verification_url }}" class="button">Подтвердить почту</a>
         </div>
-        <a href="#" class="button">Подтвердить EmailSender</a>
-    </div>
+    </center>
 </body>
 </html>

@@ -77,7 +77,7 @@ func HttpLogger(handler http.Handler) http.Handler {
 		duration := time.Since(startTime)
 
 		fullMethod := strings.Split(req.RequestURI, "/")
-		calledFunc := fullMethod[len(fullMethod)-1]
+		calledFunc := strings.Split(fullMethod[len(fullMethod)-1], "?")[0]
 
 		msgType := log.Info()
 		if recorder.StatusCode != http.StatusOK {

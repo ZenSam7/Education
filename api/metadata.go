@@ -1,4 +1,4 @@
-package api_grpc
+package api
 
 import (
 	"context"

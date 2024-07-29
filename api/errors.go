@@ -1,4 +1,4 @@
-package api_grpc
+package api
 
 import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"

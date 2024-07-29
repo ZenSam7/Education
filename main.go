@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ZenSam7/Education/api"
-	"github.com/ZenSam7/Education/api_grpc"
+	"github.com/ZenSam7/Education/api_gin"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/tools"
@@ -27,16 +27,6 @@ func main() {
 	queries, closeConn := db.GetQueries()
 	defer closeConn() // (На самом деле оно не вызывается)
 	tools.MakeLogger()
-
-	//gmail := tools.GmailSender{
-	//	Config:         config,
-	//	TemplateFile:   "email_verify.html",
-	//	TemplateValues: map[string]string{"": ""},
-	//}
-	//err := gmail.SendMail("samkirich@yandex.ru")
-	//if err != nil {
-	//	log.Fatal().Msg(err.Error())
-	//}
 
 	runDBMigration(config)
 	redisOpt, taskDistributor := makeRedis(config)
@@ -86,7 +76,7 @@ func runDBMigration(config tools.Config) {
 
 // runGatewayServer Сервер на gRPC, но с поддержкой HTTP
 func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
-	server, err := api_grpc.NewServer(config, queries, taskDistributor)
+	server, err := api.NewServer(config, queries, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}
@@ -129,7 +119,7 @@ func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor 
 
 // runGrpcServer Стандартный сервер на gRPC
 func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
-	server, err := api_grpc.NewServer(config, queries, taskDistributor)
+	server, err := api.NewServer(config, queries, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}
@@ -155,7 +145,7 @@ func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor wor
 
 // runGrpcServer Стандартный сервер на Gin
 func runGinServer(config tools.Config, queries *db.Queries) {
-	server, err := api.NewServer(config, queries)
+	server, err := api_gin.NewServer(config, queries)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}

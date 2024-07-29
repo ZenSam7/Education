@@ -896,6 +896,99 @@ func (x *RenewAccessTokenResponse) GetRefreshTokenExpiredAt() *timestamp.Timesta
 	return nil
 }
 
+type VerifyEmailResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	IdUser    int32  `protobuf:"varint,1,opt,name=id_user,json=idUser,proto3" json:"id_user,omitempty"`
+	SecretKey string `protobuf:"bytes,2,opt,name=secret_key,json=secretKey,proto3" json:"secret_key,omitempty"`
+}
+
+func (x *VerifyEmailResponse) Reset() {
+	*x = VerifyEmailResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_user_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *VerifyEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEmailResponse) ProtoMessage() {}
+
+func (x *VerifyEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEmailResponse.ProtoReflect.Descriptor instead.
+func (*VerifyEmailResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *VerifyEmailResponse) GetIdUser() int32 {
+	if x != nil {
+		return x.IdUser
+	}
+	return 0
+}
+
+func (x *VerifyEmailResponse) GetSecretKey() string {
+	if x != nil {
+		return x.SecretKey
+	}
+	return ""
+}
+
+type VerifyEmailRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *VerifyEmailRequest) Reset() {
+	*x = VerifyEmailRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_user_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *VerifyEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEmailRequest) ProtoMessage() {}
+
+func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEmailRequest.ProtoReflect.Descriptor instead.
+func (*VerifyEmailRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{16}
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 var file_user_proto_rawDesc = []byte{
@@ -1011,10 +1104,16 @@ var file_user_proto_rawDesc = []byte{
 	0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x15, 0x72, 0x65,
 	0x66, 0x72, 0x65, 0x73, 0x68, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x45, 0x78, 0x70, 0x69, 0x72, 0x65,
-	0x64, 0x41, 0x74, 0x42, 0x27, 0x5a, 0x25, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x5a, 0x65, 0x6e, 0x53, 0x61, 0x6d, 0x37, 0x2f, 0x45, 0x64, 0x75, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x41, 0x74, 0x22, 0x4d, 0x0a, 0x13, 0x56, 0x65, 0x72, 0x69, 0x66, 0x79, 0x45, 0x6d, 0x61,
+	0x69, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x17, 0x0a, 0x07, 0x69, 0x64,
+	0x5f, 0x75, 0x73, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x69, 0x64, 0x55,
+	0x73, 0x65, 0x72, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x5f, 0x6b, 0x65,
+	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4b,
+	0x65, 0x79, 0x22, 0x14, 0x0a, 0x12, 0x56, 0x65, 0x72, 0x69, 0x66, 0x79, 0x45, 0x6d, 0x61, 0x69,
+	0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x27, 0x5a, 0x25, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x5a, 0x65, 0x6e, 0x53, 0x61, 0x6d, 0x37, 0x2f, 0x45,
+	0x64, 0x75, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1029,7 +1128,7 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_user_proto_goTypes = []interface{}{
 	(*User)(nil),                       // 0: protobuf.User
 	(*CreateUserRequest)(nil),          // 1: protobuf.CreateUserRequest
@@ -1046,20 +1145,22 @@ var file_user_proto_goTypes = []interface{}{
 	(*LoginUserResponse)(nil),          // 12: protobuf.LoginUserResponse
 	(*RenewAccessTokenRequest)(nil),    // 13: protobuf.RenewAccessTokenRequest
 	(*RenewAccessTokenResponse)(nil),   // 14: protobuf.RenewAccessTokenResponse
-	(*timestamp.Timestamp)(nil),        // 15: google.protobuf.Timestamp
+	(*VerifyEmailResponse)(nil),        // 15: protobuf.VerifyEmailResponse
+	(*VerifyEmailRequest)(nil),         // 16: protobuf.VerifyEmailRequest
+	(*timestamp.Timestamp)(nil),        // 17: google.protobuf.Timestamp
 }
 var file_user_proto_depIdxs = []int32{
-	15, // 0: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
+	17, // 0: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 1: protobuf.CreateUserResponse.user:type_name -> protobuf.User
 	0,  // 2: protobuf.GetUserResponse.user:type_name -> protobuf.User
 	0,  // 3: protobuf.GetManySortedUsersResponse.users:type_name -> protobuf.User
 	0,  // 4: protobuf.EditUserResponse.user:type_name -> protobuf.User
 	0,  // 5: protobuf.DeleteUserResponse.user:type_name -> protobuf.User
 	0,  // 6: protobuf.LoginUserResponse.user:type_name -> protobuf.User
-	15, // 7: protobuf.LoginUserResponse.access_token_expired_at:type_name -> google.protobuf.Timestamp
-	15, // 8: protobuf.LoginUserResponse.refresh_token_expired_at:type_name -> google.protobuf.Timestamp
-	15, // 9: protobuf.RenewAccessTokenResponse.access_token_expired_at:type_name -> google.protobuf.Timestamp
-	15, // 10: protobuf.RenewAccessTokenResponse.refresh_token_expired_at:type_name -> google.protobuf.Timestamp
+	17, // 7: protobuf.LoginUserResponse.access_token_expired_at:type_name -> google.protobuf.Timestamp
+	17, // 8: protobuf.LoginUserResponse.refresh_token_expired_at:type_name -> google.protobuf.Timestamp
+	17, // 9: protobuf.RenewAccessTokenResponse.access_token_expired_at:type_name -> google.protobuf.Timestamp
+	17, // 10: protobuf.RenewAccessTokenResponse.refresh_token_expired_at:type_name -> google.protobuf.Timestamp
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -1253,6 +1354,30 @@ func file_user_proto_init() {
 				return nil
 			}
 		}
+		file_user_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*VerifyEmailResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_user_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*VerifyEmailRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_user_proto_msgTypes[5].OneofWrappers = []interface{}{}
 	file_user_proto_msgTypes[7].OneofWrappers = []interface{}{}
@@ -1262,7 +1387,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_user_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

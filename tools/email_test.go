@@ -13,7 +13,7 @@ func TestSendMailGmailSender(t *testing.T) {
 
 	config := LoadConfig()
 
-	sender := GmailSender{Config: config, TemplateFile: "email_verify.html", TemplateValues: map[string]string{}}
-	err := sender.SendMail(config.EmailSender)
+	sender := GmailSender{Config: config}
+	err := sender.SendMail(config.EmailSender, "email_verify.html", map[string]string{})
 	require.NoError(t, err)
 }

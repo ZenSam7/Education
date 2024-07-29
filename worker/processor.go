@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	db "github.com/ZenSam7/Education/db/sqlc"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
 )
@@ -21,9 +22,12 @@ type TaskProcessor interface {
 type RedisTaskProcessor struct {
 	server  *asynq.Server
 	queries *db.Queries
+	sender  tools.EmailSender
+	config  tools.Config
 }
 
 func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskProcessor {
+	cnfg := tools.LoadConfig()
 	return &RedisTaskProcessor{
 		server: asynq.NewServer(opt, asynq.Config{
 			// Queues Важные задачи распределяем по отдельным потокам (цифра = степень важности)
@@ -43,13 +47,17 @@ func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskPr
 			Logger: NewLogger(),
 		}),
 		queries: queries,
+		sender: &tools.GmailSender{
+			Config: cnfg,
+		},
+		config: cnfg,
 	}
 }
 
 func (p *RedisTaskProcessor) Start() error {
 	mux := asynq.NewServeMux()
 
-	mux.HandleFunc(TaskSendGetUser, p.ProcessTaskSendVerifyEmail)
+	mux.HandleFunc(TaskSendVerifyEmail, p.ProcessTaskSendVerifyEmail)
 	// TODO: добавить какие-нибудь ещё функции
 
 	return p.server.Start(mux)

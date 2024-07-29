@@ -24,7 +24,6 @@ type Config struct {
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	EmailHost            string        `mapstructure:"EMAIL_HOST"`
 	EmailPort            int           `mapstructure:"EMAIL_PORT"`
-	EmailUser            string        `mapstructure:"EMAIL_USER"`
 	EmailPassword        string        `mapstructure:"EMAIL_PASSWORD"`
 	EmailSender          string        `mapstructure:"EMAIL_SENDER"`
 }

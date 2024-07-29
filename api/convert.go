@@ -1,4 +1,4 @@
-package api_grpc
+package api
 
 import (
 	db "github.com/ZenSam7/Education/db/sqlc"

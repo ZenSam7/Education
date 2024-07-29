@@ -1,277 +1,267 @@
 package api
 
 import (
+	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
+	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
-	"github.com/gin-gonic/gin"
+	"github.com/ZenSam7/Education/worker"
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgtype"
-	"net/http"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"strings"
 	"time"
 )
 
-// createUserRequest Поле Name обязательно (required) и без спецсимволов (alphanum),
-// а также минимальная длина пароля - 6 символов
-// (json == что логично, берём данные из json'а в теле запроса)
-type createUserRequest struct {
-	Name     string `json:"name" binding:"required,alphanum"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+func validateCreateUserRequest(req *pb.CreateUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := tools.ValidateString(req.GetName(), 1, 99); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("name", err))
+	}
+
+	if err := tools.ValidateString(req.GetPassword(), 1, 999); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("password", err))
+	}
+
+	if err := tools.ValidateEmail(req.GetEmail()); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("email", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
 }
-
-func (server *Server) createUser(ctx *gin.Context) {
-	var req createUserRequest
-
-	// Проверяем чтобы все теги соответсвовали (в gin есть валидатор)
-	// (в нашем случае чтобы было поле Username, иначе выдаём ошибку в JSON'е)
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
+func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	if err := validateCreateUserRequest(req); err != nil {
+		return nil, err
 	}
 
-	passwordHash, err := tools.GetPasswordHash(req.Password)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
+	var newUser db.User
 
-	// Создаём пользователя
-	arg := db.CreateUserParams{
-		Name:         req.Name,
-		Email:        req.Email,
-		PasswordHash: passwordHash,
-	}
-	user, err := server.queries.CreateUser(ctx, arg)
-	if err != nil {
-		// Если пользователь с таким именем уже есть, то выдаем ошибку
-		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
-			ctx.JSON(http.StatusConflict, errorResponse(errors.New("пользователь с таким именем или email уже существует")))
-			return
+	// Выполняем создание пользователя в одной транзакции с записью задачи на верификацию почты в редиску
+	err := server.queries.MakeTx(ctx, func(q *db.Queries) error {
+		passwordHash, err := tools.GetPasswordHash(req.GetPassword())
+		if err != nil {
+			return status.Errorf(codes.Internal, "ошибка при хешировании: %s", err)
 		}
 
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
+		// Создание пользователя
+		newUser, err = q.CreateUser(ctx, db.CreateUserParams{
+			Name:         req.Name,
+			PasswordHash: passwordHash,
+			Email:        req.Email,
+		})
+		if err != nil {
+			return status.Errorf(codes.Internal, "не получилось создать пользователя: %s", err)
+		}
 
-	userToResponse(&user)
-	ctx.JSON(http.StatusOK, user)
-}
+		// Отдельно от создания пользователя создаём ещё и задачу (которую потом распределяем редиской)
+		payload := &worker.PayloadSendVerifyEmail{IdUser: newUser.IDUser}
 
-// getUserRequest Нам нужен парамерт URI id_user который >= 1
-// (uri == берём данные из uri (типа: user/42))
-type getUserRequest struct {
-	IDUser int32 `uri:"id_user" binding:"required,min=1"`
-}
+		// Дополнительные конфигурации
+		options := []asynq.Option{
+			asynq.MaxRetry(4), // Максимальное количество повторений запроса при ошибках
+			// (задержка нужна чтобы эта транзакция завершилась до того, как начнётся таска верификации почты)
+			asynq.ProcessIn(10 * time.Second), // После какого времени процессору можно начать задачу
+			asynq.Queue(worker.QueueDefault),  // Можем распределить важные задачи в отдельный поток (см. processor.go)
+		}
 
-func (server *Server) getUser(ctx *gin.Context) {
-	var req getUserRequest
-
-	// Проверяем чтобы все теги соответсвовали (в gin есть валидатор)
-	// (в нашем случае чтобы было поле IDUser, иначе выдаём ошибку в JSON'е)
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	// Получаем пользователя
-	user, err := server.queries.GetUser(ctx, req.IDUser)
+		return server.taskDistributor.DistributeTaskVerifyEmail(ctx, payload, options...)
+	})
 	if err != nil {
-		// Если у нас просто нет такого пользователя, то выдаём другую ошибку
+		// Если пользователь уже есть, то выдаем ошибку
+		if strings.Contains(err.Error(), "duplicate key value violates unique") {
+			return nil, status.Errorf(codes.AlreadyExists, "пользователь с таким именем или email уже существует")
+		}
+		return nil, status.Errorf(codes.Internal, "не получилось создать пользователя: %s", err)
+	}
+
+	response := &pb.CreateUserResponse{
+		User: convUser(newUser),
+	}
+	return response, nil
+}
+
+func validateGetUserRequest(req *pb.GetUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := tools.ValidateNaturalNum(int(req.GetIdUser())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("id_user", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	if err := validateGetUserRequest(req); err != nil {
+		return nil, err
+	}
+
+	user, err := server.queries.GetUser(ctx, req.GetIdUser())
+	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
+			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 
-	userToResponse(&user)
-	ctx.JSON(http.StatusOK, user)
+	response := &pb.GetUserResponse{
+		User: convUser(user),
+	}
+	return response, nil
 }
 
-// getManySortedUsersRequest Сколько а как отсортированных пользователей на страничке
-// (form == берём данные из uri, которые идут после "?" (типа: /user?page_size=20&page_num=1))
-type getManySortedUsersRequest struct {
-	IDUser      bool  `json:"id_user"`
-	Name        bool  `json:"name"`
-	Description bool  `json:"description"`
-	Karma       bool  `json:"karma"`
-	PageSize    int32 `json:"page_size" binding:"required,min=1"`
-	PageNum     int32 `json:"page_num" binding:"required,min=1"`
-}
+func validateGetManySortedUsersRequest(req *pb.GetManySortedUsersRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-func (server *Server) getManySortedUsers(ctx *gin.Context) {
-	var req getManySortedUsersRequest
-
-	// Проверяем чтобы все теги соответсвовали
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
+	if err := tools.ValidateNaturalNum(int(req.GetPageNum())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("page_num", err))
 	}
 
-	// Получаем пользователей
+	if err := tools.ValidateNaturalNum(int(req.GetPageSize())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("page_size", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySortedUsersRequest) (*pb.GetManySortedUsersResponse, error) {
+	if err := validateGetManySortedUsersRequest(req); err != nil {
+		return nil, err
+	}
+
 	arg := db.GetManySortedUsersParams{
-		IDUser:      req.IDUser,
-		Name:        req.Name,
-		Description: req.Description,
-		Karma:       req.Karma,
-		Limit:       req.PageSize,
-		Offset:      (req.PageNum - 1) * req.PageSize,
+		IDUser:      req.GetIdUser(),
+		Name:        req.GetName(),
+		Description: req.GetDescription(),
+		Karma:       req.GetKarma(),
+		Limit:       req.GetPageSize(),
+		Offset:      (req.GetPageNum() - 1) * req.GetPageSize(),
 	}
 	users, err := server.queries.GetManySortedUsers(ctx, arg)
 	if err != nil {
-		// Если у нас просто нет таких пользователей, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
+			return nil, status.Errorf(codes.NotFound, "пользователи не найдены")
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователей: %s", err)
 	}
 
-	// Превращаем в нужный формат
-	for i, u := range users {
-		users[i] = *userToResponse(&u)
+	var pbUsers []*pb.User
+	for _, u := range users {
+		pbUsers = append(pbUsers, convUser(u))
 	}
 
-	ctx.JSON(http.StatusOK, users)
+	response := &pb.GetManySortedUsersResponse{
+		Users: pbUsers,
+	}
+	return response, nil
 }
 
-// Надо разделить данные которые получаем с url и данные которые получаем с uri
-// (оно разделяет пустые строки, полученные из json'а от пустых строк вставленные go автоматически
-// (поэтому тут такие костыли))
-type editUserRequest struct {
-	Name        string
-	Description pgtype.Text
-	Karma       pgtype.Int4
-}
+func validateEditUserRequest(req *pb.EditUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-func (server *Server) editUser(ctx *gin.Context) {
-	var body map[string]interface{}
-
-	// Связываем все поля которые нам нужны
-	if err := ctx.BindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	// Делаем операцию только для авторизованного пользователя
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
-
-	// Тут мы разделяем поля которые содержат пустые строки от полей которые вообще не указаны в теле
-	var req editUserRequest
-	bodyText := make(map[string]string)
-	bodyInt := make(map[string]int32)
-	for key, val := range body {
-		switch v := val.(type) {
-		case string:
-			bodyText[key] = v
-		case float64:
-			bodyInt[key] = int32(v)
+	if req.Name != nil {
+		if err := tools.ValidateString(req.GetName(), 1, 0); err != nil {
+			errorsFields = append(errorsFields, fieldViolation("page_num", err))
 		}
 	}
 
-	if val, ok := bodyText["name"]; ok {
-		req.Name = val
+	return wrapFeildErrors(errorsFields)
+}
+func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*pb.EditUserResponse, error) {
+	if err := validateEditUserRequest(req); err != nil {
+		return nil, err
 	}
 
-	val, ok := bodyText["description"]
-	req.Description = pgtype.Text{String: val, Valid: ok}
+	accessPayload, err := server.authUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
 
-	num, ok := bodyInt["karma"]
-	req.Karma = pgtype.Int4{Int32: num, Valid: ok}
-
-	// Изменяем параметр(ы) пользователя
 	arg := db.EditUserParams{
-		IDUser:      payload.IDUser,
-		Name:        req.Name,
-		Description: req.Description,
-		Karma:       req.Karma,
+		IDUser: accessPayload.IDUser,
+		Name:   req.GetName(),
+		// Разделяем пустое значение и значение которое вообще не указывали
+		// (Т.е. имеем возможность указать '' или 0 как валидный параметр)
+		Description: pgtype.Text{String: req.GetDescription(), Valid: req.Description != nil},
+		Karma:       pgtype.Int4{Int32: req.GetKarma(), Valid: req.Karma != nil},
 	}
 
 	editedUser, err := server.queries.EditUser(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %s", err)
 	}
 
-	userToResponse(&editedUser)
-	ctx.JSON(http.StatusOK, editedUser)
+	response := &pb.EditUserResponse{
+		User: convUser(editedUser),
+	}
+	return response, nil
 }
 
-func (server *Server) deleteUser(ctx *gin.Context) {
-	// Удаляем авторизованного пользователя
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	_ = req.String() // Просто чтобы не было предупреждений
+
+	payload, err := server.authUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
 	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %s", err)
 	}
 
-	userToResponse(&deletedUser)
-	ctx.JSON(http.StatusOK, deletedUser)
+	response := &pb.DeleteUserResponse{
+		User: convUser(deletedUser),
+	}
+	return response, nil
 }
 
-// loginUserRequest Логиним пользователя
-type loginUserRequest struct {
-	Name     string `json:"name" binding:"required,alphanum"`
-	Password string `json:"password" binding:"required"`
-}
+func validateLoginUserRequest(req *pb.LoginUserRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-// loginUserResponse Отправляем токен
-type loginUserResponse struct {
-	User                  db.User   `json:"user"`
-	AccessToken           string    `json:"access_token"`
-	AccessTokenExpiredAt  time.Time `json:"access_token_expired_at"`
-	RefreshToken          string    `json:"resfresh_token"`
-	RefreshTokenExpiredAt time.Time `json:"refresh_token_expired_at"`
-}
-
-// userToResponse Заменяем PasswordHash, т.к. передавать его не безопасно
-func userToResponse(user *db.User) *db.User {
-	user.PasswordHash = "wat u looking at :)"
-	return user
-}
-
-func (server *Server) loginUser(ctx *gin.Context) {
-	var req loginUserRequest
-
-	// Проверяем чтобы все теги соответствовали
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
+	if err := tools.ValidateString(req.GetPassword(), 1, 999); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("password", err))
 	}
 
-	// Входим в систему
-	user, err := server.queries.GetUserFromName(ctx, req.Name)
+	if err := tools.ValidateString(req.GetName(), 1, 99); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("name", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	if err := validateLoginUserRequest(req); err != nil {
+		return nil, err
+	}
+
+	user, err := server.queries.GetUserFromName(ctx, req.GetName())
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
+			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 
-	// Проверяем пароль
-	if !tools.CheckPassword(req.Password, user.PasswordHash) {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("неправильный пароль")))
-		return
+	if !tools.CheckPassword(req.GetPassword(), user.PasswordHash) {
+		return nil, status.Errorf(codes.Unauthenticated, "неправильный пароль")
 	}
 
-	// Залогиненному пользователю даём access и refresh токены
+	// Если с паролем со входом всё ок, то создаём новую сессию
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %s", err)
 	}
 	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.RefreshTokenDuration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %s", err)
+	}
+
+	info, err := server.extractMetadata(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
@@ -279,87 +269,71 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		IDUser:       user.IDUser,
 		RefreshToken: refreshToken,
 		ExpiredAt:    pgtype.Timestamptz{Time: refreshPayload.ExpiredAt, Valid: true},
-		ClientIp:     ctx.ClientIP(),
+		ClientIp:     info.ClientIP,
 	})
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось создать сессию: %s", err)
 	}
 
-	response := loginUserResponse{
+	response := &pb.LoginUserResponse{
+		User:                  convUser(user),
 		AccessToken:           accessToken,
-		AccessTokenExpiredAt:  accessTokenPayload.ExpiredAt,
+		AccessTokenExpiredAt:  timestamppb.New(accessTokenPayload.ExpiredAt),
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiredAt: refreshPayload.ExpiredAt,
-		User:                  user,
+		RefreshTokenExpiredAt: timestamppb.New(refreshPayload.ExpiredAt),
 	}
 
-	userToResponse(&response.User)
-	ctx.JSON(http.StatusOK, response)
+	return response, nil
 }
 
-type renewAccessTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
+func validateRenewAccessTokenRequest(req *pb.RenewAccessTokenRequest) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-type renewAccessTokenResponse struct {
-	AccessToken           string    `json:"access_token"`
-	AccessTokenExpiredAt  time.Time `json:"access_token_expired_at"`
-	RefreshToken          string    `json:"resfresh_token"`
-	RefreshTokenExpiredAt time.Time `json:"refresh_token_expired_at"`
-}
-
-// renewAccessToken Входим по refresh токену и обновляем ОБА токена
-func (server *Server) renewAccessToken(ctx *gin.Context) {
-	var req renewAccessTokenRequest
-
-	// Проверяем чтобы все теги соответствовали
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
+	if err := tools.ValidateString(req.GetRefreshToken(), 1, 9999); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("password", err))
 	}
 
-	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.RefreshToken)
+	return wrapFeildErrors(errorsFields)
+}
+func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessTokenRequest) (*pb.RenewAccessTokenResponse, error) {
+	if err := validateRenewAccessTokenRequest(req); err != nil {
+		return nil, err
+	}
 
-	// Пересоздаём и сессию (refresh токен) и access токен
-	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
-
-	// Тут проверяем что этот refresh токен валидный
+	info, err := server.extractMetadata(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	} else if oldSession.Blocked {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("сессия заблокирована")))
-		return
-	} else if oldSession.IDUser != refreshPayload.IDUser {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("некорректная сессия пользователя")))
-		return
-	} else if oldSession.RefreshToken != req.RefreshToken {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("некорректный refresh токен")))
-		return
-	}
-	// Если токен просрочен или ip не соответствует ранее залогиневшему устройству, то перенаправляем на ввод пароля
-	if errVerifyToken == token.ErrorExpiredToken || oldSession.ClientIp != ctx.ClientIP() {
-		ctx.JSON(http.StatusUnauthorized, fmt.Errorf("необходимо залогиниться"))
-		return
+		return nil, err
 	}
 
-	// Создаём новые access и refresh токены (и сессию)
+	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.GetRefreshToken())
+
+	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "не удалось удалить сессию: %s", err)
+	} else if oldSession.Blocked {
+		return nil, status.Errorf(codes.Unauthenticated, "сессия заблокирована")
+	} else if oldSession.IDUser != refreshPayload.IDUser {
+		return nil, status.Errorf(codes.Unauthenticated, "некорректная сессия пользователя")
+	} else if oldSession.RefreshToken != req.GetRefreshToken() {
+		return nil, status.Errorf(codes.Unauthenticated, "некорректный refresh token")
+	}
+	if errVerifyToken == token.ErrorExpiredToken || oldSession.ClientIp != info.ClientIP {
+		return nil, status.Errorf(codes.Unauthenticated, "необходимо залогиниться")
+	}
+
 	newRefreshToken, newRefreshPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось создать новый refresh token: %s", err)
 	}
 	newAccessToken, newAccessPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось создать новый access token: %s", err)
 	}
 
 	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
@@ -367,17 +341,62 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		IDUser:       newRefreshPayload.IDUser,
 		RefreshToken: newRefreshToken,
 		ExpiredAt:    pgtype.Timestamptz{Time: newRefreshPayload.ExpiredAt, Valid: true},
-		ClientIp:     ctx.ClientIP(),
+		ClientIp:     info.ClientIP,
 	})
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+		return nil, status.Errorf(codes.Internal, "не удалось создать новую сессию: %s", err)
 	}
 
-	ctx.JSON(http.StatusOK, renewAccessTokenResponse{
+	response := &pb.RenewAccessTokenResponse{
 		AccessToken:           newAccessToken,
-		AccessTokenExpiredAt:  newAccessPayload.ExpiredAt,
 		RefreshToken:          newRefreshToken,
-		RefreshTokenExpiredAt: newRefreshPayload.ExpiredAt,
-	})
+		AccessTokenExpiredAt:  timestamppb.New(newAccessPayload.ExpiredAt),
+		RefreshTokenExpiredAt: timestamppb.New(newRefreshPayload.ExpiredAt),
+	}
+
+	return response, nil
+}
+
+func validateVerifyEmailRequest(req *pb.VerifyEmailResponse) error {
+	var errorsFields []*errdetails.BadRequest_FieldViolation
+
+	if err := tools.ValidateNaturalNum(int(req.GetIdUser())); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("id_user", err))
+	}
+
+	if err := tools.ValidateString(req.GetSecretKey(), 32, 0); err != nil {
+		errorsFields = append(errorsFields, fieldViolation("id_user", err))
+	}
+
+	return wrapFeildErrors(errorsFields)
+}
+func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailResponse) (*pb.VerifyEmailRequest, error) {
+	if err := validateVerifyEmailRequest(req); err != nil {
+		return nil, err
+	}
+
+	// ***пользователь перешёл по ссылке, верификация пройдена***
+
+	verifyRequest, err := server.queries.GetVerifyRequest(ctx, req.GetIdUser())
+	if err != nil {
+		return nil, err
+	}
+
+	// Удаляем неактуальный запрос
+	_, err = server.queries.DeleteVerifyRequest(ctx, req.GetIdUser())
+	if err != nil {
+		return nil, err
+	}
+
+	// Если пользователь очень долго переходил по ссылке и она успела просрочиться
+	if time.Now().After(verifyRequest.ExpiredAt.Time) {
+		return nil, status.Errorf(codes.Unauthenticated, "время для подтверждения почты истекло, пройдите снова процедуру верификации почты")
+	}
+
+	_, err = server.queries.SetEmailIsVerified(ctx, verifyRequest.IDUser)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%s", err)
+	}
+
+	return &pb.VerifyEmailRequest{}, nil
 }

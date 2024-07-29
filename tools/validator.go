@@ -6,7 +6,7 @@ import (
 )
 
 // ValidateString Контролируем размер строки
-// minLenght по умолчанию 0, maxLenght по умолчанию ∞
+// minLenght по умолчанию 0, maxLenght по умолчанию 0 (это означает ∞)
 func ValidateString(s string, minLenght, maxLenght int) error {
 	if len(s) < minLenght || (maxLenght != 0 && len(s) > maxLenght) {
 		if maxLenght != 0 {
