@@ -53,7 +53,9 @@ sqlc:
 test:
 	sudo go test -count=1 -short -cover ./...
 mock:
-	mockgen -source=db/sqlc/querier.go -destination=db/mockdb/querier.go -package=mockdb
+	mockgen -source=db/sqlc/querier.go -destination=my_mocks/db.go -package=my_mocks
+	mockgen -source=worker/distributor.go -destination=my_mocks/worker.go -package=my_mocks
+	mockgen -source=token/maker.go -destination=my_mocks/token.go -package=my_mocks
 
 # Пересоздаём нахер всё
 RESET:
@@ -80,7 +82,7 @@ net:
 # PATH=$PATH:$GOPATH/bin
 proto:
 	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
-		   --openapiv2_out=documentation --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
+		   --openapiv2_out=doc --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
 		   --grpc-gateway_out=protobuf --grpc-gateway_opt=paths=source_relative \
 		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional \
 		   proto/*.proto

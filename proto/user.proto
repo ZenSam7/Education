@@ -86,9 +86,9 @@ message RenewAccessTokenResponse {
   google.protobuf.Timestamp refresh_token_expired_at = 4;
 }
 
-message VerifyEmailResponse {
+message VerifyEmailRequest {
   int32  id_user = 1;
   string secret_key = 2;
 }
 
-message VerifyEmailRequest {}
+message VerifyEmailResponse {}

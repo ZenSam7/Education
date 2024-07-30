@@ -307,6 +307,9 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 	}
 
 	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.GetRefreshToken())
+	if errVerifyToken == token.ErrorInvalidToken {
+		return nil, status.Errorf(codes.Internal, "недействительный токен")
+	}
 
 	oldSession, err := server.querier.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
 	if err != nil {
@@ -320,6 +323,9 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 	}
 	if errVerifyToken == token.ErrorExpiredToken || oldSession.ClientIp != info.ClientIP {
 		return nil, status.Errorf(codes.Unauthenticated, "необходимо залогиниться")
+	}
+	if errVerifyToken != nil {
+		return nil, status.Errorf(codes.Internal, errVerifyToken.Error())
 	}
 
 	newRefreshToken, newRefreshPayload, err := server.tokenMaker.CreateToken(
@@ -358,7 +364,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 	return response, nil
 }
 
-func validateVerifyEmailRequest(req *pb.VerifyEmailResponse) error {
+func validateVerifyEmailRequest(req *pb.VerifyEmailRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
 	if err := tools.ValidateNaturalNum(int(req.GetIdUser())); err != nil {
@@ -371,7 +377,7 @@ func validateVerifyEmailRequest(req *pb.VerifyEmailResponse) error {
 
 	return wrapFeildErrors(errorsFields)
 }
-func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailResponse) (*pb.VerifyEmailRequest, error) {
+func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailRequest) (*pb.VerifyEmailResponse, error) {
 	if err := validateVerifyEmailRequest(req); err != nil {
 		return nil, err
 	}
@@ -416,5 +422,5 @@ func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailRespon
 		return nil, err
 	}
 
-	return &pb.VerifyEmailRequest{}, nil
+	return &pb.VerifyEmailResponse{}, nil
 }

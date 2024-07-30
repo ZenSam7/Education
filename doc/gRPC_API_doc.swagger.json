@@ -280,21 +280,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "idUser",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "secretKey",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
         "tags": [
           "Education"
         ]
@@ -472,7 +457,16 @@
       "title": "Описываем какие данные передаём под именем \"пользователь\""
     },
     "protobufVerifyEmailRequest": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "idUser": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "secretKey": {
+          "type": "string"
+        }
+      }
     },
     "rpcStatus": {
       "type": "object",
