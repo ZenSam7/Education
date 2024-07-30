@@ -24,7 +24,7 @@ import (
 
 func main() {
 	config := tools.LoadConfig()
-	queries, closeConn := db.GetQueries()
+	queries, closeConn := db.MakeQueries()
 	defer closeConn() // (На самом деле оно не вызывается)
 	tools.MakeLogger()
 
@@ -75,8 +75,8 @@ func runDBMigration(config tools.Config) {
 }
 
 // runGatewayServer Сервер на gRPC, но с поддержкой HTTP
-func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
-	server, err := api.NewServer(config, queries, taskDistributor)
+func runGatewayServer(config tools.Config, querier db.Querier, taskDistributor worker.TaskDistributor) {
+	server, err := api.NewServer(config, querier, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}
@@ -118,8 +118,8 @@ func runGatewayServer(config tools.Config, queries *db.Queries, taskDistributor 
 }
 
 // runGrpcServer Стандартный сервер на gRPC
-func runGrpcServer(config tools.Config, queries *db.Queries, taskDistributor worker.TaskDistributor) {
-	server, err := api.NewServer(config, queries, taskDistributor)
+func runGrpcServer(config tools.Config, querier db.Querier, taskDistributor worker.TaskDistributor) {
+	server, err := api.NewServer(config, querier, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
 	}

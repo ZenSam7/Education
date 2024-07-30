@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/token"
@@ -43,7 +44,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	var newUser db.User
 
 	// Выполняем создание пользователя в одной транзакции с записью задачи на верификацию почты в редиску
-	err := server.queries.MakeTx(ctx, func(q *db.Queries) error {
+	err := db.MakeTx(ctx, func(q db.Querier) error {
 		passwordHash, err := tools.GetPasswordHash(req.GetPassword())
 		if err != nil {
 			return status.Errorf(codes.Internal, "ошибка при хешировании: %s", err)
@@ -100,7 +101,7 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, err
 	}
 
-	user, err := server.queries.GetUser(ctx, req.GetIdUser())
+	user, err := server.querier.GetUser(ctx, req.GetIdUser())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
@@ -140,7 +141,7 @@ func (server *Server) GetManySortedUsers(ctx context.Context, req *pb.GetManySor
 		Limit:       req.GetPageSize(),
 		Offset:      (req.GetPageNum() - 1) * req.GetPageSize(),
 	}
-	users, err := server.queries.GetManySortedUsers(ctx, arg)
+	users, err := server.querier.GetManySortedUsers(ctx, arg)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователи не найдены")
@@ -164,7 +165,7 @@ func validateEditUserRequest(req *pb.EditUserRequest) error {
 
 	if req.Name != nil {
 		if err := tools.ValidateString(req.GetName(), 1, 0); err != nil {
-			errorsFields = append(errorsFields, fieldViolation("page_num", err))
+			errorsFields = append(errorsFields, fieldViolation("name", err))
 		}
 	}
 
@@ -189,7 +190,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 		Karma:       pgtype.Int4{Int32: req.GetKarma(), Valid: req.Karma != nil},
 	}
 
-	editedUser, err := server.queries.EditUser(ctx, arg)
+	editedUser, err := server.querier.EditUser(ctx, arg)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось изменить пользователя: %s", err)
 	}
@@ -208,7 +209,7 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 		return nil, unauthenticatedError(err)
 	}
 
-	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
+	deletedUser, err := server.querier.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось удалить пользователя: %s", err)
 	}
@@ -237,7 +238,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, err
 	}
 
-	user, err := server.queries.GetUserFromName(ctx, req.GetName())
+	user, err := server.querier.GetUserFromName(ctx, req.GetName())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
@@ -264,7 +265,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, err
 	}
 
-	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = server.querier.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true},
 		IDUser:       user.IDUser,
 		RefreshToken: refreshToken,
@@ -290,7 +291,7 @@ func validateRenewAccessTokenRequest(req *pb.RenewAccessTokenRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
 	if err := tools.ValidateString(req.GetRefreshToken(), 1, 9999); err != nil {
-		errorsFields = append(errorsFields, fieldViolation("password", err))
+		errorsFields = append(errorsFields, fieldViolation("refresh_token", err))
 	}
 
 	return wrapFeildErrors(errorsFields)
@@ -307,7 +308,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 
 	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.GetRefreshToken())
 
-	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+	oldSession, err := server.querier.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось удалить сессию: %s", err)
 	} else if oldSession.Blocked {
@@ -336,7 +337,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		return nil, status.Errorf(codes.Internal, "не удалось создать новый access token: %s", err)
 	}
 
-	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = server.querier.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: newRefreshPayload.IDSession, Valid: true},
 		IDUser:       newRefreshPayload.IDUser,
 		RefreshToken: newRefreshToken,
@@ -365,7 +366,7 @@ func validateVerifyEmailRequest(req *pb.VerifyEmailResponse) error {
 	}
 
 	if err := tools.ValidateString(req.GetSecretKey(), 32, 0); err != nil {
-		errorsFields = append(errorsFields, fieldViolation("id_user", err))
+		errorsFields = append(errorsFields, fieldViolation("secret_key", err))
 	}
 
 	return wrapFeildErrors(errorsFields)
@@ -377,25 +378,42 @@ func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailRespon
 
 	// ***пользователь перешёл по ссылке, верификация пройдена***
 
-	verifyRequest, err := server.queries.GetVerifyRequest(ctx, req.GetIdUser())
+	err := db.MakeTx(ctx, func(queries db.Querier) error {
+		verifyRequest, err := server.querier.GetVerifyRequest(ctx, req.GetIdUser())
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("запроса на верификацию почты нету")
+			}
+			return err
+		}
+
+		if verifyRequest.SecretKey != req.SecretKey {
+			return fmt.Errorf("неправильный секретный ключ")
+		}
+
+		// Удаляем неактуальный запрос
+		_, err = server.querier.DeleteVerifyRequest(ctx, req.GetIdUser())
+		if err != nil {
+			return err
+		}
+
+		// Если пользователь очень долго переходил по ссылке и она успела просрочиться
+		if time.Now().After(verifyRequest.ExpiredAt.Time) {
+			return status.Errorf(
+				codes.Unauthenticated,
+				"время для подтверждения почты истекло, пройдите снова процедуру верификации почты",
+			)
+		}
+
+		_, err = server.querier.SetEmailIsVerified(ctx, verifyRequest.IDUser)
+		if err != nil {
+			return status.Errorf(codes.Internal, "%s", err)
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	// Удаляем неактуальный запрос
-	_, err = server.queries.DeleteVerifyRequest(ctx, req.GetIdUser())
-	if err != nil {
-		return nil, err
-	}
-
-	// Если пользователь очень долго переходил по ссылке и она успела просрочиться
-	if time.Now().After(verifyRequest.ExpiredAt.Time) {
-		return nil, status.Errorf(codes.Unauthenticated, "время для подтверждения почты истекло, пройдите снова процедуру верификации почты")
-	}
-
-	_, err = server.queries.SetEmailIsVerified(ctx, verifyRequest.IDUser)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 
 	return &pb.VerifyEmailRequest{}, nil

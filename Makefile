@@ -52,10 +52,12 @@ sqlc:
 # Запускаем все тесты с подробным описанием, проверкой на полное покрытие тестов и без кеширования
 test:
 	sudo go test -count=1 -short -cover ./...
+mock:
+	mockgen -source=db/sqlc/querier.go -destination=db/mockdb/querier.go -package=mockdb
 
 # Пересоздаём нахер всё
 RESET:
-	docker restart postgres && make refreshdb && make sqlc
+	docker restart postgres && make refreshdb && make sqlc && make mock && make proto
 # Как RESET только ещё и сервер запускаем
 RESTART:
 	make RESET && make server
@@ -87,4 +89,4 @@ redis:
 	docker run --name redis -p 6379:6379 -d redis:7
 
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_schema
-.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis
+.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis mock

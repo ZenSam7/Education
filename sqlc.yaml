@@ -5,8 +5,6 @@ sql:
   - engine: "postgresql"
     schema: "./db/migration"
     queries: "./db/queries"
-    database:
-      uri: "postgres://root@localhost:5432/education?sslmode=disable&user=root&password=root"
     gen:
       go:
         package: "db"

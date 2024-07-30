@@ -12,10 +12,9 @@ import (
 	"testing"
 )
 
-// createRandomUser Создаём случайного пользователя (заодно тестируем его),
-// queries для отправки запросов, функцию для закрытия соединения и возвращаем всё это
-func createRandomUser() (User, *Queries, func()) {
-	queries, closeConn := GetQueries()
+// createRandomUser Создаём случайного пользователя и возвращаем функцию для закрытия соединения
+func createRandomUser() (User, *queries, func()) {
+	queries, closeConn := MakeQueries()
 
 	arg := CreateUserParams{
 		Name:         tools.GetRandomString(),
@@ -28,7 +27,7 @@ func createRandomUser() (User, *Queries, func()) {
 }
 
 func TestCreateUser(t *testing.T) {
-	queries, closeConn := GetQueries()
+	queries, closeConn := MakeQueries()
 	defer closeConn()
 
 	arg := CreateUserParams{

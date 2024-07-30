@@ -35,7 +35,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Описываем что-то типа интерфейса (типа как Querier interface)
+// Описываем что-то типа интерфейса (типа как queries interface)
 type EducationClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
@@ -139,7 +139,7 @@ func (c *educationClient) VerifyEmail(ctx context.Context, in *VerifyEmailRespon
 // All implementations must embed UnimplementedEducationServer
 // for forward compatibility
 //
-// Описываем что-то типа интерфейса (типа как Querier interface)
+// Описываем что-то типа интерфейса (типа как queries interface)
 type EducationServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)

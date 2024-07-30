@@ -29,7 +29,7 @@ func (server *Server) getCommentsOfArticle(ctx *gin.Context) {
 		Limit:     req.PageSize,
 		Offset:    (req.PageNum - 1) * req.PageSize,
 	}
-	comments, err := server.queries.GetCommentsOfArticle(ctx, args)
+	comments, err := server.querier.GetCommentsOfArticle(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -61,7 +61,7 @@ func (server *Server) createComment(ctx *gin.Context) {
 		Text:      req.Text,
 		Author:    payload.IDUser,
 	}
-	comment, err := server.queries.CreateComment(ctx, args)
+	comment, err := server.querier.CreateComment(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -75,7 +75,7 @@ type deleteCommentRequest struct {
 }
 
 func isAuthorComment(IDUser, IDComment int32, server *Server) bool {
-	comment, _ := server.queries.GetComment(context.Background(), IDComment)
+	comment, _ := server.querier.GetComment(context.Background(), IDComment)
 	return comment.Author == IDUser
 }
 
@@ -95,7 +95,7 @@ func (server *Server) deleteComment(ctx *gin.Context) {
 	}
 
 	// Удаляем комментарий
-	comment, err := server.queries.DeleteComment(ctx, req.IDComment)
+	comment, err := server.querier.DeleteComment(ctx, req.IDComment)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -117,7 +117,7 @@ func (server *Server) getComment(ctx *gin.Context) {
 	}
 
 	// Возвращаем комментарий
-	comment, err := server.queries.GetComment(ctx, req.IDComment)
+	comment, err := server.querier.GetComment(ctx, req.IDComment)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -151,7 +151,7 @@ func (server *Server) editComment(ctx *gin.Context) {
 		Text:      req.Text,
 		IDComment: req.IDComment,
 	}
-	comment, err := server.queries.EditComment(ctx, args)
+	comment, err := server.querier.EditComment(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

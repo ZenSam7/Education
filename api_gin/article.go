@@ -34,7 +34,7 @@ func (server *Server) createArticle(ctx *gin.Context) {
 		Text:    req.Text,
 		Authors: []int32{payload.IDUser},
 	}
-	article, err := server.queries.CreateArticle(ctx, arg)
+	article, err := server.querier.CreateArticle(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -45,7 +45,7 @@ func (server *Server) createArticle(ctx *gin.Context) {
 
 // userIsAuthorArticle Проверяем является ли пользователь автором статьи
 func isAuthorArticle(IDArticle, IDUser int32, server *Server) bool {
-	targetArticle, _ := server.queries.GetArticle(context.Background(), IDArticle)
+	targetArticle, _ := server.querier.GetArticle(context.Background(), IDArticle)
 	for _, authorID := range targetArticle.Authors {
 		if authorID == IDUser {
 			return true
@@ -76,7 +76,7 @@ func (server *Server) deleteArticle(ctx *gin.Context) {
 	}
 
 	// Удаляем статью
-	article, err := server.queries.DeleteArticle(ctx, req.IDArticle)
+	article, err := server.querier.DeleteArticle(ctx, req.IDArticle)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -99,7 +99,7 @@ func (server *Server) getArticle(ctx *gin.Context) {
 	}
 
 	// Получаем статью
-	article, err := server.queries.GetArticle(ctx, req.IDArticle)
+	article, err := server.querier.GetArticle(ctx, req.IDArticle)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -144,7 +144,7 @@ func (server *Server) getManySortedArticles(ctx *gin.Context) {
 		Limit:      req.PageSize,
 		Offset:     (req.PageNum - 1) * req.PageSize,
 	}
-	articles, err := server.queries.GetManySortedArticles(ctx, arg)
+	articles, err := server.querier.GetManySortedArticles(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -198,7 +198,7 @@ func (server *Server) getManySortedArticlesWithAttributes(ctx *gin.Context) {
 		Limit:            req.PageSize,
 		Offset:           (req.PageNum - 1) * req.PageSize,
 	}
-	articles, err := server.queries.GetManySortedArticlesWithAttribute(ctx, arg)
+	articles, err := server.querier.GetManySortedArticlesWithAttribute(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -243,7 +243,7 @@ func (server *Server) editArticle(ctx *gin.Context) {
 		Authors:   req.Authors,
 	}
 
-	editedArticle, err := server.queries.EditArticle(ctx, arg)
+	editedArticle, err := server.querier.EditArticle(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

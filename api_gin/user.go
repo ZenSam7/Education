@@ -44,7 +44,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 	}
-	user, err := server.queries.CreateUser(ctx, arg)
+	user, err := server.querier.CreateUser(ctx, arg)
 	if err != nil {
 		// Если пользователь с таким именем уже есть, то выдаем ошибку
 		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)" {
@@ -77,7 +77,7 @@ func (server *Server) getUser(ctx *gin.Context) {
 	}
 
 	// Получаем пользователя
-	user, err := server.queries.GetUser(ctx, req.IDUser)
+	user, err := server.querier.GetUser(ctx, req.IDUser)
 	if err != nil {
 		// Если у нас просто нет такого пользователя, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
@@ -121,7 +121,7 @@ func (server *Server) getManySortedUsers(ctx *gin.Context) {
 		Limit:       req.PageSize,
 		Offset:      (req.PageNum - 1) * req.PageSize,
 	}
-	users, err := server.queries.GetManySortedUsers(ctx, arg)
+	users, err := server.querier.GetManySortedUsers(ctx, arg)
 	if err != nil {
 		// Если у нас просто нет таких пользователей, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
@@ -192,7 +192,7 @@ func (server *Server) editUser(ctx *gin.Context) {
 		Karma:       req.Karma,
 	}
 
-	editedUser, err := server.queries.EditUser(ctx, arg)
+	editedUser, err := server.querier.EditUser(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -205,7 +205,7 @@ func (server *Server) editUser(ctx *gin.Context) {
 func (server *Server) deleteUser(ctx *gin.Context) {
 	// Удаляем авторизованного пользователя
 	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
-	deletedUser, err := server.queries.DeleteUser(ctx, payload.IDUser)
+	deletedUser, err := server.querier.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -246,7 +246,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	// Входим в систему
-	user, err := server.queries.GetUserFromName(ctx, req.Name)
+	user, err := server.querier.GetUserFromName(ctx, req.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -274,7 +274,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = server.querier.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true},
 		IDUser:       user.IDUser,
 		RefreshToken: refreshToken,
@@ -322,7 +322,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 	refreshPayload, errVerifyToken := server.tokenMaker.VerifyToken(req.RefreshToken)
 
 	// Пересоздаём и сессию (refresh токен) и access токен
-	oldSession, err := server.queries.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
+	oldSession, err := server.querier.DeleteSession(ctx, pgtype.UUID{Bytes: refreshPayload.IDSession, Valid: true})
 
 	// Тут проверяем что этот refresh токен валидный
 	if err != nil {
@@ -362,7 +362,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	_, err = server.queries.CreateSession(ctx, db.CreateSessionParams{
+	_, err = server.querier.CreateSession(ctx, db.CreateSessionParams{
 		IDSession:    pgtype.UUID{Bytes: newRefreshPayload.IDSession, Valid: true},
 		IDUser:       newRefreshPayload.IDUser,
 		RefreshToken: newRefreshToken,

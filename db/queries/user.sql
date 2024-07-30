@@ -46,7 +46,7 @@ SET
 WHERE id_user = @id_user::integer
 RETURNING *;
 
--- SetEmailIsVerified Ставим состояние почту как подтверждённую для какого-то пользователя
+-- SetEmailIsVerified Ставим состояние почты как подтверждённую для какого-то пользователя
 -- name: SetEmailIsVerified :one
 UPDATE users
 SET email_verified = true

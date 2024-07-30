@@ -11,7 +11,7 @@ import (
 
 // Server Обрабатываем запросы от API
 type Server struct {
-	queries    *db.Queries
+	querier    db.Querier
 	router     *gin.Engine
 	tokenMaker token.Maker
 	config     tools.Config
@@ -24,13 +24,13 @@ func (server *Server) Run(address string) error {
 
 // NewServer Новый HTTP процесс для обработки запросов и роутер (который просто
 // вызывает определёную функцию при каком-либо запросе на конкретный URI)
-func NewServer(config tools.Config, queries *db.Queries) (*Server, error) {
+func NewServer(config tools.Config, querier db.Querier) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, err
 	}
 	server := &Server{
-		queries:    queries,
+		querier:    querier,
 		tokenMaker: tokenMaker,
 		config:     config,
 	}

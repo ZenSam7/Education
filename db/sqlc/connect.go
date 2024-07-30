@@ -8,10 +8,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// GetQueries Возвращаем переменую через которую можно отправить запросы,
-// и функцию для закрытия соединения с бд
-func GetQueries() (*Queries, func()) {
-	ctx := context.Background()
+// queries Можно было бы спокойно обойтись и без этой переменной, но она нужна для MakeTx
+// (чтобы не создавать лишних коннектов к бд)
+var queries *Queries
+
+// MakeQueries Создаёт коннект к бд и функцию для закрытия этого соединения с бд
+func MakeQueries() (*Queries, func()) {
 	config := tools.LoadConfig()
 
 	// Создаём url для соединения через pgx
@@ -25,7 +27,7 @@ func GetQueries() (*Queries, func()) {
 
 	// Открываем соединение при помощи pgx
 	conn, err := pgx.Connect(
-		ctx,
+		context.Background(),
 		dbConnectParameters,
 	)
 	if err != nil {
@@ -43,7 +45,7 @@ func GetQueries() (*Queries, func()) {
 			} else {
 				log.Info().Msg("Закрыли соединение")
 			}
-		}(ctx, conn)
+		}(context.Background(), conn)
 	}
 
 	return queries, closeConnect
