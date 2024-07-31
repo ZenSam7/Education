@@ -11,6 +11,16 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - edu_net
+    volumes:
+      - redis:/var/lib/redis/data
+
   edu:
     container_name: edu
     build: .
@@ -19,12 +29,14 @@ services:
     environment:
       GIN_MODE: release
       DB_HOST: postgres
+      REDIS_ADDRESS: redis:6379
       MIGRATION_URL: file://migration
     ports:
       - "1213:1213"
       - "8080:8080"
     depends_on:
       - postgres
+      - redis
     networks:
       - edu_net
     command: [ "./main" ]
@@ -32,6 +44,8 @@ services:
 
 volumes:
   db_data:
+    external: true
+  redis:
     external: true
 
 networks:

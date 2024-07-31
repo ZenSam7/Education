@@ -502,3 +502,22 @@ func TestRenewAccessToken_SessionBlocked(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, codes.Unauthenticated, state.Code())
 }
+
+// Test for validation error in VerifyEmail
+func TestVerifyEmail_ValidationError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	req := &pb.VerifyEmailRequest{
+		IdUser:    0,  // Invalid user ID
+		SecretKey: "", // Invalid secret key
+	}
+
+	server := &Server{}
+	resp, err := server.VerifyEmail(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	state, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Equal(t, codes.InvalidArgument, state.Code())
+}

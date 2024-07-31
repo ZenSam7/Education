@@ -48,7 +48,7 @@ service Education {
           body: "*"
         };
   };
-  rpc VerifyEmail(VerifyEmailResponse) returns (VerifyEmailRequest) {
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {
         option (google.api.http) = {
           get: "/verify_email"
         };

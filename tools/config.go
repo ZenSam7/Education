@@ -62,12 +62,13 @@ func findAbsolutePath() {
 		checkDir := strings.Join(tempPath[:i], PathSeparator)
 		filesInCheckDir, err := os.ReadDir(checkDir)
 		if err != nil {
-			log.Fatal().Err(err).Msg("не получилось узнать абсолютный путь")
+			log.Fatal().Err(err).Msg("не получилось узнать нахождение корневого файла")
 		}
 
 		// Содержит ли checkDir main.go
 		for _, file := range filesInCheckDir {
-			if file.Name() == "main.go" {
+			// "mail.go" для запуска с компа, "main" для докер контейнера
+			if file.Name() == "main.go" || file.Name() == "main" {
 				absolutePath = checkDir
 				return
 			}

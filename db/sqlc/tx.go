@@ -7,6 +7,11 @@ import (
 
 // MakeTx создаём и выполняем новую транзакцию
 func MakeTx(ctx context.Context, fn func(Querier) error) error {
+	if queries == nil {
+		// Не закрываем соединение (да, это плохо)
+		queries, _ = MakeQueries()
+	}
+
 	conn, ok := queries.db.(*pgx.Conn)
 	if !ok {
 		return pgx.ErrTxClosed

@@ -19,6 +19,9 @@ createdb:
 dropdb:
 	docker exec postgres dropdb education
 
+redis:
+	docker run --name redis -v redis:/var/lib/redis/data -p 6379:6379 -d redis:7
+
 # Поднимаем миграции (т.е. переходим к новой версии бд)
 migrateup:
 	migrate -path ./db/migration/ -database ${POSTGRES_URL} up
@@ -76,6 +79,8 @@ runimage:
 	docker run --name edu -p 8080:8080 -e GIN_MODE=release -e DB_HOST="postgres" --net edu_net education:latest
 net:
 	docker network create edu_net
+compose:
+	docker compose up --build
 
 # Если не работает proto, надо сделать эти 2 команды
 # export GOPATH=$HOME/go
@@ -87,8 +92,5 @@ proto:
 		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional \
 		   proto/*.proto
 
-redis:
-	docker run --name redis -p 6379:6379 -d redis:7
-
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_schema
-.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis mock
+.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis mock compose

@@ -4,8 +4,8 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"github.com/ZenSam7/Education/tools"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ import (
 )
 
 // createRandomUser Создаём случайного пользователя и возвращаем функцию для закрытия соединения
-func createRandomUser() (User, *queries, func()) {
+func createRandomUser() (User, *Queries, func()) {
 	queries, closeConn := MakeQueries()
 
 	arg := CreateUserParams{
@@ -138,7 +138,7 @@ func TestDeleteUser(t *testing.T) {
 
 	findedUser, err := queries.GetUser(context.Background(), user.IDUser)
 	require.Error(t, err)
-	require.EqualError(t, err, pgx.ErrNoRows.Error())
+	require.EqualError(t, err, sql.ErrNoRows.Error())
 
 	require.Empty(t, findedUser)
 }

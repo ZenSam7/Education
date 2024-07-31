@@ -14,6 +14,7 @@ WORKDIR /app/education
 COPY --from=builder /app/education/main .
 # Отдельно загружаем конфигурацию и миграции
 COPY .env .
+COPY templates ./templates
 COPY db/migration ./migration
 
 EXPOSE 8080

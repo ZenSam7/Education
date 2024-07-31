@@ -44,7 +44,7 @@ type EducationClient interface {
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
 	RenewAccessToken(ctx context.Context, in *RenewAccessTokenRequest, opts ...grpc.CallOption) (*RenewAccessTokenResponse, error)
-	VerifyEmail(ctx context.Context, in *VerifyEmailResponse, opts ...grpc.CallOption) (*VerifyEmailRequest, error)
+	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error)
 }
 
 type educationClient struct {
@@ -125,9 +125,9 @@ func (c *educationClient) RenewAccessToken(ctx context.Context, in *RenewAccessT
 	return out, nil
 }
 
-func (c *educationClient) VerifyEmail(ctx context.Context, in *VerifyEmailResponse, opts ...grpc.CallOption) (*VerifyEmailRequest, error) {
+func (c *educationClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(VerifyEmailRequest)
+	out := new(VerifyEmailResponse)
 	err := c.cc.Invoke(ctx, Education_VerifyEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ type EducationServer interface {
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
 	RenewAccessToken(context.Context, *RenewAccessTokenRequest) (*RenewAccessTokenResponse, error)
-	VerifyEmail(context.Context, *VerifyEmailResponse) (*VerifyEmailRequest, error)
+	VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error)
 	mustEmbedUnimplementedEducationServer()
 }
 
@@ -177,7 +177,7 @@ func (UnimplementedEducationServer) LoginUser(context.Context, *LoginUserRequest
 func (UnimplementedEducationServer) RenewAccessToken(context.Context, *RenewAccessTokenRequest) (*RenewAccessTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RenewAccessToken not implemented")
 }
-func (UnimplementedEducationServer) VerifyEmail(context.Context, *VerifyEmailResponse) (*VerifyEmailRequest, error) {
+func (UnimplementedEducationServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyEmail not implemented")
 }
 func (UnimplementedEducationServer) mustEmbedUnimplementedEducationServer() {}
@@ -320,7 +320,7 @@ func _Education_RenewAccessToken_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _Education_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VerifyEmailResponse)
+	in := new(VerifyEmailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -332,7 +332,7 @@ func _Education_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: Education_VerifyEmail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EducationServer).VerifyEmail(ctx, req.(*VerifyEmailResponse))
+		return srv.(EducationServer).VerifyEmail(ctx, req.(*VerifyEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

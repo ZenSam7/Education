@@ -270,7 +270,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/protobufVerifyEmailRequest"
+              "$ref": "#/definitions/protobufVerifyEmailResponse"
             }
           },
           "default": {
@@ -280,6 +280,21 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "idUser",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "secretKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "tags": [
           "Education"
         ]
@@ -456,17 +471,8 @@
       },
       "title": "Описываем какие данные передаём под именем \"пользователь\""
     },
-    "protobufVerifyEmailRequest": {
-      "type": "object",
-      "properties": {
-        "idUser": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "secretKey": {
-          "type": "string"
-        }
-      }
+    "protobufVerifyEmailResponse": {
+      "type": "object"
     },
     "rpcStatus": {
       "type": "object",
