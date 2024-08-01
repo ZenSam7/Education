@@ -16,6 +16,7 @@ const (
 
 type TaskProcessor interface {
 	Start() error
+	Shutdown()
 	ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error
 }
 
@@ -29,6 +30,9 @@ type RedisTaskProcessor struct {
 func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskProcessor {
 	cnfg := tools.LoadConfig()
 	return &RedisTaskProcessor{
+		queries: queries,
+		sender:  &tools.GmailSender{Config: cnfg},
+		config:  cnfg,
 		server: asynq.NewServer(opt, asynq.Config{
 			// Queues Важные задачи распределяем по отдельным потокам (цифра = степень важности)
 			Queues: map[string]int{
@@ -46,11 +50,6 @@ func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskPr
 			}),
 			Logger: NewLogger(),
 		}),
-		queries: queries,
-		sender: &tools.GmailSender{
-			Config: cnfg,
-		},
-		config: cnfg,
 	}
 }
 
@@ -61,4 +60,8 @@ func (p *RedisTaskProcessor) Start() error {
 	// TODO: добавить какие-нибудь ещё функции
 
 	return p.server.Start(mux)
+}
+
+func (p *RedisTaskProcessor) Shutdown() {
+	p.server.Shutdown()
 }

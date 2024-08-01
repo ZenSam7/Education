@@ -138,7 +138,7 @@ func TestDeleteUser(t *testing.T) {
 
 	findedUser, err := queries.GetUser(context.Background(), user.IDUser)
 	require.Error(t, err)
-	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.EqualError(t, sql.ErrNoRows, "sql: "+err.Error())
 
 	require.Empty(t, findedUser)
 }

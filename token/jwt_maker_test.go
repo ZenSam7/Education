@@ -20,7 +20,7 @@ func TestNewJWTMaker(t *testing.T) {
 	require.NotEmpty(t, token)
 	require.NotEmpty(t, payload)
 
-	payload, err = NewPayload(randomIDUser, tools.UsualRole, duration)
+	payload, err = NewPayload(randomIDUser, tools.AdminRole, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, payload)
 
