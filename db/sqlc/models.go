@@ -47,6 +47,7 @@ type User struct {
 	Email         string             `json:"email"`
 	PasswordHash  string             `json:"password_hash"`
 	EmailVerified bool               `json:"email_verified"`
+	Role          string             `json:"role"`
 }
 
 type VerifyEmail struct {

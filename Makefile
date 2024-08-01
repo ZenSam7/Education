@@ -40,7 +40,7 @@ makemigrate:
 # Дальше при помощи https://dbdiagram.io/d уже делаем что захотим
 db_schema:
 	docker exec -it postgres pg_dump -h localhost -p 5432 -d education -U root -s -F p -E UTF-8 -f /bin/abc.sql
-	docker cp postgres:/bin/abc.sql ./documentation/schema.sql
+	docker cp postgres:/bin/abc.sql ./doc/schema.sql
 
 # Подключаемся к бд
 connect:

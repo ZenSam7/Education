@@ -9,6 +9,7 @@ import (
 type Payload struct {
 	IDSession uuid.UUID `json:"id_session"`
 	IDUser    int32     `json:"id_user"`
+	Role      string    `json:"role"`
 	// IssuedAt Когда токен создался
 	IssuedAt time.Time `json:"issued_at"`
 	// ExpiredAt Когда токен просрочится
@@ -24,10 +25,11 @@ func (p *Payload) Valid() error {
 }
 
 // NewPayload Просто создаём новый токен
-func NewPayload(IDUser int32, duration time.Duration) (*Payload, error) {
+func NewPayload(IDUser int32, role string, duration time.Duration) (*Payload, error) {
 	payload := &Payload{
 		IDSession: uuid.New(),
 		IDUser:    IDUser,
+		Role:      role,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
 	}

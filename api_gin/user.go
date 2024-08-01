@@ -263,12 +263,20 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	// Залогиненному пользователю даём access и refresh токены
-	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
+	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(
+		user.IDUser,
+		user.Role,
+		server.config.RefreshTokenDuration,
+	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.RefreshTokenDuration)
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
+		user.IDUser,
+		user.Role,
+		server.config.RefreshTokenDuration,
+	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -347,6 +355,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 	// Создаём новые access и refresh токены (и сессию)
 	newRefreshToken, newRefreshPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
+		refreshPayload.Role,
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
@@ -355,6 +364,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 	}
 	newAccessToken, newAccessPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
+		refreshPayload.Role,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {

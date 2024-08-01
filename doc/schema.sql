@@ -143,6 +143,7 @@ CREATE TABLE public.users (
     email character varying NOT NULL,
     password_hash character varying NOT NULL,
     email_verified boolean DEFAULT false NOT NULL,
+    role character varying DEFAULT 'usual'::character varying NOT NULL,
     CONSTRAINT email_must_be_valid CHECK (((email)::text ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'::text)),
     CONSTRAINT users_email_check CHECK (((email)::text <> ''::text)),
     CONSTRAINT users_name_check CHECK (((name)::text <> ''::text)),
@@ -295,6 +296,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: verify_emails verify_emails_id_user_key; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.verify_emails
+    ADD CONSTRAINT verify_emails_id_user_key UNIQUE (id_user);
+
+
+--
 -- Name: verify_emails verify_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
@@ -321,14 +330,6 @@ CREATE INDEX comment_indx ON public.comments USING btree (id_comment);
 --
 
 CREATE INDEX user_indx ON public.users USING btree (id_user);
-
-
---
--- Name: comments comments_author_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.comments
-    ADD CONSTRAINT comments_author_fkey FOREIGN KEY (author) REFERENCES public.users(id_user);
 
 
 --

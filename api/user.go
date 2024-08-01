@@ -178,14 +178,20 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 
 	accessPayload, err := server.authUser(ctx)
 	if err != nil {
-		return nil, unauthenticatedError(err)
+		return nil, status.Errorf(codes.Unauthenticated, "пользователь не авторизовался: %s", err)
+	}
+
+	// Чтобы изменить карму надо либо быть системой которая начисляем карму, либо администратором
+	// (проверяем права)
+	if req.Karma != nil && accessPayload.Role == tools.UsualRole {
+		return nil, status.Errorf(codes.PermissionDenied, "у вас нет прав на изменение кармы")
 	}
 
 	arg := db.EditUserParams{
 		IDUser: accessPayload.IDUser,
 		Name:   req.GetName(),
 		// Разделяем пустое значение и значение которое вообще не указывали
-		// (Т.е. имеем возможность указать '' или 0 как валидный параметр)
+		// (Т.е. имеем возможность указать '' или 0 как валидный параметр (стереть значения), но не nil)
 		Description: pgtype.Text{String: req.GetDescription(), Valid: req.Description != nil},
 		Karma:       pgtype.Int4{Int32: req.GetKarma(), Valid: req.Karma != nil},
 	}
@@ -206,7 +212,7 @@ func (server *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	payload, err := server.authUser(ctx)
 	if err != nil {
-		return nil, unauthenticatedError(err)
+		return nil, status.Errorf(codes.Unauthenticated, "пользователь не авторизовался: %s", err)
 	}
 
 	deletedUser, err := server.querier.DeleteUser(ctx, payload.IDUser)
@@ -251,11 +257,19 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	}
 
 	// Если с паролем со входом всё ок, то создаём новую сессию
-	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.AccessTokenDuration)
+	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(
+		user.IDUser,
+		user.Role,
+		server.config.AccessTokenDuration,
+	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось создать access token: %s", err)
 	}
-	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.IDUser, server.config.RefreshTokenDuration)
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
+		user.IDUser,
+		user.Role,
+		server.config.AccessTokenDuration,
+	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "не удалось создать refresh token: %s", err)
 	}
@@ -330,6 +344,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 
 	newRefreshToken, newRefreshPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
+		refreshPayload.Role,
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
@@ -337,6 +352,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 	}
 	newAccessToken, newAccessPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.IDUser,
+		refreshPayload.Role,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {

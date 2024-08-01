@@ -21,10 +21,6 @@ func wrapFeildErrors(violation []*errdetails.BadRequest_FieldViolation) error {
 	return nil
 }
 
-func unauthenticatedError(err error) error {
-	return status.Errorf(codes.Unauthenticated, "пользователь не авторизовался: %s", err)
-}
-
 func fieldViolation(field string, err error) *errdetails.BadRequest_FieldViolation {
 	return &errdetails.BadRequest_FieldViolation{Field: field, Description: err.Error()}
 }

@@ -26,7 +26,7 @@ func (q *Queries) CountRowsUser(ctx context.Context) (int64, error) {
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, email, password_hash)
 VALUES ($1::text, $2::text, $3::text)
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
 `
 
 type CreateUserParams struct {
@@ -48,6 +48,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.PasswordHash,
 		&i.EmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
@@ -55,7 +56,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
 WHERE id_user = $1::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
 `
 
 // DeleteUser Удаляем пользователя
@@ -71,6 +72,7 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 		&i.Email,
 		&i.PasswordHash,
 		&i.EmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
@@ -85,7 +87,7 @@ SET
   description = COALESCE($2::text, description),
   karma = COALESCE($3::integer, karma)
 WHERE id_user = $4::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
 `
 
 type EditUserParams struct {
@@ -113,12 +115,13 @@ func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error
 		&i.Email,
 		&i.PasswordHash,
 		&i.EmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
 
 const getManySortedUsers = `-- name: GetManySortedUsers :many
-SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role FROM users
 ORDER BY
         CASE WHEN $1::boolean THEN id_user::integer
              WHEN $2::boolean THEN karma::integer END
@@ -165,6 +168,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 			&i.Email,
 			&i.PasswordHash,
 			&i.EmailVerified,
+			&i.Role,
 		); err != nil {
 			return nil, err
 		}
@@ -177,7 +181,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role FROM users
 WHERE id_user = $1
 `
 
@@ -194,12 +198,13 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 		&i.Email,
 		&i.PasswordHash,
 		&i.EmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
 
 const getUserFromName = `-- name: GetUserFromName :one
-SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role FROM users
 WHERE name = $1
 `
 
@@ -216,6 +221,7 @@ func (q *Queries) GetUserFromName(ctx context.Context, name string) (User, error
 		&i.Email,
 		&i.PasswordHash,
 		&i.EmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
@@ -224,7 +230,7 @@ const setEmailIsVerified = `-- name: SetEmailIsVerified :one
 UPDATE users
 SET email_verified = true
 WHERE id_user = $1::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
 `
 
 // SetEmailIsVerified Ставим состояние почты как подтверждённую для какого-то пользователя
@@ -240,6 +246,7 @@ func (q *Queries) SetEmailIsVerified(ctx context.Context, idUser int32) (User, e
 		&i.Email,
 		&i.PasswordHash,
 		&i.EmailVerified,
+		&i.Role,
 	)
 	return i, err
 }

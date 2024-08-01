@@ -50,6 +50,7 @@ Table "users" {
   "email" "character varying" [unique, not null]
   "password_hash" "character varying" [unique, not null]
   "email_verified" boolean [not null, default: false]
+  "role" "character varying" [not null, default: `'usual'::charactervarying`]
 
   Indexes {
     id_user [type: btree, name: "user_indx"]
@@ -58,12 +59,10 @@ Table "users" {
 
 Table "verify_emails" {
   "id_verify_email" integer [pk, not null]
-  "id_user" integer [not null]
+  "id_user" integer [unique, not null]
   "secret_key" "character varying" [not null]
   "expired_at" timestamp [not null, default: `now()+'00:10:00'::interval`]
 }
-
-Ref "comments_author_fkey":"users"."id_user" < "comments"."author"
 
 Ref "sessions_id_user_fkey":"users"."id_user" < "sessions"."id_user"
 

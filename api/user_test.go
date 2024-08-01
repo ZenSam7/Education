@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -41,7 +42,7 @@ func TestGetUser_Success(t *testing.T) {
 
 	mockQueries := my_mocks.NewMockQuerier(ctrl)
 	mockQueries.EXPECT().
-		GetUser(gomock.Any(), gomock.Eq(user.IDUser)).
+		GetUser(gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem()), gomock.Eq(user.IDUser)).
 		Times(1).
 		Return(user, nil)
 
@@ -84,7 +85,7 @@ func TestGetUser_NotFound(t *testing.T) {
 
 	mockQueries := my_mocks.NewMockQuerier(ctrl)
 	mockQueries.EXPECT().
-		GetUser(gomock.Any(), gomock.Eq(idUser)).
+		GetUser(gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem()), gomock.Eq(idUser)).
 		Times(1).
 		Return(getRandomUser(), sql.ErrNoRows)
 
@@ -131,9 +132,11 @@ func TestGetManySortedUsers_Success(t *testing.T) {
 
 	mockQueries := my_mocks.NewMockQuerier(ctrl)
 	mockQueries.EXPECT().
-		GetManySortedUsers(gomock.Any(), gomock.Eq(db.GetManySortedUsersParams{
-			Offset: (req.PageNum - 1) * req.PageSize, Limit: req.GetPageSize(),
-		})).
+		GetManySortedUsers(
+			gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem()),
+			gomock.Eq(db.GetManySortedUsersParams{
+				Offset: (req.PageNum - 1) * req.PageSize, Limit: req.GetPageSize(),
+			})).
 		Times(1).
 		Return([]db.User{getRandomUser()}, nil)
 
@@ -182,7 +185,7 @@ func TestEditUser_Success(t *testing.T) {
 
 	mockQueries := my_mocks.NewMockQuerier(ctrl)
 	mockQueries.EXPECT().
-		EditUser(gomock.Any(), db.EditUserParams{
+		EditUser(gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem()), db.EditUserParams{
 			IDUser: user.IDUser, Name: req.GetName(),
 			Description: pgtype.Text{String: req.GetDescription(), Valid: true},
 			Karma:       pgtype.Int4{Int32: req.GetKarma(), Valid: true},
@@ -194,7 +197,7 @@ func TestEditUser_Success(t *testing.T) {
 	// авторизации чтобы metadata работала
 	mockTokenMaker := my_mocks.NewMockMaker(ctrl)
 	mockTokenMaker.EXPECT().
-		VerifyToken(gomock.Any()).
+		VerifyToken(gomock.AssignableToTypeOf(reflect.TypeOf((*string)(nil)).Elem())).
 		Times(1).
 		Return(&token.Payload{IDUser: user.IDUser}, nil)
 
@@ -250,7 +253,7 @@ func TestDeleteUser_Success(t *testing.T) {
 
 	mockTokenMaker := my_mocks.NewMockMaker(ctrl)
 	mockTokenMaker.EXPECT().
-		VerifyToken(gomock.Any()).
+		VerifyToken(gomock.AssignableToTypeOf(reflect.TypeOf((*string)(nil)).Elem())).
 		Times(1).
 		Return(&token.Payload{IDUser: user.IDUser}, nil)
 
@@ -285,13 +288,17 @@ func TestLoginUser_Success(t *testing.T) {
 		Times(1).
 		Return(user, nil)
 	mockQueries.EXPECT().
-		CreateSession(loginCtx, gomock.Any()).
+		CreateSession(loginCtx, gomock.AssignableToTypeOf(reflect.TypeOf((*db.CreateSessionParams)(nil)).Elem())).
 		Times(1).
 		Return(db.Session{}, nil)
 
 	mockTokenMaker := my_mocks.NewMockMaker(ctrl)
 	mockTokenMaker.EXPECT().
-		CreateToken(gomock.Any(), gomock.Any()).
+		CreateToken(
+			gomock.AssignableToTypeOf(reflect.TypeOf((*int32)(nil)).Elem()),
+			gomock.AssignableToTypeOf(reflect.TypeOf((*string)(nil)).Elem()),
+			gomock.AssignableToTypeOf(reflect.TypeOf((*time.Duration)(nil)).Elem()),
+		).
 		Times(2).
 		Return("token", &token.Payload{IDUser: user.IDUser}, nil)
 
@@ -333,7 +340,10 @@ func TestLoginUser_UserNotFound(t *testing.T) {
 
 	mockQueries := my_mocks.NewMockQuerier(ctrl)
 	mockQueries.EXPECT().
-		GetUserFromName(gomock.Any(), gomock.Eq(req.GetName())).
+		GetUserFromName(
+			gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem()),
+			gomock.Eq(req.GetName()),
+		).
 		Times(1).
 		Return(db.User{}, sql.ErrNoRows)
 
@@ -357,7 +367,10 @@ func TestLoginUser_InvalidPassword(t *testing.T) {
 
 	mockQueries := my_mocks.NewMockQuerier(ctrl)
 	mockQueries.EXPECT().
-		GetUserFromName(gomock.Any(), gomock.Eq(req.GetName())).
+		GetUserFromName(
+			gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem()),
+			gomock.Eq(req.GetName()),
+		).
 		Times(1).
 		Return(user, nil)
 
@@ -402,7 +415,7 @@ func TestRenewAccessToken_Success(t *testing.T) {
 		Times(1).
 		Return(oldSession, nil)
 	mockQueries.EXPECT().
-		CreateSession(loginCtx, gomock.Any()).
+		CreateSession(loginCtx, gomock.AssignableToTypeOf(reflect.TypeOf((*db.CreateSessionParams)(nil)).Elem())).
 		Times(1).
 		Return(db.Session{}, nil)
 
@@ -412,7 +425,11 @@ func TestRenewAccessToken_Success(t *testing.T) {
 		Times(1).
 		Return(refreshPayload, nil)
 	mockTokenMaker.EXPECT().
-		CreateToken(gomock.Any(), gomock.Any()).
+		CreateToken(
+			gomock.AssignableToTypeOf(reflect.TypeOf((*int32)(nil)).Elem()),
+			gomock.AssignableToTypeOf(reflect.TypeOf((*string)(nil)).Elem()),
+			gomock.AssignableToTypeOf(reflect.TypeOf((*time.Duration)(nil)).Elem()),
+		).
 		Times(2).
 		Return("newToken", refreshPayload, nil)
 
