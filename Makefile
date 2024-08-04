@@ -1,16 +1,10 @@
-# Файл для упрощения работы с командами
-# Заменяет команды на сокращённые версии
-# Как воспользоваться: Открываем терминал WSL Ubuntu и пишем:
-# $ cd /mnt/c/Users/samki/GoProjects/Education
-# $ make <название нашей команды>
-
 include .env
 
 POSTGRES_URL = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}"
 
 # Создаём новый контейнер с бд
 postgres:
-	docker run --name postgres -p 5432:5432 --net edu_net -v db_data:/var/lib/postgresql/data \
+	docker run --name postgres -p 5432:5432 -v db_data:/var/lib/postgresql/data \
  		-e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
 # Создаём новую бд
 createdb:
@@ -40,7 +34,7 @@ makemigrate:
 # Дальше при помощи https://dbdiagram.io/d уже делаем что захотим
 db_schema:
 	docker exec -it postgres pg_dump -h localhost -p 5432 -d education -U root -s -F p -E UTF-8 -f /bin/abc.sql
-	docker cp postgres:/bin/abc.sql ./doc/schema.sql
+	docker cp postgres:/bin/abc.sql ./documentation/schema.sql
 
 # Подключаемся к бд
 connect:
@@ -71,26 +65,21 @@ RESTART:
 server:
 	sudo go run main.go
 
-# Собираем образ
-myimage:
-	docker build -t education:latest .
-# Меняем DB_HOST с localhost на "postgres" (имя контейнера), т.к. они подключены к одной сети edu_net
-runimage:
-	docker run --name edu -p 8080:8080 -e GIN_MODE=release -e DB_HOST="postgres" --net edu_net education:latest
 net:
-	docker network create edu_net
-compose:
-	docker compose up --build
+	docker network create education_net
+volume:
+	docker volume create redis
+	docker volume create db_data
 
 # Если не работает proto, надо сделать эти 2 команды
 # export GOPATH=$HOME/go
 # PATH=$PATH:$GOPATH/bin
 proto:
 	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
-		   --openapiv2_out=doc --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
+		   --openapiv2_out=documentation --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
 		   --grpc-gateway_out=protobuf --grpc-gateway_opt=paths=source_relative \
 		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional \
 		   proto/*.proto
 
 .PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_schema
-.PHONY: connect refreshdb sqlc test RESET RESTART server myimage runimage net proto redis mock compose
+.PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume

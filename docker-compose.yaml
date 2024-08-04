@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     networks:
-      - edu_net
+      - education_net
     volumes:
       - db_data:/var/lib/postgresql/data
 
@@ -17,7 +17,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - edu_net
+      - education_net
     volumes:
       - redis:/var/lib/redis/data
 
@@ -27,9 +27,8 @@ services:
     env_file:
       - .env
     environment:
-      GIN_MODE: release
       DB_HOST: postgres
-      REDIS_ADDRESS: redis:6379
+      REDIS_ADDRESS: redis
       MIGRATION_URL: file://migration
     ports:
       - "1213:1213"
@@ -38,18 +37,15 @@ services:
       - postgres
       - redis
     networks:
-      - edu_net
+      - education_net
     command: [ "./main" ]
 
 
 volumes:
   db_data:
-    external: true
   redis:
-    external: true
 
 networks:
-  edu_net:
-    name: edu_net
+  education_net:
+    name: education_net
     driver: bridge
-    external: true  # Используем существующую сеть

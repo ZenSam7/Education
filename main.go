@@ -61,6 +61,7 @@ func main() {
 	startTaskProcessor(redisOpt)
 	runHttpGatewayServer(taskDistributor)
 	runGrpcServer(taskDistributor)
+	//runGinServer()
 
 	if err := waitErr.Wait(); err != nil {
 		log.Fatal().Err(err).Msg("сервер лёг")
