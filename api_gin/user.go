@@ -9,6 +9,7 @@ import (
 	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"time"
 )
@@ -159,7 +160,16 @@ func (server *Server) editUser(ctx *gin.Context) {
 	}
 
 	// Делаем операцию только для авторизованного пользователя
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	t, exist := ctx.Get(authPayloadKey)
+	if !exist {
+		t = ctx.Request.Header.Get(authPayloadKey)
+	}
+	tkn := t.(string)
+	payload, err := server.tokenMaker.VerifyToken(tkn)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
 
 	// Тут мы разделяем поля которые содержат пустые строки от полей которые вообще не указаны в теле
 	var req editUserRequest
@@ -204,7 +214,17 @@ func (server *Server) editUser(ctx *gin.Context) {
 
 func (server *Server) deleteUser(ctx *gin.Context) {
 	// Удаляем авторизованного пользователя
-	payload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	t, exist := ctx.Get(authPayloadKey)
+	if !exist {
+		t = ctx.Request.Header.Get(authPayloadKey)
+	}
+	tkn := t.(string)
+	payload, err := server.tokenMaker.VerifyToken(tkn)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
 	deletedUser, err := server.querier.DeleteUser(ctx, payload.IDUser)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -390,4 +410,10 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		RefreshToken:          newRefreshToken,
 		RefreshTokenExpiredAt: newRefreshPayload.ExpiredAt,
 	})
+
+	// Удаляем просроченные сессии
+	err = server.querier.DeleteExpiredSessions(ctx)
+	if err != nil || err != sql.ErrNoRows {
+		log.Err(err).Msg("сессии не удалились")
+	}
 }

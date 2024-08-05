@@ -35,6 +35,10 @@ type Querier interface {
 	DeleteArticle(ctx context.Context, idArticle int32) (Article, error)
 	// DeleteComment Удаляем комментарий к статье
 	DeleteComment(ctx context.Context, idComment int32) (Article, error)
+	// DeleteExiredRequests Удаляем все просроченные сессии
+	DeleteExiredRequests(ctx context.Context) error
+	// DeleteExpiredSessions Удаляем все просроченные сессии
+	DeleteExpiredSessions(ctx context.Context) error
 	// DeleteSession Удаляем сессию по id
 	DeleteSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// DeleteUser Удаляем пользователя
@@ -53,7 +57,7 @@ type Querier interface {
 	GetArticlesWithAttribute(ctx context.Context, arg GetArticlesWithAttributeParams) ([]Article, error)
 	// GetComment Возвращаем комментарий
 	GetComment(ctx context.Context, idComment int32) (Comment, error)
-	// GetCommentsOfArticle Возвращаем комментарии
+	// GetCommentsOfArticle Возвращаем комментарии к статье
 	GetCommentsOfArticle(ctx context.Context, arg GetCommentsOfArticleParams) ([]Comment, error)
 	// GetManySortedArticles Возвращаем много отсортированных статей
 	GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error)
@@ -63,7 +67,7 @@ type Querier interface {
 	// GetManySortedUsers Возвращаем слайс пользователей отсортированных по какому-то параметру
 	// (можно поставить: id_user, и сортировки не будет)
 	GetManySortedUsers(ctx context.Context, arg GetManySortedUsersParams) ([]User, error)
-	// GetSession Получаем сессиб по id
+	// GetSession Получаем сессию по id
 	GetSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// GetUser Возвращаем пользователя
 	GetUser(ctx context.Context, idUser int32) (User, error)

@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Education",
-    "version": "1.0",
+    "version": "1.1",
     "contact": {
       "name": "ZenSam7",
       "url": "https://github.com/ZenSam7"
@@ -20,6 +20,83 @@
     "application/json"
   ],
   "paths": {
+    "/comments_of_article": {
+      "get": {
+        "operationId": "Education_GetCommentsOfArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetCommentsOfArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idArticle",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/create_comment": {
+      "post": {
+        "operationId": "Education_CreateComment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateCommentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateCommentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/create_user": {
       "post": {
         "operationId": "Education_CreateUser",
@@ -52,6 +129,37 @@
         ]
       }
     },
+    "/delete_comment": {
+      "delete": {
+        "operationId": "Education_DeleteComment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeleteCommentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idComment",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/delete_user": {
       "delete": {
         "operationId": "Education_DeleteUser",
@@ -69,6 +177,38 @@
             }
           }
         },
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/edit_comment": {
+      "patch": {
+        "operationId": "Education_EditComment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufEditCommentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufEditCommentRequest"
+            }
+          }
+        ],
         "tags": [
           "Education"
         ]
@@ -99,6 +239,37 @@
             "schema": {
               "$ref": "#/definitions/protobufEditUserRequest"
             }
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/get_comment": {
+      "get": {
+        "operationId": "Education_GetComment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetCommentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idComment",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
@@ -311,6 +482,58 @@
       },
       "additionalProperties": {}
     },
+    "protobufComment": {
+      "type": "object",
+      "properties": {
+        "idComment": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "text": {
+          "type": "string"
+        },
+        "author": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "evaluation": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "editedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufCreateCommentRequest": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "idArticle": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "evaluation": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "protobufCreateCommentResponse": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/protobufComment"
+        }
+      }
+    },
     "protobufCreateUserRequest": {
       "type": "object",
       "properties": {
@@ -333,11 +556,43 @@
         }
       }
     },
+    "protobufDeleteCommentResponse": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/protobufComment"
+        }
+      }
+    },
     "protobufDeleteUserResponse": {
       "type": "object",
       "properties": {
         "user": {
           "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufEditCommentRequest": {
+      "type": "object",
+      "properties": {
+        "idComment": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "text": {
+          "type": "string"
+        },
+        "evaluation": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "protobufEditCommentResponse": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/protobufComment"
         }
       }
     },
@@ -361,6 +616,26 @@
       "properties": {
         "user": {
           "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufGetCommentResponse": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/protobufComment"
+        }
+      }
+    },
+    "protobufGetCommentsOfArticleResponse": {
+      "type": "object",
+      "properties": {
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufComment"
+          }
         }
       }
     },

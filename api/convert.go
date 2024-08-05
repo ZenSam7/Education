@@ -16,3 +16,14 @@ func convUser(user db.User) *pb.User {
 		CreatedAt:   timestamppb.New(user.CreatedAt.Time),
 	}
 }
+
+func convComment(comment db.Comment) *pb.Comment {
+	return &pb.Comment{
+		IdComment: comment.IDComment,
+		Text: comment.Text,
+		Author: comment.Author,
+		Evaluation: comment.Evaluation,
+		CreatedAt: timestamppb.New(comment.CreatedAt.Time),
+		EditedAt: timestamppb.New(comment.EditedAt.Time),
+	}
+}

@@ -92,20 +92,26 @@ SET
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
     text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
-    author = CASE WHEN $2::integer <> author THEN $2::integer ELSE author END
-WHERE id_comment = $3::integer
+    evaluation = CASE WHEN $3::integer <> evaluation THEN $3::integer ELSE evaluation END
+WHERE id_comment = $4::integer
 RETURNING id_comment, created_at, edited_at, text, author, evaluation
 `
 
 type EditCommentParams struct {
-	Text      string `json:"text"`
-	Author    int32  `json:"author"`
-	IDComment int32  `json:"id_comment"`
+	Text       string `json:"text"`
+	Author     int32  `json:"author"`
+	Evaluation int32  `json:"evaluation"`
+	IDComment  int32  `json:"id_comment"`
 }
 
 // EditComment Изменяем параметр(ы) пользователя
 func (q *Queries) EditComment(ctx context.Context, arg EditCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, editComment, arg.Text, arg.Author, arg.IDComment)
+	row := q.db.QueryRow(ctx, editComment,
+		arg.Text,
+		arg.Author,
+		arg.Evaluation,
+		arg.IDComment,
+	)
 	var i Comment
 	err := row.Scan(
 		&i.IDComment,
@@ -155,7 +161,7 @@ type GetCommentsOfArticleParams struct {
 	IDArticle int32 `json:"id_article"`
 }
 
-// GetCommentsOfArticle Возвращаем комментарии
+// GetCommentsOfArticle Возвращаем комментарии к статье
 func (q *Queries) GetCommentsOfArticle(ctx context.Context, arg GetCommentsOfArticleParams) ([]Comment, error) {
 	rows, err := q.db.Query(ctx, getCommentsOfArticle, arg.Offset, arg.Limit, arg.IDArticle)
 	if err != nil {

@@ -183,7 +183,7 @@ CREATE TABLE public.verify_emails (
     id_verify_email integer NOT NULL,
     id_user integer NOT NULL,
     secret_key character varying NOT NULL,
-    expired_at timestamp with time zone DEFAULT (now() + '00:10:00'::interval) NOT NULL
+    expired_at timestamp with time zone DEFAULT (now() + '00:01:00'::interval) NOT NULL
 );
 
 

@@ -32,9 +32,11 @@ makemigrate:
 
 # Экспортируем схему из контейнера postgres в .sql
 # Дальше при помощи https://dbdiagram.io/d уже делаем что захотим
-db_schema:
+db_doc:
 	docker exec -it postgres pg_dump -h localhost -p 5432 -d education -U root -s -F p -E UTF-8 -f /bin/abc.sql
-	docker cp postgres:/bin/abc.sql ./documentation/schema.sql
+	docker cp postgres:/bin/abc.sql ./doc/schema.sql
+	sql2dbml doc/schema.sql --postgres -o doc/schema.dbml
+	rm dbml-error.log
 
 # Подключаемся к бд
 connect:
@@ -50,9 +52,9 @@ sqlc:
 test:
 	sudo go test -count=1 -short -cover ./...
 mock:
-	mockgen -source=db/sqlc/querier.go -destination=my_mocks/db.go -package=my_mocks
+	mockgen -source=db/sqlc/querier.go    -destination=my_mocks/db.go     -package=my_mocks
 	mockgen -source=worker/distributor.go -destination=my_mocks/worker.go -package=my_mocks
-	mockgen -source=token/maker.go -destination=my_mocks/token.go -package=my_mocks
+	mockgen -source=token/maker.go        -destination=my_mocks/token.go  -package=my_mocks
 
 # Пересоздаём нахер всё
 RESET:
@@ -76,10 +78,14 @@ volume:
 # PATH=$PATH:$GOPATH/bin
 proto:
 	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
-		   --openapiv2_out=documentation --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
+		   --openapiv2_out=doc --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \
 		   --grpc-gateway_out=protobuf --grpc-gateway_opt=paths=source_relative \
 		   --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional \
 		   proto/*.proto
 
-.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_schema
-.PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume
+# Генерируем всё что можно генерировать
+generate:
+	make mock && make sqlc && make proto && make db_doc
+
+.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_doc
+.PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume generate

@@ -14,3 +14,9 @@ RETURNING *;
 -- name: GetVerifyRequest :one
 SELECT * FROM verify_emails
 WHERE id_user = @id_user::integer;
+
+
+-- DeleteExiredRequests Удаляем все просроченные сессии
+-- name: DeleteExiredRequests :exec
+DELETE FROM verify_emails
+WHERE expired_at > NOW();

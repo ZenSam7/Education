@@ -54,6 +54,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteUser = `-- name: DeleteUser :one
+WITH deleted_session AS ( -- Объединяем 2 запроса в 1
+    DELETE FROM sessions
+    WHERE id_user = $1::integer
+), delete_verify_request AS ( -- Объединяем 3 запроса в 1
+    DELETE FROM verify_emails
+    WHERE id_user = $1::integer
+)
 DELETE FROM users
 WHERE id_user = $1::integer
 RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role

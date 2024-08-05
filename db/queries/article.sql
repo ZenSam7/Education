@@ -102,7 +102,8 @@ RETURNING *;
 
 -- DeleteArticle Удаляем статью и комментарии к ней
 -- name: DeleteArticle :one
-WITH deleted_comments AS ( -- Объединяем 2 запроса в 1 -- TODO: переделать в транзакцию
+WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
+    -- TODO: переделать в транзакцию
     DELETE FROM comments
     WHERE id_comment = ANY ((SELECT comments FROM articles
                             WHERE id_article = @id_article::integer)::text::integer[])

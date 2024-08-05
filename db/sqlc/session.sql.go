@@ -86,6 +86,17 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	return i, err
 }
 
+const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
+DELETE FROM sessions
+WHERE expired_at > NOW()
+`
+
+// DeleteExpiredSessions Удаляем все просроченные сессии
+func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteExpiredSessions)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :one
 DELETE FROM sessions
 WHERE id_session = $1::uuid
@@ -113,7 +124,7 @@ SELECT id_session, issued_at, expired_at, refresh_token, id_user, client_ip, blo
 WHERE id_session = $1::uuid
 `
 
-// GetSession Получаем сессиб по id
+// GetSession Получаем сессию по id
 func (q *Queries) GetSession(ctx context.Context, idSession pgtype.UUID) (Session, error) {
 	row := q.db.QueryRow(ctx, getSession, idSession)
 	var i Session

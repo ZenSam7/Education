@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package protobuf;
+option go_package = "github.com/ZenSam7/Education/protobuf";
+
+import "google/protobuf/timestamp.proto";
+
+message Comment {
+  int32 id_comment = 1;
+  string text = 2;
+  int32 author = 3;
+  int32 evaluation = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp edited_at = 6;
+}
+
+message CreateCommentRequest {
+  string text = 1;
+  int32  id_article = 2;
+  int32  evaluation = 3;
+}
+
+message CreateCommentResponse {
+  Comment comment = 1;
+}
+
+message GetCommentRequest {
+  int32 id_comment = 1;
+}
+
+message GetCommentResponse {
+  Comment comment = 1;
+}
+
+message GetCommentsOfArticleRequest {
+  int32 id_article = 1;
+  int32 page_num = 2;
+  int32 page_size = 3;
+}
+
+message GetCommentsOfArticleResponse {
+  repeated Comment comments = 1;
+}
+
+message EditCommentRequest {
+  int32 id_comment = 1;
+  optional string text = 2;
+  optional int32 evaluation = 3;
+}
+
+message EditCommentResponse {
+  Comment comment = 1;
+}
+
+message DeleteCommentRequest {
+  int32 id_comment = 1;
+}
+
+message DeleteCommentResponse {
+  Comment comment = 1;
+}

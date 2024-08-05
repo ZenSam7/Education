@@ -61,7 +61,7 @@ Table "verify_emails" {
   "id_verify_email" integer [pk, not null]
   "id_user" integer [unique, not null]
   "secret_key" "character varying" [not null]
-  "expired_at" timestamp [not null, default: `now()+'00:10:00'::interval`]
+  "expired_at" timestamp [not null, default: `now()+'00:01:00'::interval`]
 }
 
 Ref "sessions_id_user_fkey":"users"."id_user" < "sessions"."id_user"

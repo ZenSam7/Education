@@ -21,10 +21,15 @@ SET blocked = true
 WHERE id_session = @id_session::uuid
 RETURNING *;
 
--- GetSession Получаем сессиб по id
+-- GetSession Получаем сессию по id
 -- name: GetSession :one
 SELECT * FROM sessions
 WHERE id_session = @id_session::uuid;
+
+-- DeleteExpiredSessions Удаляем все просроченные сессии
+-- name: DeleteExpiredSessions :exec
+DELETE FROM sessions
+WHERE expired_at > NOW();
 
 -- CountRowsSessions Считаем количество строк в таблице
 -- name: CountRowsSessions :one

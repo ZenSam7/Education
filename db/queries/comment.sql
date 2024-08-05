@@ -37,11 +37,11 @@ SET
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
     text = CASE WHEN @text::text <> '' THEN @text::text ELSE text END,
-    author = CASE WHEN @author::integer <> author THEN @author::integer ELSE author END
+    evaluation = CASE WHEN @evaluation::integer <> evaluation THEN @evaluation::integer ELSE evaluation END
 WHERE id_comment = @id_comment::integer
 RETURNING *;
 
--- GetCommentsOfArticle Возвращаем комментарии
+-- GetCommentsOfArticle Возвращаем комментарии к статье
 -- name: GetCommentsOfArticle :many
 WITH the_article AS ( -- TODO: переделать в транзакцию
     SELECT unnest(comments) AS id_comment FROM articles

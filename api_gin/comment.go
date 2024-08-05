@@ -41,7 +41,6 @@ func (server *Server) getCommentsOfArticle(ctx *gin.Context) {
 type createCommentRequest struct {
 	IDArticle int32  `json:"id_article" binding:"required,min=1"`
 	Text      string `json:"text" binding:"required"`
-	Author    int32  `json:"author" binding:"required"`
 }
 
 func (server *Server) createComment(ctx *gin.Context) {

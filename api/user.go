@@ -11,6 +11,7 @@ import (
 	"github.com/ZenSam7/Education/worker"
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -298,13 +299,19 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		RefreshTokenExpiredAt: timestamppb.New(refreshPayload.ExpiredAt),
 	}
 
+	// Удаляем просроченные сессии
+	err = server.querier.DeleteExpiredSessions(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		log.Err(err).Msg("сессии не удалились")
+	}
+
 	return response, nil
 }
 
 func validateRenewAccessTokenRequest(req *pb.RenewAccessTokenRequest) error {
 	var errorsFields []*errdetails.BadRequest_FieldViolation
 
-	if err := tools.ValidateString(req.GetRefreshToken(), 1, 9999); err != nil {
+	if err := tools.ValidateString(req.GetRefreshToken(), 1, 999); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("refresh_token", err))
 	}
 
@@ -315,6 +322,7 @@ func (server *Server) RenewAccessToken(ctx context.Context, req *pb.RenewAccessT
 		return nil, err
 	}
 
+	// Только для авторизованных пользователей
 	info, err := server.extractMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -436,6 +444,12 @@ func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailReques
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Удаляем просроченные верификации
+	err = server.querier.DeleteExiredRequests(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		log.Err(err).Msg("запросы на верификацию почт не удалились")
 	}
 
 	return &pb.VerifyEmailResponse{}, nil

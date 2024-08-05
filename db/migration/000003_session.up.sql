@@ -8,3 +8,5 @@ CREATE TABLE "sessions" (
     blocked         boolean NOT NULL DEFAULT FALSE,
     FOREIGN KEY (id_user) REFERENCES "users" (id_user)
 );
+
+CREATE INDEX session_indx ON "sessions" ("id_user");

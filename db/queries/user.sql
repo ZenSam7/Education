@@ -6,6 +6,13 @@ RETURNING *;
 
 -- DeleteUser Удаляем пользователя
 -- name: DeleteUser :one
+WITH deleted_session AS ( -- Объединяем 2 запроса в 1
+    DELETE FROM sessions
+    WHERE id_user = @id_user::integer
+), delete_verify_request AS ( -- Объединяем 3 запроса в 1
+    DELETE FROM verify_emails
+    WHERE id_user = @id_user::integer
+)
 DELETE FROM users
 WHERE id_user = @id_user::integer
 RETURNING *;

@@ -4,6 +4,7 @@ syntax = "proto3";
 package protobuf;
 option go_package = "github.com/ZenSam7/Education/protobuf";
 import "user.proto";
+import "comment.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/option/annotations.proto";
 
@@ -53,6 +54,35 @@ service Education {
           get: "/verify_email"
         };
   };
+
+
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse) {
+        option (google.api.http) = {
+          post: "/create_comment"
+          body: "*"
+        };
+  };
+  rpc GetComment(GetCommentRequest) returns (GetCommentResponse) {
+        option (google.api.http) = {
+          get: "/get_comment"
+        };
+  };
+  rpc GetCommentsOfArticle(GetCommentsOfArticleRequest) returns (GetCommentsOfArticleResponse) {
+      option (google.api.http) = {
+        get: "/comments_of_article"
+      };
+  };
+  rpc EditComment(EditCommentRequest) returns (EditCommentResponse) {
+        option (google.api.http) = {
+          patch: "/edit_comment"
+          body: "*"
+        };
+  };
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse) {
+        option (google.api.http) = {
+          delete: "/delete_comment"
+        };
+  };
 }
 
 
@@ -60,7 +90,7 @@ service Education {
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Education";
-    version: "1.0";
+    version: "1.1";
     contact: {
       name: "ZenSam7";
       url: "https://github.com/ZenSam7";

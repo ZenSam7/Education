@@ -33,6 +33,17 @@ func (q *Queries) CreateVerifyRequest(ctx context.Context, arg CreateVerifyReque
 	return i, err
 }
 
+const deleteExiredRequests = `-- name: DeleteExiredRequests :exec
+DELETE FROM verify_emails
+WHERE expired_at > NOW()
+`
+
+// DeleteExiredRequests Удаляем все просроченные сессии
+func (q *Queries) DeleteExiredRequests(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteExiredRequests)
+	return err
+}
+
 const deleteVerifyRequest = `-- name: DeleteVerifyRequest :one
 DELETE FROM verify_emails
 WHERE id_user = $1::integer

@@ -216,6 +216,34 @@ func (mr *MockQuerierMockRecorder) DeleteComment(ctx, idComment interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComment", reflect.TypeOf((*MockQuerier)(nil).DeleteComment), ctx, idComment)
 }
 
+// DeleteExiredRequests mocks base method.
+func (m *MockQuerier) DeleteExiredRequests(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteExiredRequests", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteExiredRequests indicates an expected call of DeleteExiredRequests.
+func (mr *MockQuerierMockRecorder) DeleteExiredRequests(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExiredRequests", reflect.TypeOf((*MockQuerier)(nil).DeleteExiredRequests), ctx)
+}
+
+// DeleteExpiredSessions mocks base method.
+func (m *MockQuerier) DeleteExpiredSessions(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteExpiredSessions", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteExpiredSessions indicates an expected call of DeleteExpiredSessions.
+func (mr *MockQuerierMockRecorder) DeleteExpiredSessions(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExpiredSessions", reflect.TypeOf((*MockQuerier)(nil).DeleteExpiredSessions), ctx)
+}
+
 // DeleteSession mocks base method.
 func (m *MockQuerier) DeleteSession(ctx context.Context, idSession pgtype.UUID) (db.Session, error) {
 	m.ctrl.T.Helper()
