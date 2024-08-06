@@ -10,6 +10,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"strings"
 )
 
 func validateCreateCommentRequest(req *pb.CreateCommentRequest) error {
@@ -20,9 +21,6 @@ func validateCreateCommentRequest(req *pb.CreateCommentRequest) error {
 	}
 	if err := tools.ValidateNaturalNum(int(req.GetIdArticle())); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("id_article", err))
-	}
-	if err := tools.ValidateNaturalNum(int(req.GetAuthor())); err != nil {
-		errorsFields = append(errorsFields, fieldViolation("author", err))
 	}
 
 	return wrapFeildErrors(errorsFields)
@@ -72,7 +70,7 @@ func (server *Server) GetComment(ctx context.Context, req *pb.GetCommentRequest)
 
 	comment, err := server.querier.GetComment(ctx, req.GetIdComment())
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if strings.Contains(err.Error(), "no rows") {
 			return nil, status.Errorf(codes.NotFound, "комментария с id %d не существует", req.GetIdComment())
 		}
 
@@ -148,7 +146,12 @@ func (server *Server) DeleteComment(ctx context.Context, req *pb.DeleteCommentRe
 		return nil, err
 	}
 
-	if payload.IDUser != req.GetIdComment() {
+	comment, err := server.GetComment(ctx, &pb.GetCommentRequest{IdComment: req.GetIdComment()})
+	if err != nil {
+		return nil, err
+	}
+
+	if payload.IDUser != comment.Comment.Author {
 		return nil, status.Errorf(codes.PermissionDenied, "только автор может удалить комментарий")
 	}
 
@@ -172,7 +175,7 @@ func validateEditCommentRequest(req *pb.EditCommentRequest) error {
 	if err := tools.ValidateNaturalNum(int(req.GetEvaluation())); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("evaluation", err))
 	}
-	if err := tools.ValidateString(req.GetText(), 1, 1000); err != nil {
+	if err := tools.ValidateString(req.GetText(), 1, 9999); err != nil {
 		errorsFields = append(errorsFields, fieldViolation("text", err))
 	}
 
@@ -194,7 +197,12 @@ func (server *Server) EditComment(ctx context.Context, req *pb.EditCommentReques
 		return nil, err
 	}
 
-	if payload.IDUser != req.GetIdComment() {
+	comment, err := server.GetComment(ctx, &pb.GetCommentRequest{IdComment: req.GetIdComment()})
+	if err != nil {
+		return nil, err
+	}
+
+	if payload.IDUser != comment.Comment.Author {
 		return nil, status.Errorf(codes.PermissionDenied, "только автор может редактировать комментарий")
 	}
 

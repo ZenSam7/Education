@@ -65,6 +65,38 @@
         ]
       }
     },
+    "/create_article": {
+      "post": {
+        "operationId": "Education_CreateArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateArticleRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/create_comment": {
       "post": {
         "operationId": "Education_CreateComment",
@@ -129,6 +161,37 @@
         ]
       }
     },
+    "/delete_article": {
+      "delete": {
+        "operationId": "Education_DeleteArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeleteArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idArticle",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/delete_comment": {
       "delete": {
         "operationId": "Education_DeleteComment",
@@ -177,6 +240,38 @@
             }
           }
         },
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/edit_article": {
+      "patch": {
+        "operationId": "Education_EditArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufEditArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufEditArticleRequest"
+            }
+          }
+        ],
         "tags": [
           "Education"
         ]
@@ -246,6 +341,105 @@
         ]
       }
     },
+    "/get_article": {
+      "get": {
+        "operationId": "Education_GetArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetArticleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idArticle",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/get_articles_with_attribute": {
+      "get": {
+        "operationId": "Education_GetArticlesWithAttribute",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetArticlesWithAttributeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "evaluation",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/get_comment": {
       "get": {
         "operationId": "Education_GetComment",
@@ -266,6 +460,208 @@
         "parameters": [
           {
             "name": "idComment",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/get_many_sorted_articles": {
+      "get": {
+        "operationId": "Education_GetManySortedArticles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetManySortedArticlesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idArticle",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "evaluation",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "comments",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "createdAt",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "editedAt",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/get_many_sorted_articles_with_attribute": {
+      "get": {
+        "operationId": "Education_GetManySortedArticlesWithAttribute",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetManySortedArticlesWithAttributeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "selectTitle",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "selectText",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "selectEvaluation",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "selectAuthors",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "sortedIdArticle",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedEvaluation",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedComments",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedAuthors",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedTitle",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedText",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedEditedAt",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sortedCreatedAt",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageNum",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -482,6 +878,47 @@
       },
       "additionalProperties": {}
     },
+    "protobufArticle": {
+      "type": "object",
+      "properties": {
+        "idArticle": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "evaluation": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "editedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "protobufComment": {
       "type": "object",
       "properties": {
@@ -507,6 +944,32 @@
         "editedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "protobufCreateArticleRequest": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    },
+    "protobufCreateArticleResponse": {
+      "type": "object",
+      "properties": {
+        "article": {
+          "$ref": "#/definitions/protobufArticle"
         }
       }
     },
@@ -556,6 +1019,14 @@
         }
       }
     },
+    "protobufDeleteArticleResponse": {
+      "type": "object",
+      "properties": {
+        "article": {
+          "$ref": "#/definitions/protobufArticle"
+        }
+      }
+    },
     "protobufDeleteCommentResponse": {
       "type": "object",
       "properties": {
@@ -569,6 +1040,47 @@
       "properties": {
         "user": {
           "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufEditArticleRequest": {
+      "type": "object",
+      "properties": {
+        "idArticle": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "text": {
+          "type": "string"
+        },
+        "evaluation": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "title": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    },
+    "protobufEditArticleResponse": {
+      "type": "object",
+      "properties": {
+        "article": {
+          "$ref": "#/definitions/protobufArticle"
         }
       }
     },
@@ -619,6 +1131,26 @@
         }
       }
     },
+    "protobufGetArticleResponse": {
+      "type": "object",
+      "properties": {
+        "article": {
+          "$ref": "#/definitions/protobufArticle"
+        }
+      }
+    },
+    "protobufGetArticlesWithAttributeResponse": {
+      "type": "object",
+      "properties": {
+        "articles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufArticle"
+          }
+        }
+      }
+    },
     "protobufGetCommentResponse": {
       "type": "object",
       "properties": {
@@ -635,6 +1167,30 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufComment"
+          }
+        }
+      }
+    },
+    "protobufGetManySortedArticlesResponse": {
+      "type": "object",
+      "properties": {
+        "articles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufArticle"
+          }
+        }
+      }
+    },
+    "protobufGetManySortedArticlesWithAttributeResponse": {
+      "type": "object",
+      "properties": {
+        "articles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufArticle"
           }
         }
       }

@@ -26,7 +26,7 @@ func (server *Server) extractMetadata(ctx context.Context) (*Metadata, error) {
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("ошибка в извлечении метаданных из контекста")
+		return nil, fmt.Errorf("надо авторизоваться")
 	}
 
 	if clientIPs := md.Get(xForwardedForHeader); len(clientIPs) != 0 {

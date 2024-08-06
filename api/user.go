@@ -182,8 +182,8 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 		return nil, status.Errorf(codes.Unauthenticated, "пользователь не авторизовался: %s", err)
 	}
 
-	// Чтобы изменить карму надо либо быть системой которая начисляем карму, либо администратором
-	// (проверяем права)
+	// Чтобы изменить карму надо либо быть системой которая начисляем карму,
+	// либо администратором (проверяем права)
 	if req.Karma != nil && accessPayload.Role == tools.UsualRole {
 		return nil, status.Errorf(codes.PermissionDenied, "у вас нет прав на изменение кармы")
 	}

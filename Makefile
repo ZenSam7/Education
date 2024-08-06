@@ -74,8 +74,7 @@ volume:
 	docker volume create db_data
 
 # Если не работает proto, надо сделать эти 2 команды
-# export GOPATH=$HOME/go
-# PATH=$PATH:$GOPATH/bin
+# export GOPATH=$HOME/go PATH=$PATH:$GOPATH/bin
 proto:
 	protoc --proto_path=proto --go_out=protobuf --go-grpc_out=protobuf \
 		   --openapiv2_out=doc --openapiv2_opt=allow_merge=true,merge_file_name=gRPC_API_doc \

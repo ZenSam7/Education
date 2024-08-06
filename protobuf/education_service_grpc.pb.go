@@ -21,19 +21,26 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Education_CreateUser_FullMethodName           = "/protobuf.Education/CreateUser"
-	Education_GetUser_FullMethodName              = "/protobuf.Education/GetUser"
-	Education_GetManySortedUsers_FullMethodName   = "/protobuf.Education/GetManySortedUsers"
-	Education_EditUser_FullMethodName             = "/protobuf.Education/EditUser"
-	Education_DeleteUser_FullMethodName           = "/protobuf.Education/DeleteUser"
-	Education_LoginUser_FullMethodName            = "/protobuf.Education/LoginUser"
-	Education_RenewAccessToken_FullMethodName     = "/protobuf.Education/RenewAccessToken"
-	Education_VerifyEmail_FullMethodName          = "/protobuf.Education/VerifyEmail"
-	Education_CreateComment_FullMethodName        = "/protobuf.Education/CreateComment"
-	Education_GetComment_FullMethodName           = "/protobuf.Education/GetComment"
-	Education_GetCommentsOfArticle_FullMethodName = "/protobuf.Education/GetCommentsOfArticle"
-	Education_EditComment_FullMethodName          = "/protobuf.Education/EditComment"
-	Education_DeleteComment_FullMethodName        = "/protobuf.Education/DeleteComment"
+	Education_CreateUser_FullMethodName                         = "/protobuf.Education/CreateUser"
+	Education_GetUser_FullMethodName                            = "/protobuf.Education/GetUser"
+	Education_GetManySortedUsers_FullMethodName                 = "/protobuf.Education/GetManySortedUsers"
+	Education_EditUser_FullMethodName                           = "/protobuf.Education/EditUser"
+	Education_DeleteUser_FullMethodName                         = "/protobuf.Education/DeleteUser"
+	Education_LoginUser_FullMethodName                          = "/protobuf.Education/LoginUser"
+	Education_RenewAccessToken_FullMethodName                   = "/protobuf.Education/RenewAccessToken"
+	Education_VerifyEmail_FullMethodName                        = "/protobuf.Education/VerifyEmail"
+	Education_CreateComment_FullMethodName                      = "/protobuf.Education/CreateComment"
+	Education_GetComment_FullMethodName                         = "/protobuf.Education/GetComment"
+	Education_GetCommentsOfArticle_FullMethodName               = "/protobuf.Education/GetCommentsOfArticle"
+	Education_EditComment_FullMethodName                        = "/protobuf.Education/EditComment"
+	Education_DeleteComment_FullMethodName                      = "/protobuf.Education/DeleteComment"
+	Education_CreateArticle_FullMethodName                      = "/protobuf.Education/CreateArticle"
+	Education_GetArticle_FullMethodName                         = "/protobuf.Education/GetArticle"
+	Education_EditArticle_FullMethodName                        = "/protobuf.Education/EditArticle"
+	Education_DeleteArticle_FullMethodName                      = "/protobuf.Education/DeleteArticle"
+	Education_GetArticlesWithAttribute_FullMethodName           = "/protobuf.Education/GetArticlesWithAttribute"
+	Education_GetManySortedArticles_FullMethodName              = "/protobuf.Education/GetManySortedArticles"
+	Education_GetManySortedArticlesWithAttribute_FullMethodName = "/protobuf.Education/GetManySortedArticlesWithAttribute"
 )
 
 // EducationClient is the client API for Education service.
@@ -55,6 +62,13 @@ type EducationClient interface {
 	GetCommentsOfArticle(ctx context.Context, in *GetCommentsOfArticleRequest, opts ...grpc.CallOption) (*GetCommentsOfArticleResponse, error)
 	EditComment(ctx context.Context, in *EditCommentRequest, opts ...grpc.CallOption) (*EditCommentResponse, error)
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentResponse, error)
+	CreateArticle(ctx context.Context, in *CreateArticleRequest, opts ...grpc.CallOption) (*CreateArticleResponse, error)
+	GetArticle(ctx context.Context, in *GetArticleRequest, opts ...grpc.CallOption) (*GetArticleResponse, error)
+	EditArticle(ctx context.Context, in *EditArticleRequest, opts ...grpc.CallOption) (*EditArticleResponse, error)
+	DeleteArticle(ctx context.Context, in *DeleteArticleRequest, opts ...grpc.CallOption) (*DeleteArticleResponse, error)
+	GetArticlesWithAttribute(ctx context.Context, in *GetArticlesWithAttributeRequest, opts ...grpc.CallOption) (*GetArticlesWithAttributeResponse, error)
+	GetManySortedArticles(ctx context.Context, in *GetManySortedArticlesRequest, opts ...grpc.CallOption) (*GetManySortedArticlesResponse, error)
+	GetManySortedArticlesWithAttribute(ctx context.Context, in *GetManySortedArticlesWithAttributeRequest, opts ...grpc.CallOption) (*GetManySortedArticlesWithAttributeResponse, error)
 }
 
 type educationClient struct {
@@ -195,6 +209,76 @@ func (c *educationClient) DeleteComment(ctx context.Context, in *DeleteCommentRe
 	return out, nil
 }
 
+func (c *educationClient) CreateArticle(ctx context.Context, in *CreateArticleRequest, opts ...grpc.CallOption) (*CreateArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateArticleResponse)
+	err := c.cc.Invoke(ctx, Education_CreateArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) GetArticle(ctx context.Context, in *GetArticleRequest, opts ...grpc.CallOption) (*GetArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetArticleResponse)
+	err := c.cc.Invoke(ctx, Education_GetArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) EditArticle(ctx context.Context, in *EditArticleRequest, opts ...grpc.CallOption) (*EditArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EditArticleResponse)
+	err := c.cc.Invoke(ctx, Education_EditArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) DeleteArticle(ctx context.Context, in *DeleteArticleRequest, opts ...grpc.CallOption) (*DeleteArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteArticleResponse)
+	err := c.cc.Invoke(ctx, Education_DeleteArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) GetArticlesWithAttribute(ctx context.Context, in *GetArticlesWithAttributeRequest, opts ...grpc.CallOption) (*GetArticlesWithAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetArticlesWithAttributeResponse)
+	err := c.cc.Invoke(ctx, Education_GetArticlesWithAttribute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) GetManySortedArticles(ctx context.Context, in *GetManySortedArticlesRequest, opts ...grpc.CallOption) (*GetManySortedArticlesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetManySortedArticlesResponse)
+	err := c.cc.Invoke(ctx, Education_GetManySortedArticles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) GetManySortedArticlesWithAttribute(ctx context.Context, in *GetManySortedArticlesWithAttributeRequest, opts ...grpc.CallOption) (*GetManySortedArticlesWithAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetManySortedArticlesWithAttributeResponse)
+	err := c.cc.Invoke(ctx, Education_GetManySortedArticlesWithAttribute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EducationServer is the server API for Education service.
 // All implementations must embed UnimplementedEducationServer
 // for forward compatibility
@@ -214,6 +298,13 @@ type EducationServer interface {
 	GetCommentsOfArticle(context.Context, *GetCommentsOfArticleRequest) (*GetCommentsOfArticleResponse, error)
 	EditComment(context.Context, *EditCommentRequest) (*EditCommentResponse, error)
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error)
+	CreateArticle(context.Context, *CreateArticleRequest) (*CreateArticleResponse, error)
+	GetArticle(context.Context, *GetArticleRequest) (*GetArticleResponse, error)
+	EditArticle(context.Context, *EditArticleRequest) (*EditArticleResponse, error)
+	DeleteArticle(context.Context, *DeleteArticleRequest) (*DeleteArticleResponse, error)
+	GetArticlesWithAttribute(context.Context, *GetArticlesWithAttributeRequest) (*GetArticlesWithAttributeResponse, error)
+	GetManySortedArticles(context.Context, *GetManySortedArticlesRequest) (*GetManySortedArticlesResponse, error)
+	GetManySortedArticlesWithAttribute(context.Context, *GetManySortedArticlesWithAttributeRequest) (*GetManySortedArticlesWithAttributeResponse, error)
 	mustEmbedUnimplementedEducationServer()
 }
 
@@ -259,6 +350,27 @@ func (UnimplementedEducationServer) EditComment(context.Context, *EditCommentReq
 }
 func (UnimplementedEducationServer) DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteComment not implemented")
+}
+func (UnimplementedEducationServer) CreateArticle(context.Context, *CreateArticleRequest) (*CreateArticleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateArticle not implemented")
+}
+func (UnimplementedEducationServer) GetArticle(context.Context, *GetArticleRequest) (*GetArticleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetArticle not implemented")
+}
+func (UnimplementedEducationServer) EditArticle(context.Context, *EditArticleRequest) (*EditArticleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditArticle not implemented")
+}
+func (UnimplementedEducationServer) DeleteArticle(context.Context, *DeleteArticleRequest) (*DeleteArticleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteArticle not implemented")
+}
+func (UnimplementedEducationServer) GetArticlesWithAttribute(context.Context, *GetArticlesWithAttributeRequest) (*GetArticlesWithAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetArticlesWithAttribute not implemented")
+}
+func (UnimplementedEducationServer) GetManySortedArticles(context.Context, *GetManySortedArticlesRequest) (*GetManySortedArticlesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetManySortedArticles not implemented")
+}
+func (UnimplementedEducationServer) GetManySortedArticlesWithAttribute(context.Context, *GetManySortedArticlesWithAttributeRequest) (*GetManySortedArticlesWithAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetManySortedArticlesWithAttribute not implemented")
 }
 func (UnimplementedEducationServer) mustEmbedUnimplementedEducationServer() {}
 
@@ -507,6 +619,132 @@ func _Education_DeleteComment_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Education_CreateArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).CreateArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_CreateArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).CreateArticle(ctx, req.(*CreateArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_GetArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).GetArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_GetArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).GetArticle(ctx, req.(*GetArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_EditArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).EditArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_EditArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).EditArticle(ctx, req.(*EditArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_DeleteArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).DeleteArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_DeleteArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).DeleteArticle(ctx, req.(*DeleteArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_GetArticlesWithAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetArticlesWithAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).GetArticlesWithAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_GetArticlesWithAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).GetArticlesWithAttribute(ctx, req.(*GetArticlesWithAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_GetManySortedArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetManySortedArticlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).GetManySortedArticles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_GetManySortedArticles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).GetManySortedArticles(ctx, req.(*GetManySortedArticlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_GetManySortedArticlesWithAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetManySortedArticlesWithAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).GetManySortedArticlesWithAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_GetManySortedArticlesWithAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).GetManySortedArticlesWithAttribute(ctx, req.(*GetManySortedArticlesWithAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Education_ServiceDesc is the grpc.ServiceDesc for Education service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -565,6 +803,34 @@ var Education_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteComment",
 			Handler:    _Education_DeleteComment_Handler,
+		},
+		{
+			MethodName: "CreateArticle",
+			Handler:    _Education_CreateArticle_Handler,
+		},
+		{
+			MethodName: "GetArticle",
+			Handler:    _Education_GetArticle_Handler,
+		},
+		{
+			MethodName: "EditArticle",
+			Handler:    _Education_EditArticle_Handler,
+		},
+		{
+			MethodName: "DeleteArticle",
+			Handler:    _Education_DeleteArticle_Handler,
+		},
+		{
+			MethodName: "GetArticlesWithAttribute",
+			Handler:    _Education_GetArticlesWithAttribute_Handler,
+		},
+		{
+			MethodName: "GetManySortedArticles",
+			Handler:    _Education_GetManySortedArticles_Handler,
+		},
+		{
+			MethodName: "GetManySortedArticlesWithAttribute",
+			Handler:    _Education_GetManySortedArticlesWithAttribute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

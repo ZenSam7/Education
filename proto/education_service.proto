@@ -5,6 +5,7 @@ package protobuf;
 option go_package = "github.com/ZenSam7/Education/protobuf";
 import "user.proto";
 import "comment.proto";
+import "article.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/option/annotations.proto";
 
@@ -81,6 +82,45 @@ service Education {
   rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse) {
         option (google.api.http) = {
           delete: "/delete_comment"
+        };
+  };
+
+
+  rpc CreateArticle(CreateArticleRequest) returns (CreateArticleResponse) {
+        option (google.api.http) = {
+          post: "/create_article"
+          body: "*"
+        };
+  };
+  rpc GetArticle(GetArticleRequest) returns (GetArticleResponse) {
+        option (google.api.http) = {
+          get: "/get_article"
+        };
+  };;
+  rpc EditArticle(EditArticleRequest) returns (EditArticleResponse) {
+        option (google.api.http) = {
+          patch: "/edit_article"
+          body: "*"
+        };
+  };
+  rpc DeleteArticle(DeleteArticleRequest) returns (DeleteArticleResponse) {
+        option (google.api.http) = {
+          delete: "/delete_article"
+        };
+  };
+  rpc GetArticlesWithAttribute(GetArticlesWithAttributeRequest) returns (GetArticlesWithAttributeResponse) {
+        option (google.api.http) = {
+          get: "/get_articles_with_attribute"
+        };
+  };
+  rpc GetManySortedArticles(GetManySortedArticlesRequest) returns (GetManySortedArticlesResponse) {
+        option (google.api.http) = {
+          get: "/get_many_sorted_articles"
+        };
+  };
+  rpc GetManySortedArticlesWithAttribute(GetManySortedArticlesWithAttributeRequest) returns (GetManySortedArticlesWithAttributeResponse) {
+        option (google.api.http) = {
+          get: "/get_many_sorted_articles_with_attribute"
         };
   };
 }

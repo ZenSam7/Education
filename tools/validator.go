@@ -18,6 +18,14 @@ func ValidateString(s string, minLenght, maxLenght int) error {
 	return nil
 }
 
+func ValidateNotEmpty(x []int32) error {
+	if len(x) == 0 {
+		return fmt.Errorf("список не должен быть пустым")
+	}
+
+	return nil
+}
+
 func ValidateNaturalNum(x int) error {
 	if x <= 0 {
 		return fmt.Errorf("число должно быть натуральным")

@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package protobuf;
+option go_package = "github.com/ZenSam7/Education/protobuf";
+import "google/protobuf/timestamp.proto";
+
+message Article {
+  int32  id_article = 1;
+  string title = 2;
+  string text = 3;
+  int32  evaluation = 4;
+  repeated int32 authors = 5;
+  repeated int32 comments = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp edited_at = 8;
+}
+
+message CreateArticleRequest {
+  string title = 1;
+  string text = 2;
+  repeated int32 authors = 3;
+}
+
+message CreateArticleResponse {
+  Article article = 1;
+}
+
+message GetArticleRequest {
+  int32 id_article = 1;
+}
+
+message GetArticleResponse {
+  Article article = 1;
+}
+
+message GetManySortedArticlesRequest {
+  optional bool id_article = 1;
+  optional bool title = 2;
+  optional bool text = 3;
+  optional bool evaluation = 4;
+  optional bool authors = 5;
+  optional bool comments = 6;
+  optional bool created_at = 7;
+  optional bool edited_at = 8;
+  int32 page_size = 9;
+  int32 page_num = 10;
+}
+
+message GetManySortedArticlesResponse {
+  repeated Article articles = 1;
+}
+
+message GetArticlesWithAttributeRequest {
+  string title = 1;
+  string text = 2;
+  int32  evaluation = 3;
+  repeated int32 authors = 4;
+  int32 page_size = 5;
+  int32 page_num = 6;
+}
+
+message GetArticlesWithAttributeResponse {
+  repeated Article articles = 1;
+}
+
+message GetManySortedArticlesWithAttributeRequest {
+  string select_title = 1;
+  string select_text = 2;
+  int32  select_evaluation = 3;
+  repeated int32 select_authors = 4;
+  bool   sorted_id_article = 5;
+  bool   sorted_evaluation = 6;
+  bool   sorted_comments = 7;
+  bool   sorted_authors = 8;
+  bool   sorted_title = 9;
+  bool   sorted_text = 10;
+  bool   sorted_edited_at = 11;
+  bool   sorted_created_at = 12;
+  int32  page_size = 13;
+  int32  page_num = 14;
+}
+
+message GetManySortedArticlesWithAttributeResponse {
+  repeated Article articles = 1;
+}
+
+message EditArticleRequest {
+  int32 id_article = 1;
+  optional string text = 2;
+  optional int32  evaluation = 3;
+  optional string title = 4;
+  repeated int32 authors = 5;
+  repeated int32 comments = 6;
+}
+
+message EditArticleResponse {
+  Article article = 1;
+}
+
+message DeleteArticleRequest {
+  int32 id_article = 1;
+}
+
+message DeleteArticleResponse {
+  Article article = 1;
+}

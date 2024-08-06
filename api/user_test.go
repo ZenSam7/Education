@@ -291,6 +291,10 @@ func TestLoginUser_Success(t *testing.T) {
 		CreateSession(loginCtx, gomock.AssignableToTypeOf(reflect.TypeOf((*db.CreateSessionParams)(nil)).Elem())).
 		Times(1).
 		Return(db.Session{}, nil)
+	mockQueries.EXPECT().
+		DeleteExpiredSessions(loginCtx).
+		Times(1).
+		Return(nil)
 
 	mockTokenMaker := my_mocks.NewMockMaker(ctrl)
 	mockTokenMaker.EXPECT().

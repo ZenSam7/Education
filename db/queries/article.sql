@@ -24,7 +24,10 @@ WHERE
         ELSE text END AND
     evaluation = CASE WHEN @evaluation::integer <> evaluation
         THEN @evaluation::integer
-        ELSE evaluation END
+        ELSE evaluation END  AND
+    authors = CASE WHEN @authors::integer[] <> authors
+        THEN @select_authors::integer[]
+        ELSE authors END
 LIMIT sqlc.arg('Limit')::integer
 OFFSET sqlc.arg('Offset')::integer;
 
@@ -62,7 +65,11 @@ WHERE
         ELSE text END AND
     evaluation = CASE WHEN @select_evaluation::integer <> evaluation
         THEN @select_evaluation::integer
-        ELSE evaluation END
+        ELSE evaluation END AND
+    authors = CASE WHEN @select_authors::integer[] <> authors
+        THEN @select_authors::integer[]
+        ELSE authors END
+
 ORDER BY
         -- Объединяем в группы столбцы одного типа (в один большой CASE WHEN нельзя разные типы)
         CASE WHEN @sorted_id_article::boolean THEN id_article::integer
@@ -95,6 +102,7 @@ SET
   -- CASE WHEN используется когда нельзя указать нулевое значение (пустую строку), COALESCE когда можно
   title = CASE WHEN @title::text <> '' THEN @title::text ELSE title END,
   text = CASE WHEN @text::text <> '' THEN @text::text ELSE text END,
+  evaluation = CASE WHEN @evaluation::integer <> evaluation THEN @evaluation::integer ELSE evaluation END,
   comments = COALESCE(@comments::integer[], comments),
   authors = CASE WHEN cardinality(@authors::integer[]) <> 0 THEN @authors ELSE authors END
 WHERE id_article = @id_article::integer

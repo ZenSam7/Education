@@ -19,11 +19,24 @@ func convUser(user db.User) *pb.User {
 
 func convComment(comment db.Comment) *pb.Comment {
 	return &pb.Comment{
-		IdComment: comment.IDComment,
-		Text: comment.Text,
-		Author: comment.Author,
+		IdComment:  comment.IDComment,
+		Text:       comment.Text,
+		Author:     comment.Author,
 		Evaluation: comment.Evaluation,
-		CreatedAt: timestamppb.New(comment.CreatedAt.Time),
-		EditedAt: timestamppb.New(comment.EditedAt.Time),
+		CreatedAt:  timestamppb.New(comment.CreatedAt.Time),
+		EditedAt:   timestamppb.New(comment.EditedAt.Time),
+	}
+}
+
+func convArticle(article db.Article) *pb.Article {
+	return &pb.Article{
+		IdArticle:  article.IDArticle,
+		Title:      article.Title,
+		Text:       article.Text,
+		Comments:   article.Comments,
+		Authors:    article.Authors,
+		Evaluation: article.Evaluation,
+		CreatedAt:  timestamppb.New(article.CreatedAt.Time),
+		EditedAt:   timestamppb.New(article.EditedAt.Time),
 	}
 }
