@@ -2,6 +2,7 @@ package api_gin
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	"github.com/ZenSam7/Education/token"
@@ -118,6 +119,11 @@ func (server *Server) getComment(ctx *gin.Context) {
 	// Возвращаем комментарий
 	comment, err := server.querier.GetComment(ctx, req.IDComment)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

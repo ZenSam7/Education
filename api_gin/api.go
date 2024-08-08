@@ -4,6 +4,7 @@ package api_gin
 
 import (
 	db "github.com/ZenSam7/Education/db/sqlc"
+	"github.com/ZenSam7/Education/redis/cache"
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ type Server struct {
 	router     *gin.Engine
 	tokenMaker token.Maker
 	config     tools.Config
+	cacher     cache.Cacher
 }
 
 // Run Начинаем прослушивать запросы к API по HTTP
@@ -24,21 +26,24 @@ func (server *Server) Run(address string) error {
 
 // NewServer Новый HTTP процесс для обработки запросов и роутер (который просто
 // вызывает определёную функцию при каком-либо запросе на конкретный URI)
-func NewServer(config tools.Config, querier db.Querier) (*Server, error) {
-	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
-	if err != nil {
-		return nil, err
-	}
+func NewServer(
+	config tools.Config,
+	querier db.Querier,
+	tokenMaker token.Maker,
+	cacher cache.Cacher,
+) *Server {
+
 	server := &Server{
 		querier:    querier,
 		tokenMaker: tokenMaker,
 		config:     config,
+		cacher:     cacher,
 	}
 
 	router := gin.Default()
 	server.setupRouter(router)
 
-	return server, nil
+	return server
 }
 
 // setupRouter Устанавливаем все возможные url для обработки, а также делим

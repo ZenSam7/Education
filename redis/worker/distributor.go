@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 )
 
 // TaskDistributor Создаём и (асинхронно) выполняем все эти задачи через брокер сообщений
@@ -15,6 +16,10 @@ type RedisTaskDistributor struct {
 	client *asynq.Client
 }
 
-func NewRedisTaskDistributor(redisOptions asynq.RedisClientOpt) TaskDistributor {
-	return &RedisTaskDistributor{client: asynq.NewClient(redisOptions)}
+func NewRedisTaskDistributor(opt redis.Options) TaskDistributor {
+	asynqOption := asynq.RedisClientOpt{
+		Addr: opt.Addr,
+	}
+
+	return &RedisTaskDistributor{client: asynq.NewClient(asynqOption)}
 }

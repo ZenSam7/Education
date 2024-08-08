@@ -11,7 +11,7 @@ type Logger struct {
 	asynq.Logger
 }
 
-func NewLogger() *Logger {
+func NewWorkerLogger() *Logger {
 	return &Logger{}
 }
 

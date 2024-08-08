@@ -1,8 +1,9 @@
 package token
 
 import (
-	"fmt"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/o1egl/paseto"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -12,16 +13,17 @@ type PasetoMaker struct {
 	symmetricKey []byte
 }
 
-func NewPasetoMaker(secretKey string) (Maker, error) {
+func NewPasetoMaker(secretKey string) Maker {
 	if len(secretKey) < minSecretKeySize {
-		return nil, fmt.Errorf("секретный ключ должен содержать не менее %d", minSecretKeySize)
+		secretKey = tools.GetRandomString(minSecretKeySize)[:minSecretKeySize]
+		log.Warn().Msgf("длина secretKey < %d, secretKey заменён на случайную строку", minSecretKeySize)
 	}
 
 	newPaseto := &PasetoMaker{
 		paseto:       paseto.NewV2(),
 		symmetricKey: []byte(secretKey),
 	}
-	return newPaseto, nil
+	return newPaseto
 }
 
 func (maker *PasetoMaker) CreateToken(idUser int32, role string, duration time.Duration) (string, *Payload, error) {

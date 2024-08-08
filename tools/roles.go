@@ -5,4 +5,12 @@ const (
 	AdminRole = "admin"
 )
 
-// Todo: Функцию для определения необходимых прав
+// HasPermission проверяет есть ли роль в списке
+func HasPermission(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}

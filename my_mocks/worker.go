@@ -6,9 +6,9 @@ package my_mocks
 
 import (
 	context "context"
+	"github.com/ZenSam7/Education/redis/worker"
 	reflect "reflect"
 
-	worker "github.com/ZenSam7/Education/worker"
 	gomock "github.com/golang/mock/gomock"
 	asynq "github.com/hibiken/asynq"
 )

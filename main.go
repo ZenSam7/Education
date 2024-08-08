@@ -7,13 +7,15 @@ import (
 	"github.com/ZenSam7/Education/api_gin"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
+	"github.com/ZenSam7/Education/redis/cache"
+	"github.com/ZenSam7/Education/redis/worker"
+	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
-	"github.com/ZenSam7/Education/worker"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -26,9 +28,12 @@ import (
 	"syscall"
 )
 
+// Не хочу возиться с передачами аргументов
 var config tools.Config
 var queries *db.Queries
 var closeConn func()
+var tokenMaker token.Maker
+var cacher cache.Cacher
 
 // interruptSignals список ошибок, которые не дадут серверу упасть мнговенно; когда возникнет одна из этих ошибок,
 // сервер завершит обработку всех текущих запросов, а уже потом ляжет
@@ -46,12 +51,14 @@ func main() {
 	// Настройки
 	config = tools.LoadConfig()
 	tools.MakeLogger()
+	tokenMaker = token.NewPasetoMaker(config.TokenSymmetricKey)
 
-	// Бд
+	// Бд, распределитель задач и кэш
 	queries, closeConn = db.MakeQueries()
 	defer closeConn()
 	runDBMigration()
-	redisOpt, taskDistributor := makeRedis()
+	redisOpt, taskDistributor := makeTaskDistributor()
+	cacher = cache.NewRedisCacher(redisOpt)
 
 	// Захватываем ошибки во время работы серверов
 	notifyCtx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
@@ -70,7 +77,7 @@ func main() {
 }
 
 // startTaskProcessor Запускаем обработчик процессов
-func startTaskProcessor(options asynq.RedisClientOpt) {
+func startTaskProcessor(options redis.Options) {
 	processor := worker.NewRedisTaskProcessor(options, queries)
 
 	// Запускаем сервер конкурентно, и, если что, захватываем ошибку в waitErr
@@ -90,9 +97,9 @@ func startTaskProcessor(options asynq.RedisClientOpt) {
 	})
 }
 
-// makeRedis Запускаем сервер редиски
-func makeRedis() (asynq.RedisClientOpt, worker.TaskDistributor) {
-	options := asynq.RedisClientOpt{
+// makeTaskDistributor Запускаем сервер редиски
+func makeTaskDistributor() (redis.Options, worker.TaskDistributor) {
+	options := redis.Options{
 		Addr: config.RedisAddress,
 	}
 
@@ -121,10 +128,7 @@ func runDBMigration() {
 
 // runHttpGatewayServer Сервер на gRPC, но с поддержкой HTTP
 func runHttpGatewayServer(taskDistributor worker.TaskDistributor) {
-	server, err := api.NewServer(config, queries, taskDistributor)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
-	}
+	server := api.NewServer(config, queries, tokenMaker, taskDistributor, cacher)
 
 	// Важная штука, которая не изменяет названия в json'е (названия остаются в snake_style)
 	jsobOptions := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
@@ -138,7 +142,7 @@ func runHttpGatewayServer(taskDistributor worker.TaskDistributor) {
 
 	grpcMux := runtime.NewServeMux(jsobOptions)
 
-	err = pb.RegisterEducationHandlerServer(context.Background(), grpcMux, server)
+	err := pb.RegisterEducationHandlerServer(context.Background(), grpcMux, server)
 	if err != nil {
 		log.Fatal().Err(err).Msg("не получилось поднять HTTP Gateway сервер")
 	}
@@ -178,10 +182,7 @@ func runHttpGatewayServer(taskDistributor worker.TaskDistributor) {
 
 // runGrpcServer Стандартный сервер на gRPC
 func runGrpcServer(taskDistributor worker.TaskDistributor) {
-	server, err := api.NewServer(config, queries, taskDistributor)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
-	}
+	server := api.NewServer(config, queries, tokenMaker, taskDistributor, cacher)
 
 	// Настраиваем логгер
 	lggr := grpc.UnaryInterceptor(tools.GrpcLogger)
@@ -216,17 +217,14 @@ func runGrpcServer(taskDistributor worker.TaskDistributor) {
 
 // runGrpcServer Стандартный сервер на Gin
 func runGinServer() {
-	server, err := api_gin.NewServer(config, queries)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Ошибка в создании сервера")
-	}
+	server := api_gin.NewServer(config, queries, tokenMaker, cacher)
 
 	// Запускаем сервер конкурентно, и, если что, захватываем ошибку в waitErr
 	waitErr.Go(func() error {
 		if err := server.Run(config.HttpServerAddress); err != nil {
 			log.Fatal().Err(err).Msg("Не получилось поднять Gin сервер:")
 		}
-		return err
+		return nil
 	})
 	// Убиваем сервер нахуй
 	return

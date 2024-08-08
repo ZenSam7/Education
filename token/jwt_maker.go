@@ -1,8 +1,9 @@
 package token
 
 import (
-	"fmt"
+	"github.com/ZenSam7/Education/tools"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -55,9 +56,10 @@ func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {
 }
 
 // NewJWTMaker Создаём сам JWT с секретным ключом
-func NewJWTMaker(secretKey string) (Maker, error) {
+func NewJWTMaker(secretKey string) Maker {
 	if len(secretKey) < minSecretKeySize {
-		return nil, fmt.Errorf("секретный ключ должен содержать не менее %d", minSecretKeySize)
+		secretKey = tools.GetRandomString(minSecretKeySize)[:minSecretKeySize]
+		log.Warn().Msgf("длина secretKey < %d, secretKey заменён на случайную строку", minSecretKeySize)
 	}
-	return &JWTMaker{secretKey: secretKey}, nil
+	return &JWTMaker{secretKey: secretKey}
 }

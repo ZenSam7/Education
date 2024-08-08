@@ -6,9 +6,9 @@ import (
 	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
+	worker2 "github.com/ZenSam7/Education/redis/worker"
 	"github.com/ZenSam7/Education/token"
 	"github.com/ZenSam7/Education/tools"
-	"github.com/ZenSam7/Education/worker"
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/rs/zerolog/log"
@@ -62,14 +62,14 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		}
 
 		// Отдельно от создания пользователя создаём ещё и задачу (которую потом распределяем редиской)
-		payload := &worker.PayloadSendVerifyEmail{IdUser: newUser.IDUser}
+		payload := &worker2.PayloadSendVerifyEmail{IdUser: newUser.IDUser}
 
 		// Дополнительные конфигурации
 		options := []asynq.Option{
 			asynq.MaxRetry(4), // Максимальное количество повторений запроса при ошибках
 			// (задержка нужна чтобы эта транзакция завершилась до того, как начнётся таска верификации почты)
 			asynq.ProcessIn(10 * time.Second), // После какого времени процессору можно начать задачу
-			asynq.Queue(worker.QueueDefault),  // Можем распределить важные задачи в отдельный поток (см. processor.go)
+			asynq.Queue(worker2.QueueDefault), // Можем распределить важные задачи в отдельный поток (см. processor.go)
 		}
 
 		return server.taskDistributor.DistributeTaskVerifyEmail(ctx, payload, options...)
@@ -184,7 +184,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 
 	// Чтобы изменить карму надо либо быть системой которая начисляем карму,
 	// либо администратором (проверяем права)
-	if req.Karma != nil && accessPayload.Role == tools.UsualRole {
+	if req.Karma != nil && tools.HasPermission([]string{accessPayload.Role}, tools.UsualRole) {
 		return nil, status.Errorf(codes.PermissionDenied, "у вас нет прав на изменение кармы")
 	}
 

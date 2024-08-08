@@ -5,6 +5,7 @@ import (
 	db "github.com/ZenSam7/Education/db/sqlc"
 	"github.com/ZenSam7/Education/tools"
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
 
@@ -27,29 +28,38 @@ type RedisTaskProcessor struct {
 	config  tools.Config
 }
 
-func NewRedisTaskProcessor(opt asynq.RedisClientOpt, queries *db.Queries) TaskProcessor {
+func NewRedisTaskProcessor(opt redis.Options, queries *db.Queries) TaskProcessor {
 	cnfg := tools.LoadConfig()
-	return &RedisTaskProcessor{
-		queries: queries,
-		sender:  &tools.GmailSender{Config: cnfg},
-		config:  cnfg,
-		server: asynq.NewServer(opt, asynq.Config{
+
+	server := asynq.NewServer(
+		asynq.RedisClientOpt{
+			Addr: opt.Addr,
+		},
+
+		asynq.Config{
 			// Queues Важные задачи распределяем по отдельным потокам (цифра = степень важности)
 			Queues: map[string]int{
 				QueueCritical: 9,
 				QueueDefault:  3,
 				QueueLow:      1,
 			},
-			// Чтобы было удобно парсить логи (и смотреть на них) реализовал их в мой tools.Log
+			// Чтобы было удобно парсить логи (и смотреть на них) реализовал их в tools.Log
 			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
 				log.Error().
 					Err(err).
 					Str("type", task.Type()).
 					Bytes("payload", task.Payload()).
-					Msg("ошибка в task")
+					Msg("ошибка в таске")
 			}),
-			Logger: NewLogger(),
-		}),
+			Logger: NewWorkerLogger(),
+		},
+	)
+
+	return &RedisTaskProcessor{
+		queries: queries,
+		sender:  &tools.GmailSender{Config: cnfg},
+		config:  cnfg,
+		server:  server,
 	}
 }
 
@@ -57,7 +67,6 @@ func (p *RedisTaskProcessor) Start() error {
 	mux := asynq.NewServeMux()
 
 	mux.HandleFunc(TaskSendVerifyEmail, p.ProcessTaskSendVerifyEmail)
-	// TODO: добавить какие-нибудь ещё функции
 
 	return p.server.Start(mux)
 }
