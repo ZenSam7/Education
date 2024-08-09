@@ -77,6 +77,14 @@ func (server *Server) getUser(ctx *gin.Context) {
 		return
 	}
 
+	// Попытка получения данных из кеша
+	cacheKey := fmt.Sprintf("user:%d", req.IDUser)
+	var cachedResponse db.Article
+	if err := server.cacher.GetCache(ctx, cacheKey, &cachedResponse); err == nil {
+		ctx.JSON(http.StatusOK, cachedResponse)
+		return
+	}
+
 	// Получаем пользователя
 	user, err := server.querier.GetUser(ctx, req.IDUser)
 	if err != nil {
@@ -91,6 +99,11 @@ func (server *Server) getUser(ctx *gin.Context) {
 
 	userToResponse(&user)
 	ctx.JSON(http.StatusOK, user)
+
+	if err := server.cacher.SetCache(ctx, cacheKey, user); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("не удалось сохранить данные в кеш: %s", err)))
+		return
+	}
 }
 
 // getManySortedUsersRequest Сколько а как отсортированных пользователей на страничке

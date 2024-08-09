@@ -22,6 +22,7 @@ type Config struct {
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	CacheDuration        time.Duration `mapstructure:"CHACHE_DURATUON"`
 	EmailHost            string        `mapstructure:"EMAIL_HOST"`
 	EmailPort            int           `mapstructure:"EMAIL_PORT"`
 	EmailPassword        string        `mapstructure:"EMAIL_PASSWORD"`

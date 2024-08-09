@@ -98,10 +98,19 @@ func validateGetUserRequest(req *pb.GetUserRequest) error {
 	return wrapFeildErrors(errorsFields)
 }
 func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	// Попытка получения данных из кеша
+	cacheKey := fmt.Sprintf("user:%d", req.GetIdUser())
+	var cachedResponse pb.GetUserResponse
+	if err := server.cacher.GetCache(ctx, cacheKey, &cachedResponse); err == nil {
+		return &cachedResponse, nil
+	}
+
+	// Проверка валидности запроса
 	if err := validateGetUserRequest(req); err != nil {
 		return nil, err
 	}
 
+	// Сам запрос
 	user, err := server.querier.GetUser(ctx, req.GetIdUser())
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -113,6 +122,11 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	response := &pb.GetUserResponse{
 		User: convUser(user),
 	}
+
+	if err := server.cacher.SetCache(ctx, cacheKey, response); err != nil {
+		return nil, status.Errorf(codes.Internal, "не удалось сохранить данные в кеш: %s", err)
+	}
+
 	return response, nil
 }
 

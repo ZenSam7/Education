@@ -43,7 +43,7 @@ func MakeQueries() (*Queries, func()) {
 			if err := conn.Close(ctx); err != nil {
 				log.Fatal().Err(err).Msg("Не получается закрыть соединение с бд")
 			} else {
-				log.Info().Msg("Закрыли соединение")
+				log.Info().Msg("Закрыли соединение с бд")
 			}
 		}(context.Background(), conn)
 	}

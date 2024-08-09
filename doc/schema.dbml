@@ -39,6 +39,10 @@ Table "sessions" {
   "id_user" integer [not null]
   "client_ip" "character varying" [not null]
   "blocked" boolean [not null, default: false]
+
+  Indexes {
+    id_user [type: btree, name: "session_indx"]
+  }
 }
 
 Table "users" {

@@ -3,6 +3,7 @@ package api_gin
 import (
 	"context"
 	"errors"
+	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	"github.com/ZenSam7/Education/token"
 	"github.com/gin-gonic/gin"
@@ -98,6 +99,14 @@ func (server *Server) getArticle(ctx *gin.Context) {
 		return
 	}
 
+	// Попытка получения данных из кеша
+	cacheKey := fmt.Sprintf("article:%d", req.IDArticle)
+	var cachedResponse db.Article
+	if err := server.cacher.GetCache(ctx, cacheKey, &cachedResponse); err == nil {
+		ctx.JSON(http.StatusOK, cachedResponse)
+		return
+	}
+
 	// Получаем статью
 	article, err := server.querier.GetArticle(ctx, req.IDArticle)
 	if err != nil {
@@ -106,6 +115,11 @@ func (server *Server) getArticle(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, article)
+
+	if err := server.cacher.SetCache(ctx, cacheKey, article); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("не удалось сохранить данные в кеш: %s", err)))
+		return
+	}
 }
 
 // Да громоздко.

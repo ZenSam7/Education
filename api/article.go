@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	db "github.com/ZenSam7/Education/db/sqlc"
 	pb "github.com/ZenSam7/Education/protobuf"
 	"github.com/ZenSam7/Education/tools"
@@ -71,6 +72,14 @@ func validateGetArticleRequest(req *pb.GetArticleRequest) error {
 	return wrapFeildErrors(errorsFields)
 }
 func (server *Server) GetArticle(ctx context.Context, req *pb.GetArticleRequest) (*pb.GetArticleResponse, error) {
+	// Попытка получения данных из кеша
+	cacheKey := fmt.Sprintf("article:%d", req.GetIdArticle())
+	var cachedResponse pb.GetArticleResponse
+	if err := server.cacher.GetCache(ctx, cacheKey, &cachedResponse); err == nil {
+		return &cachedResponse, nil
+	}
+
+	// Проверка валидности запроса
 	if err := validateGetArticleRequest(req); err != nil {
 		return nil, err
 	}
@@ -83,7 +92,15 @@ func (server *Server) GetArticle(ctx context.Context, req *pb.GetArticleRequest)
 		return nil, status.Errorf(codes.Internal, "ошибка при получении статьи: %s", err)
 	}
 
-	return &pb.GetArticleResponse{Article: convArticle(article)}, nil
+	response := &pb.GetArticleResponse{
+		Article: convArticle(article),
+	}
+
+	if err := server.cacher.SetCache(ctx, cacheKey, response); err != nil {
+		return nil, status.Errorf(codes.Internal, "не удалось сохранить данные в кеш: %s", err)
+	}
+
+	return response, nil
 }
 
 func validateEditArticleRequest(req *pb.EditArticleRequest) error {

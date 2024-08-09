@@ -96,7 +96,7 @@ service Education {
         option (google.api.http) = {
           get: "/get_article"
         };
-  };;
+  };
   rpc EditArticle(EditArticleRequest) returns (EditArticleResponse) {
         option (google.api.http) = {
           patch: "/edit_article"

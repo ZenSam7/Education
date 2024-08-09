@@ -58,7 +58,7 @@ func main() {
 	defer closeConn()
 	runDBMigration()
 	redisOpt, taskDistributor := makeTaskDistributor()
-	cacher = cache.NewRedisCacher(redisOpt)
+	cacher = cache.NewRedisCacher(redisOpt, config)
 
 	// Захватываем ошибки во время работы серверов
 	notifyCtx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
@@ -66,9 +66,9 @@ func main() {
 
 	// Запускаем сервера
 	startTaskProcessor(redisOpt)
-	runHttpGatewayServer(taskDistributor)
+	//runHttpGatewayServer(taskDistributor)
 	runGrpcServer(taskDistributor)
-	//runGinServer()
+	runGinServer()
 
 	if err := waitErr.Wait(); err != nil {
 		log.Fatal().Err(err).Msg("сервер лёг")

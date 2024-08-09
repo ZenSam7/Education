@@ -326,6 +326,13 @@ CREATE INDEX comment_indx ON public.comments USING btree (id_comment);
 
 
 --
+-- Name: session_indx; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX session_indx ON public.sessions USING btree (id_user);
+
+
+--
 -- Name: user_indx; Type: INDEX; Schema: public; Owner: root
 --
 
