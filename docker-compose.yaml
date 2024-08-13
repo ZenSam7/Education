@@ -1,7 +1,7 @@
 services:
-  postgres:
+  db:
     image: postgres:16
-    container_name: postgres
+    container_name: db
     ports:
       - "5432:5432"
     env_file:
@@ -11,6 +11,45 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=2
+      - -c
+      - max_replication_slots=2
+
+  db_repl:
+    image: postgres:16
+    container_name: db_repl
+    env_file:
+      - .env
+    volumes:
+      - db_repl:/var/lib/postgresql/data
+    networks:
+      - education_net
+    depends_on:
+      - db
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        # Ожидание, пока основной сервер будет доступен
+        until pg_isready -h db -U masteruser; do
+          echo "Waiting for master db..."
+          sleep 1
+        done
+
+        # Создание резервной копии
+        pg_basebackup -h db -D /var/lib/postgresql/data -U masteruser -Fp -Xs -P
+
+        # Создание файла конфигурации для репликации
+        echo "primary_conninfo = 'host=db port=5432 user=masteruser password=masterpass'" > /var/lib/postgresql/data/postgresql.conf
+        echo "standby_mode = 'on'" > /var/lib/postgresql/data/standby.signal
+
+        # Запуск PostgreSQL
+        exec postgres -c "hot_standby=on"
 
   redis:
     image: redis:7
@@ -28,22 +67,23 @@ services:
     env_file:
       - .env
     environment:
-      DB_HOST: postgres
+      DB_HOST: db
+      DB_REPLICATION: db_repl
       REDIS_ADDRESS: redis:6379
       MIGRATION_URL: file://migration
     ports:
       - "1213:1213"
       - "8080:8080"
     depends_on:
-      - postgres
+      - db
       - redis
     networks:
       - education_net
     command: [ "./main" ]
 
-
 volumes:
   db_data:
+  db_repl:
   redis:
 
 networks:

@@ -130,7 +130,7 @@ service Education {
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Education";
-    version: "1.1";
+    version: "0.8";
     contact: {
       name: "ZenSam7";
       url: "https://github.com/ZenSam7";

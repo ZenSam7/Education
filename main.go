@@ -24,7 +24,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"syscall"
 )
 
@@ -53,27 +52,37 @@ func main() {
 	tools.MakeLogger()
 	tokenMaker = token.NewPasetoMaker(config.TokenSymmetricKey)
 
-	// Бд, распределитель задач и кэш
-	queries, closeConn = db.MakeQueries()
-	defer closeConn()
+	//// Бд, распределитель задач и кэш
+	//queries, closeConn = db.MakeQueries()
+	//defer closeConn()
 	runDBMigration()
-	redisOpt, taskDistributor := makeTaskDistributor()
-	cacher = cache.NewRedisCacher(redisOpt, config)
-
-	// Захватываем ошибки во время работы серверов
-	notifyCtx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
-	waitErr, ctx = errgroup.WithContext(notifyCtx)
-
-	// Запускаем сервера
-	startTaskProcessor(redisOpt)
+	//redisOpt, taskDistributor := makeTaskDistributor()
+	//cacher = cache.NewRedisCacher(redisOpt, config)
+	//
+	//// Захватываем ошибки во время работы серверов
+	//notifyCtx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	//waitErr, ctx = errgroup.WithContext(notifyCtx)
+	//
+	//// Запускаем сервера
+	//startTaskProcessor(redisOpt)
 	//runHttpGatewayServer(taskDistributor)
-	runGrpcServer(taskDistributor)
-	runGinServer()
+	//runGrpcServer(taskDistributor)
+	////runGinServer()
+	//
+	//if err := waitErr.Wait(); err != nil {
+	//	log.Fatal().Err(err).Msg("сервер лёг")
+	//	stop()
+	//}
+	conn, replicaConn, closeConnect := db.MakeQueries()
+	defer closeConnect()
 
-	if err := waitErr.Wait(); err != nil {
-		log.Fatal().Err(err).Msg("сервер лёг")
-		stop()
-	}
+	// Пример выполнения запроса к основной базе данных
+	u, err := conn.CreateUser(context.Background(), db.CreateUserParams{Name: "123", Email: "1@1.1", PasswordHash: "11"})
+	log.Info().Bool("", err != nil).Msg(u.Name + "!")
+
+	// Пример выполнения запроса к реплике
+	u, err = replicaConn.GetUser(context.Background(), 1)
+	log.Info().Bool("", err != nil).Msg(u.Name + "!")
 }
 
 // startTaskProcessor Запускаем обработчик процессов
@@ -108,22 +117,25 @@ func makeTaskDistributor() (redis.Options, worker.TaskDistributor) {
 
 // runDBMigration Запускаем миграции через Go
 func runDBMigration() {
-	migration, err := migrate.New(config.MigrationUrl, fmt.Sprintf(
-		"postgresql://%s:%s@%s:5432/education?sslmode=%s",
-		config.DBUserName,
-		config.DBPassword,
-		config.DBHost,
-		config.DBSSLMode,
-	))
-	if err != nil {
-		log.Fatal().Err(err).Msg("не получилось создать миграцию")
+	// Создаём миграции для обоих бд
+	for _, dbName := range [2]string{"db", "db_repl"} {
+		migration, err := migrate.New(config.MigrationUrl, fmt.Sprintf(
+			"postgres://%s:%s@%s:5432/education?sslmode=%s",
+			config.DBUserName,
+			config.DBPassword,
+			dbName,
+			config.DBSSLMode,
+		))
+		if err != nil {
+			log.Fatal().Err(err).Msg("не получилось создать миграцию для " + dbName)
+		}
+
+		if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
+			log.Error().Err(err).Msg("не получилось поднять миграцию для " + dbName)
+		}
 	}
 
-	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Error().Err(err).Msg("не получилось поднять миграцию")
-	}
-
-	log.Info().Msg("миграция завершена")
+	log.Info().Msg("миграции завершены")
 }
 
 // runHttpGatewayServer Сервер на gRPC, но с поддержкой HTTP

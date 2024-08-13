@@ -9,7 +9,7 @@ import (
 )
 
 func TestCreateComment(t *testing.T) {
-	queries, closeConn := MakeQueries()
+	queries, _, closeConn := MakeQueries()
 	defer closeConn()
 
 	arg := CreateCommentParams{
@@ -30,7 +30,7 @@ func TestCreateComment(t *testing.T) {
 }
 
 func TestGetComment(t *testing.T) {
-	queries, closeConn := MakeQueries()
+	queries, _, closeConn := MakeQueries()
 	defer closeConn()
 
 	// Создаём комментарий

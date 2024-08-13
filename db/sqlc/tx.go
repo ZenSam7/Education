@@ -6,14 +6,22 @@ import (
 )
 
 // MakeTx создаём и выполняем новую транзакцию
-func MakeTx(ctx context.Context, fn func(Querier) error) error {
-	if queries == nil {
+func MakeTx(ctx context.Context, fn func(Querier) error, mayUseReplica ...bool) error {
+	if queries == nil || replica == nil {
 		// Не закрываем соединение (да, это плохо)
-		queries, _ = MakeQueries()
+		queries, replica, _ = MakeQueries()
 	}
 
 	conn, ok := queries.db.(*pgx.Conn)
 	if !ok {
+		// Пробуем использовать реплику
+		if mayUseReplica[0] {
+			conn, ok = replica.db.(*pgx.Conn)
+			if !ok {
+				return pgx.ErrTxClosed
+			}
+		}
+
 		return pgx.ErrTxClosed
 	}
 
@@ -22,16 +30,29 @@ func MakeTx(ctx context.Context, fn func(Querier) error) error {
 		return err
 	}
 
-	// Создание нового объекта queries с транзакцией
-	qtx := queries.WithTx(tx)
-
 	// Выполнение переданной функции fn
-	err = fn(qtx)
+	err = fn(queries.WithTx(tx))
+
 	if err != nil {
 		// Откат транзакции в случае ошибки
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			return rollbackErr
 		}
+
+		// Если можно попытаться использовать реплику, то используем реплику
+		if mayUseReplica[0] {
+			err = fn(replica.WithTx(tx))
+			// Откат транзакции
+			if err != nil {
+				if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+					return rollbackErr
+				}
+				return err
+			}
+			// Завершение транзакции реплики
+			return tx.Commit(ctx)
+		}
+
 		return err
 	}
 

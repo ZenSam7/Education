@@ -10,7 +10,7 @@ import (
 
 // createRandomArticle Создаём случайную статью и возвращаем её
 func createRandomArticle() (Article, *Queries, func()) {
-	queries, closeConn := MakeQueries()
+	queries, _, closeConn := MakeQueries()
 
 	arg := CreateArticleParams{
 		Title:   tools.GetRandomString(),
@@ -23,7 +23,7 @@ func createRandomArticle() (Article, *Queries, func()) {
 }
 
 func TestCreateArticle(t *testing.T) {
-	queries, closeConn := MakeQueries()
+	queries, _, closeConn := MakeQueries()
 	defer closeConn()
 
 	arg := CreateArticleParams{

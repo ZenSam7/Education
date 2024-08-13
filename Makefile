@@ -3,15 +3,29 @@ include .env
 POSTGRES_URL = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}"
 
 # Создаём новый контейнер с бд
-postgres:
-	docker run --name postgres -p 5432:5432 -v db_data:/var/lib/postgresql/data \
+db:
+	docker run --name db -p 5432:5432 -v db_data:/var/lib/db_data/data \
  		-e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
+
+replic:
+	docker run --name db_repl -v db_repl:/var/lib/postgresql/data \
+ 		-e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
+	# Записываем настройки реплики
+	docker exec -i db sh -c \
+		'echo "wal_level = logical\nmax_replication_slots = 2\nmax_wal_senders = 2" >> \
+		/var/lib/postgresql/data/postgresql.conf'
+	docker exec -i db sh -c \
+		'echo "host    replication     репликация    192.168.1.0/24   md5" >> \
+		/var/lib/postgresql/data/pg_hba.conf'
+	docker exec -i db psql -c "SELECT pg_reload_conf();"
+	docker exec -i db psql -c "SELECT * FROM pg_create_logical_replication_slot('edu_replic', 'pgoutput');"
+
 # Создаём новую бд
 createdb:
-	docker exec postgres createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} education
+	docker exec db createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} education
 # Удаляем бд
 dropdb:
-	docker exec postgres dropdb education
+	docker exec db dropdb education
 
 redis:
 	docker run --name redis -v redis:/var/lib/redis/data -p 6379:6379 -d redis:7
@@ -30,17 +44,17 @@ migratedown1:
 makemigrate:
 	migrate create -ext sql -dir ./db/migration -seq $(name)
 
-# Экспортируем схему из контейнера postgres в .sql
+# Экспортируем схему из контейнера db в .sql
 # Дальше при помощи https://dbdiagram.io/d уже делаем что захотим
 db_doc:
-	docker exec -it postgres pg_dump -h localhost -p 5432 -d education -U root -s -F p -E UTF-8 -f /bin/abc.sql
-	docker cp postgres:/bin/abc.sql ./doc/schema.sql
+	docker exec -it db pg_dump -h localhost -p 5432 -d education -U root -s -F p -E UTF-8 -f /bin/abc.sql
+	docker cp db:/bin/abc.sql ./doc/schema.sql
 	sql2dbml doc/schema.sql --postgres -o doc/schema.dbml
 	rm dbml-error.log
 
 # Подключаемся к бд
 connect:
-	docker exec -it postgres psql -U root education
+	docker exec -it db psql -U root education
 # Удаляем и создаём новую бд со всеми миграциями
 refreshdb:
 	make dropdb && make createdb && make migrateup
@@ -58,7 +72,7 @@ mock:
 
 # Пересоздаём нахер всё
 RESET:
-	docker restart postgres && make refreshdb && make sqlc && make mock && make proto
+	docker restart db && make refreshdb && make sqlc && make mock && make proto
 # Как RESET только ещё и сервер запускаем
 RESTART:
 	make RESET && make server
@@ -72,6 +86,7 @@ net:
 volume:
 	docker volume create redis
 	docker volume create db_data
+	docker volume create db_repl
 
 # Если не работает proto, надо сделать эти 2 команды
 # export GOPATH=$HOME/go
@@ -87,5 +102,5 @@ proto:
 generate:
 	make mock && make sqlc && make proto && make db_doc
 
-.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_doc
+.PHONY: db createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_doc
 .PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume generate
