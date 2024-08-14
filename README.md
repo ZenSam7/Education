@@ -38,12 +38,13 @@
 docker compose up
 ```
 
-Или выполнить команду на ubuntu:
-
+Или можно выполнить команду на ubuntu:
 ```shell
-make postgres
-make redis
-make createdb
-make server
+make all
+```
+
+Убрать всё что было создано:
+```shell
+make clean
 ```
 

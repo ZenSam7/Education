@@ -110,9 +110,10 @@ func makeTaskDistributor() (redis.Options, worker.TaskDistributor) {
 // runDBMigration Запускаем миграции через Go
 func runDBMigration() {
 	migration, err := migrate.New(config.MigrationUrl, fmt.Sprintf(
-		"postgres://%s:%s@db:5432/education?sslmode=%s",
+		"postgres://%s:%s@%s:5432/education?sslmode=%s",
 		config.DBUserName,
 		config.DBPassword,
+		config.DBHost,
 		config.DBSSLMode,
 	))
 	if err != nil {

@@ -3,22 +3,32 @@ include .env
 POSTGRES_URL = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}"
 
 # Создаём новый контейнер с бд
-db:
-	docker run --name db -p 5432:5432 -v db_data:/var/lib/db_data/data \
- 		-e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
+db: volume net
+	docker run --name db \
+		-p 5432:5432 \
+		--net education_net \
+		--env-file .env \
+		-v db_data \
+		-v ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh \
+		-d postgres:16 \
+		-c wal_level=replica \
+		-c max_wal_senders=2 \
+		-c max_replication_slots=2
 
-replic:
-	docker run --name db_repl -v db_repl:/var/lib/postgresql/data \
- 		-e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:16
-	# Записываем настройки реплики
-	docker exec -i db sh -c \
-		'echo "wal_level = logical\nmax_replication_slots = 2\nmax_wal_senders = 2" >> \
-		/var/lib/postgresql/data/postgresql.conf'
-	docker exec -i db sh -c \
-		'echo "host    replication     репликация    192.168.1.0/24   md5" >> \
-		/var/lib/postgresql/data/pg_hba.conf'
-	docker exec -i db psql -c "SELECT pg_reload_conf();"
-	docker exec -i db psql -c "SELECT * FROM pg_create_logical_replication_slot('edu_replic', 'pgoutput');"
+replic: volume net
+	docker run --name db_repl  \
+		--network education_net \
+		--env-file .env \
+		-e PGPASSWORD=root \
+		-u postgres \
+		-v db_repl \
+		--rm -d postgres:16 \
+		/bin/bash -c "\
+			pg_basebackup -h db -D /var/lib/postgresql/data -U root -Fp -Xs -P && \
+			echo \"primary_conninfo = 'host=db port=5432 user=root password=root'\" >> /var/lib/postgresql/data/postgresql.conf && \
+			echo \"standby_mode = 'on'\" > /var/lib/postgresql/data/standby.signal && \
+			chmod 0750 /var/lib/postgresql/data && \
+			exec postgres -c 'hot_standby=on'"
 
 # Создаём новую бд
 createdb:
@@ -27,8 +37,12 @@ createdb:
 dropdb:
 	docker exec db dropdb education
 
-redis:
-	docker run --name redis -v redis:/var/lib/redis/data -p 6379:6379 -d redis:7
+redis: volume
+	docker run --name redis \
+		-p 6379:6379 \
+		--network education_net \
+		-v redis \
+		-d redis:7
 
 # Поднимаем миграции (т.е. переходим к новой версии бд)
 migrateup:
@@ -56,8 +70,7 @@ db_doc:
 connect:
 	docker exec -it db psql -U root education
 # Удаляем и создаём новую бд со всеми миграциями
-refreshdb:
-	make dropdb && make createdb && make migrateup
+refreshdb: dropdb createdb migrateup
 
 # Создаём код для запросов через sqlc
 sqlc:
@@ -74,20 +87,18 @@ mock:
 RESET:
 	docker restart db && make refreshdb && make sqlc && make mock && make proto
 # Как RESET только ещё и сервер запускаем
-RESTART:
-	make RESET && make server
+RESTART: RESET server
 
-# Запускаем cервер
+# Команда для сборки и запуска приложения
 server:
 	sudo go run main.go
 
 net:
 	docker network create education_net
 volume:
-	docker volume create redis
 	docker volume create db_data
-	chmod 0750 /var/lib/postgresql/data
 	docker volume create db_repl
+	docker volume create redis
 
 # Если не работает proto, надо сделать эти 2 команды
 # export GOPATH=$HOME/go
@@ -100,8 +111,16 @@ proto:
 		   proto/*.proto
 
 # Генерируем всё что можно генерировать
-generate:
-	make mock && make sqlc && make proto && make db_doc
+generate: mock sqlc proto db_doc
 
-.PHONY: db createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_doc
+# Команда для запуска всего стека
+all: volume net db replic redis server
+
+# Команда для остановки и удаления всех контейнеров и volumes
+clean:
+	docker rm -f db db_repl redis edu || true
+	docker volume rm db_data db_repl redis || true
+	docker network rm education_net || true
+
+.PHONY: db createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_doc all clean
 .PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume generate
