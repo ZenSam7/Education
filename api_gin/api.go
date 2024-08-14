@@ -12,11 +12,12 @@ import (
 
 // Server Обрабатываем запросы от API
 type Server struct {
-	querier    db.Querier
-	router     *gin.Engine
-	tokenMaker token.Maker
-	config     tools.Config
-	cacher     cache.Cacher
+	querier     db.Querier
+	replicaConn db.Querier
+	router      *gin.Engine
+	tokenMaker  token.Maker
+	config      tools.Config
+	cacher      cache.Cacher
 }
 
 // Run Начинаем прослушивать запросы к API по HTTP
@@ -27,17 +28,19 @@ func (server *Server) Run(address string) error {
 // NewServer Новый HTTP процесс для обработки запросов и роутер (который просто
 // вызывает определёную функцию при каком-либо запросе на конкретный URI)
 func NewServer(
-	config tools.Config,
 	querier db.Querier,
+	replicaConn db.Querier,
+	config tools.Config,
 	tokenMaker token.Maker,
 	cacher cache.Cacher,
 ) *Server {
 
 	server := &Server{
-		querier:    querier,
-		tokenMaker: tokenMaker,
-		config:     config,
-		cacher:     cacher,
+		querier:     querier,
+		replicaConn: replicaConn,
+		tokenMaker:  tokenMaker,
+		config:      config,
+		cacher:      cacher,
 	}
 
 	router := gin.Default()

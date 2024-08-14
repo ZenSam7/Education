@@ -70,6 +70,9 @@ func (server *Server) GetComment(ctx context.Context, req *pb.GetCommentRequest)
 
 	comment, err := server.querier.GetComment(ctx, req.GetIdComment())
 	if err != nil {
+		// Если не получилось с главной бд, пытаемся с репликой
+		comment, err = server.replicaConn.GetComment(ctx, req.GetIdComment())
+
 		if strings.Contains(err.Error(), "no rows") {
 			return nil, status.Errorf(codes.NotFound, "комментария с id %d не существует", req.GetIdComment())
 		}

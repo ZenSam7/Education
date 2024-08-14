@@ -119,6 +119,9 @@ func (server *Server) getComment(ctx *gin.Context) {
 	// Возвращаем комментарий
 	comment, err := server.querier.GetComment(ctx, req.IDComment)
 	if err != nil {
+		// Если не получилось с главной бд, пытаемся с репликой
+		comment, err = server.replicaConn.GetComment(ctx, req.IDComment)
+
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return

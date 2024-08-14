@@ -86,6 +86,9 @@ func (server *Server) GetArticle(ctx context.Context, req *pb.GetArticleRequest)
 
 	article, err := server.querier.GetArticle(ctx, req.GetIdArticle())
 	if err != nil {
+		// Если не получилось с главной бд, пытаемся с репликой
+		article, err = server.replicaConn.GetArticle(ctx, req.GetIdArticle())
+
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "статья не найдена")
 		}

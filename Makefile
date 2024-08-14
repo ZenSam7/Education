@@ -86,6 +86,7 @@ net:
 volume:
 	docker volume create redis
 	docker volume create db_data
+	chmod 0750 /var/lib/postgresql/data
 	docker volume create db_repl
 
 # Если не работает proto, надо сделать эти 2 команды

@@ -24,13 +24,15 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"syscall"
 )
 
 // Не хочу возиться с передачами аргументов
 var config tools.Config
-var queries *db.Queries
-var closeConn func()
+var querier *db.Queries
+var replicaConn *db.Queries
+var closeConnect func()
 var tokenMaker token.Maker
 var cacher cache.Cacher
 
@@ -52,42 +54,32 @@ func main() {
 	tools.MakeLogger()
 	tokenMaker = token.NewPasetoMaker(config.TokenSymmetricKey)
 
-	//// Бд, распределитель задач и кэш
-	//queries, closeConn = db.MakeQueries()
-	//defer closeConn()
-	runDBMigration()
-	//redisOpt, taskDistributor := makeTaskDistributor()
-	//cacher = cache.NewRedisCacher(redisOpt, config)
-	//
-	//// Захватываем ошибки во время работы серверов
-	//notifyCtx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
-	//waitErr, ctx = errgroup.WithContext(notifyCtx)
-	//
-	//// Запускаем сервера
-	//startTaskProcessor(redisOpt)
-	//runHttpGatewayServer(taskDistributor)
-	//runGrpcServer(taskDistributor)
-	////runGinServer()
-	//
-	//if err := waitErr.Wait(); err != nil {
-	//	log.Fatal().Err(err).Msg("сервер лёг")
-	//	stop()
-	//}
-	conn, replicaConn, closeConnect := db.MakeQueries()
+	// Бд, реплика, распределитель задач и кэш
+	querier, replicaConn, closeConnect = db.MakeQueries()
 	defer closeConnect()
+	runDBMigration()
+	redisOpt, taskDistributor := makeTaskDistributor()
+	cacher = cache.NewRedisCacher(redisOpt, config)
 
-	// Пример выполнения запроса к основной базе данных
-	u, err := conn.CreateUser(context.Background(), db.CreateUserParams{Name: "123", Email: "1@1.1", PasswordHash: "11"})
-	log.Info().Bool("", err != nil).Msg(u.Name + "!")
+	// Захватываем ошибки во время работы серверов
+	notifyCtx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	waitErr, ctx = errgroup.WithContext(notifyCtx)
 
-	// Пример выполнения запроса к реплике
-	u, err = replicaConn.GetUser(context.Background(), 1)
-	log.Info().Bool("", err != nil).Msg(u.Name + "!")
+	// Запускаем сервера
+	startTaskProcessor(redisOpt)
+	runHttpGatewayServer(taskDistributor)
+	runGrpcServer(taskDistributor)
+	//runGinServer()
+
+	if err := waitErr.Wait(); err != nil {
+		log.Fatal().Err(err).Msg("сервер лёг")
+		stop()
+	}
 }
 
 // startTaskProcessor Запускаем обработчик процессов
 func startTaskProcessor(options redis.Options) {
-	processor := worker.NewRedisTaskProcessor(options, queries)
+	processor := worker.NewRedisTaskProcessor(options, querier)
 
 	// Запускаем сервер конкурентно, и, если что, захватываем ошибку в waitErr
 	waitErr.Go(func() error {
@@ -117,22 +109,18 @@ func makeTaskDistributor() (redis.Options, worker.TaskDistributor) {
 
 // runDBMigration Запускаем миграции через Go
 func runDBMigration() {
-	// Создаём миграции для обоих бд
-	for _, dbName := range [2]string{"db", "db_repl"} {
-		migration, err := migrate.New(config.MigrationUrl, fmt.Sprintf(
-			"postgres://%s:%s@%s:5432/education?sslmode=%s",
-			config.DBUserName,
-			config.DBPassword,
-			dbName,
-			config.DBSSLMode,
-		))
-		if err != nil {
-			log.Fatal().Err(err).Msg("не получилось создать миграцию для " + dbName)
-		}
+	migration, err := migrate.New(config.MigrationUrl, fmt.Sprintf(
+		"postgres://%s:%s@db:5432/education?sslmode=%s",
+		config.DBUserName,
+		config.DBPassword,
+		config.DBSSLMode,
+	))
+	if err != nil {
+		log.Fatal().Err(err).Msg("не получилось создать миграцию")
+	}
 
-		if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-			log.Error().Err(err).Msg("не получилось поднять миграцию для " + dbName)
-		}
+	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Error().Err(err).Msg("не получилось поднять миграцию")
 	}
 
 	log.Info().Msg("миграции завершены")
@@ -140,7 +128,7 @@ func runDBMigration() {
 
 // runHttpGatewayServer Сервер на gRPC, но с поддержкой HTTP
 func runHttpGatewayServer(taskDistributor worker.TaskDistributor) {
-	server := api.NewServer(config, queries, tokenMaker, taskDistributor, cacher)
+	server := api.NewServer(querier, replicaConn, config, tokenMaker, taskDistributor, cacher)
 
 	// Важная штука, которая не изменяет названия в json'е (названия остаются в snake_style)
 	jsobOptions := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
@@ -194,7 +182,7 @@ func runHttpGatewayServer(taskDistributor worker.TaskDistributor) {
 
 // runGrpcServer Стандартный сервер на gRPC
 func runGrpcServer(taskDistributor worker.TaskDistributor) {
-	server := api.NewServer(config, queries, tokenMaker, taskDistributor, cacher)
+	server := api.NewServer(querier, replicaConn, config, tokenMaker, taskDistributor, cacher)
 
 	// Настраиваем логгер
 	lggr := grpc.UnaryInterceptor(tools.GrpcLogger)
@@ -229,7 +217,7 @@ func runGrpcServer(taskDistributor worker.TaskDistributor) {
 
 // runGrpcServer Стандартный сервер на Gin
 func runGinServer() {
-	server := api_gin.NewServer(config, queries, tokenMaker, cacher)
+	server := api_gin.NewServer(querier, replicaConn, config, tokenMaker, cacher)
 
 	// Запускаем сервер конкурентно, и, если что, захватываем ошибку в waitErr
 	waitErr.Go(func() error {

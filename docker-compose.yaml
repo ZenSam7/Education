@@ -10,7 +10,7 @@ services:
       - education_net
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
     command:
       - postgres
       - -c
@@ -25,6 +25,9 @@ services:
     container_name: db_repl
     env_file:
       - .env
+    environment:
+      - PGPASSWORD=root
+    user: postgres
     volumes:
       - db_repl:/var/lib/postgresql/data
     networks:
@@ -35,19 +38,16 @@ services:
       - /bin/bash
       - -c
       - |
-        # Ожидание, пока основной сервер будет доступен
-        until pg_isready -h db -U masteruser; do
-          echo "Waiting for master db..."
-          sleep 1
-        done
-
         # Создание резервной копии
-        pg_basebackup -h db -D /var/lib/postgresql/data -U masteruser -Fp -Xs -P
-
+        pg_basebackup -h db -D /var/lib/postgresql/data -U root -Fp -Xs -P
+        
         # Создание файла конфигурации для репликации
-        echo "primary_conninfo = 'host=db port=5432 user=masteruser password=masterpass'" > /var/lib/postgresql/data/postgresql.conf
+        echo "primary_conninfo = 'host=db port=5432 user=root password=root'" > /var/lib/postgresql/data/postgresql.conf
         echo "standby_mode = 'on'" > /var/lib/postgresql/data/standby.signal
-
+        
+        # Устанавливаем права
+        chmod 0750 /var/lib/postgresql/data
+        
         # Запуск PostgreSQL
         exec postgres -c "hot_standby=on"
 

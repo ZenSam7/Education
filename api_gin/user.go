@@ -88,6 +88,9 @@ func (server *Server) getUser(ctx *gin.Context) {
 	// Получаем пользователя
 	user, err := server.querier.GetUser(ctx, req.IDUser)
 	if err != nil {
+		// Если не получилось с главной бд, пытаемся с репликой
+		user, err = server.replicaConn.GetUser(ctx, req.IDUser)
+
 		// Если у нас просто нет такого пользователя, то выдаём другую ошибку
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))

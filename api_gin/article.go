@@ -110,6 +110,9 @@ func (server *Server) getArticle(ctx *gin.Context) {
 	// Получаем статью
 	article, err := server.querier.GetArticle(ctx, req.IDArticle)
 	if err != nil {
+		// Если не получилось с главной бд, пытаемся с репликой
+		article, err = server.replicaConn.GetArticle(ctx, req.IDArticle)
+
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

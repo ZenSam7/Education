@@ -113,9 +113,13 @@ func (server *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	// Сам запрос
 	user, err := server.querier.GetUser(ctx, req.GetIdUser())
 	if err != nil {
+		// Если не получилось с главной бд, пытаемся с репликой
+		user, err = server.replicaConn.GetUser(ctx, req.GetIdUser())
+
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "пользователь не найден")
 		}
+
 		return nil, status.Errorf(codes.Internal, "не удалось получить пользователя: %s", err)
 	}
 

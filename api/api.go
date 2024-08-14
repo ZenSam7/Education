@@ -13,6 +13,7 @@ import (
 type Server struct {
 	pb.UnimplementedEducationServer
 	querier         db.Querier
+	replicaConn     db.Querier
 	tokenMaker      token.Maker
 	config          tools.Config
 	taskDistributor worker.TaskDistributor
@@ -21,8 +22,9 @@ type Server struct {
 
 // NewServer Новый gRPC процесс для обработки запросов (используем Paseto)
 func NewServer(
-	config tools.Config,
 	querier db.Querier,
+	replicaConn db.Querier,
+	config tools.Config,
 	tokenMaker token.Maker,
 	taskDistributor worker.TaskDistributor,
 	cacher cache.Cacher,
@@ -30,6 +32,7 @@ func NewServer(
 
 	server := &Server{
 		querier:         querier,
+		replicaConn:     replicaConn,
 		tokenMaker:      tokenMaker,
 		config:          config,
 		taskDistributor: taskDistributor,
