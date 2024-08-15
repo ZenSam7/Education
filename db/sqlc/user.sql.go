@@ -26,7 +26,7 @@ func (q *Queries) CountRowsUser(ctx context.Context) (int64, error) {
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, email, password_hash)
 VALUES ($1::text, $2::text, $3::text)
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar
 `
 
 type CreateUserParams struct {
@@ -49,6 +49,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.EmailVerified,
 		&i.Role,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -63,7 +64,7 @@ WITH deleted_session AS ( -- Объединяем 2 запроса в 1
 )
 DELETE FROM users
 WHERE id_user = $1::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar
 `
 
 // DeleteUser Удаляем пользователя
@@ -80,6 +81,7 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (User, error) {
 		&i.PasswordHash,
 		&i.EmailVerified,
 		&i.Role,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -89,18 +91,21 @@ UPDATE users
 SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
   -- CASE WHEN используется когда нельзя указать нулевое значение (пустую строку), COALESCE когда можно
   name = CASE WHEN $1::text <> '' THEN $1::text ELSE name END,
   description = COALESCE($2::text, description),
-  karma = COALESCE($3::integer, karma)
-WHERE id_user = $4::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
+  karma = COALESCE($3::integer, karma),
+  avatar = CASE WHEN $4::integer <> 0 THEN $4::integer ELSE avatar END
+WHERE id_user = $5::integer
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar
 `
 
 type EditUserParams struct {
 	Name        string      `json:"name"`
 	Description pgtype.Text `json:"description"`
 	Karma       pgtype.Int4 `json:"karma"`
+	Avatar      int32       `json:"avatar"`
 	IDUser      int32       `json:"id_user"`
 }
 
@@ -110,6 +115,7 @@ func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error
 		arg.Name,
 		arg.Description,
 		arg.Karma,
+		arg.Avatar,
 		arg.IDUser,
 	)
 	var i User
@@ -123,12 +129,13 @@ func (q *Queries) EditUser(ctx context.Context, arg EditUserParams) (User, error
 		&i.PasswordHash,
 		&i.EmailVerified,
 		&i.Role,
+		&i.Avatar,
 	)
 	return i, err
 }
 
 const getManySortedUsers = `-- name: GetManySortedUsers :many
-SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar FROM users
 ORDER BY
         CASE WHEN $1::boolean THEN id_user::integer
              WHEN $2::boolean THEN karma::integer END
@@ -176,6 +183,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 			&i.PasswordHash,
 			&i.EmailVerified,
 			&i.Role,
+			&i.Avatar,
 		); err != nil {
 			return nil, err
 		}
@@ -188,7 +196,7 @@ func (q *Queries) GetManySortedUsers(ctx context.Context, arg GetManySortedUsers
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar FROM users
 WHERE id_user = $1
 `
 
@@ -206,12 +214,13 @@ func (q *Queries) GetUser(ctx context.Context, idUser int32) (User, error) {
 		&i.PasswordHash,
 		&i.EmailVerified,
 		&i.Role,
+		&i.Avatar,
 	)
 	return i, err
 }
 
 const getUserFromName = `-- name: GetUserFromName :one
-SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role FROM users
+SELECT id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar FROM users
 WHERE name = $1
 `
 
@@ -229,6 +238,7 @@ func (q *Queries) GetUserFromName(ctx context.Context, name string) (User, error
 		&i.PasswordHash,
 		&i.EmailVerified,
 		&i.Role,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -237,7 +247,7 @@ const setEmailIsVerified = `-- name: SetEmailIsVerified :one
 UPDATE users
 SET email_verified = true
 WHERE id_user = $1::integer
-RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role
+RETURNING id_user, created_at, name, description, karma, email, password_hash, email_verified, role, avatar
 `
 
 // SetEmailIsVerified Ставим состояние почты как подтверждённую для какого-то пользователя
@@ -254,6 +264,7 @@ func (q *Queries) SetEmailIsVerified(ctx context.Context, idUser int32) (User, e
 		&i.PasswordHash,
 		&i.EmailVerified,
 		&i.Role,
+		&i.Avatar,
 	)
 	return i, err
 }

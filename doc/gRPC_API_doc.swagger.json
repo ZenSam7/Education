@@ -223,6 +223,37 @@
         ]
       }
     },
+    "/delete_image/{idImage}": {
+      "delete": {
+        "operationId": "Education_DeleteImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeleteImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idImage",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/delete_user": {
       "delete": {
         "operationId": "Education_DeleteUser",
@@ -301,6 +332,38 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/protobufEditCommentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/edit_image": {
+      "patch": {
+        "operationId": "Education_EditImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufEditImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufEditImageRequest"
             }
           }
         ],
@@ -462,6 +525,37 @@
             "name": "idComment",
             "in": "query",
             "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/get_image/{idImage}": {
+      "get": {
+        "operationId": "Education_GetImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idImage",
+            "in": "path",
+            "required": true,
             "type": "integer",
             "format": "int32"
           }
@@ -766,6 +860,38 @@
         ]
       }
     },
+    "/load_image": {
+      "post": {
+        "operationId": "Education_LoadImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLoadImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufLoadImageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
     "/login_user": {
       "post": {
         "operationId": "Education_LoginUser",
@@ -790,6 +916,38 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/protobufLoginUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Education"
+        ]
+      }
+    },
+    "/rename_image": {
+      "patch": {
+        "operationId": "Education_RenameImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufRenameImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufRenameImageRequest"
             }
           }
         ],
@@ -903,6 +1061,13 @@
           }
         },
         "comments": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "images": {
           "type": "array",
           "items": {
             "type": "integer",
@@ -1035,6 +1200,14 @@
         }
       }
     },
+    "protobufDeleteImageResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/protobufImage"
+        }
+      }
+    },
     "protobufDeleteUserResponse": {
       "type": "object",
       "properties": {
@@ -1068,6 +1241,13 @@
           }
         },
         "comments": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "images": {
           "type": "array",
           "items": {
             "type": "integer",
@@ -1108,6 +1288,27 @@
         }
       }
     },
+    "protobufEditImageRequest": {
+      "type": "object",
+      "properties": {
+        "idImage": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "content": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protobufEditImageResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/protobufImage"
+        }
+      }
+    },
     "protobufEditUserRequest": {
       "type": "object",
       "properties": {
@@ -1120,6 +1321,10 @@
         },
         "description": {
           "type": "string"
+        },
+        "avatar": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -1171,6 +1376,14 @@
         }
       }
     },
+    "protobufGetImageResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/protobufImage"
+        }
+      }
+    },
     "protobufGetManySortedArticlesResponse": {
       "type": "object",
       "properties": {
@@ -1215,6 +1428,46 @@
         }
       }
     },
+    "protobufImage": {
+      "type": "object",
+      "properties": {
+        "idImage": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "format": "byte"
+        },
+        "idUser": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "protobufLoadImageRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protobufLoadImageResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/protobufImage"
+        }
+      }
+    },
     "protobufLoginUserRequest": {
       "type": "object",
       "properties": {
@@ -1245,6 +1498,26 @@
         "refreshTokenExpiredAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "protobufRenameImageRequest": {
+      "type": "object",
+      "properties": {
+        "idImage": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufRenameImageResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/protobufImage"
         }
       }
     },
@@ -1297,6 +1570,10 @@
         },
         "role": {
           "type": "string"
+        },
+        "avatar": {
+          "type": "integer",
+          "format": "int32"
         },
         "createdAt": {
           "type": "string",

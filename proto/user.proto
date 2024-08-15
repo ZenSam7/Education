@@ -13,7 +13,8 @@ message User {
   string description = 4;
   int32  karma = 5;
   string role = 6;
-  google.protobuf.Timestamp created_at = 7;
+  int32  avatar = 7;
+  google.protobuf.Timestamp created_at = 8;
 }
 
 message CreateUserRequest {
@@ -35,10 +36,10 @@ message GetUserResponse {
 }
 
 message GetManySortedUsersRequest {
-  optional bool  id_user = 1;
-  optional bool  name = 2;
-  optional bool  description = 3;
-  optional bool  karma = 4;
+  optional bool id_user = 1;
+  optional bool name = 2;
+  optional bool description = 3;
+  optional bool karma = 4;
   int32 page_size = 5;
   int32 page_num = 6;
 }
@@ -51,6 +52,7 @@ message EditUserRequest {
   optional string name = 1;
   optional int32  karma = 2;
   optional string description = 3;
+  optional int32  avatar = 4;
 }
 
 message EditUserResponse {

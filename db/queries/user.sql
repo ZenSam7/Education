@@ -46,10 +46,12 @@ UPDATE users
 SET
   -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
   -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
+  -- (Кстати, "::text" <- эти штуки нужны чтобы вместа pgtype был string/int32)
   -- CASE WHEN используется когда нельзя указать нулевое значение (пустую строку), COALESCE когда можно
   name = CASE WHEN @name::text <> '' THEN @name::text ELSE name END,
   description = COALESCE(sqlc.narg(description)::text, description),
-  karma = COALESCE(sqlc.narg(karma)::integer, karma)
+  karma = COALESCE(sqlc.narg(karma)::integer, karma),
+  avatar = CASE WHEN @avatar::integer <> 0 THEN @avatar::integer ELSE avatar END
 WHERE id_user = @id_user::integer
 RETURNING *;
 

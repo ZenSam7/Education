@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package protobuf;
+option go_package = "github.com/ZenSam7/Education/protobuf";
+
+message Image {
+  int32 id_image = 1;
+  string name = 2;
+  bytes content = 3;
+  int32 id_user = 4;
+}
+
+message GetImageRequest {
+  int32 id_image = 1;
+}
+
+message GetImageResponse {
+  Image image = 1;
+}
+
+message EditImageRequest {
+  int32 id_image = 1;
+  bytes content = 2;
+}
+
+message EditImageResponse {
+  Image image = 1;
+}
+
+message DeleteImageRequest {
+  int32 id_image = 1;
+}
+
+message DeleteImageResponse {
+  Image image = 1;
+}
+
+message LoadImageRequest {
+  string name = 1;
+  bytes  content = 2;
+}
+
+message LoadImageResponse {
+  Image image = 1;
+}
+
+message RenameImageRequest {
+  int32  id_image = 1;
+  string name = 2;
+}
+
+message RenameImageResponse {
+  Image image = 1;
+}

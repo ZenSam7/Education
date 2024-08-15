@@ -15,7 +15,7 @@ func MakeTx(ctx context.Context, fn func(Querier) error, mayUseReplica ...bool) 
 	conn, ok := queries.db.(*pgx.Conn)
 	if !ok {
 		// Пробуем использовать реплику
-		if mayUseReplica[0] {
+		if len(mayUseReplica) != 0 && mayUseReplica[0] {
 			conn, ok = replica.db.(*pgx.Conn)
 			if !ok {
 				return pgx.ErrTxClosed
@@ -40,7 +40,7 @@ func MakeTx(ctx context.Context, fn func(Querier) error, mayUseReplica ...bool) 
 		}
 
 		// Если можно попытаться использовать реплику, то используем реплику
-		if mayUseReplica[0] {
+		if len(mayUseReplica) != 0 && mayUseReplica[0] {
 			err = fn(replica.WithTx(tx))
 			// Откат транзакции
 			if err != nil {

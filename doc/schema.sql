@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.3 (Debian 16.3-1.pgdg120+1)
--- Dumped by pg_dump version 16.3 (Debian 16.3-1.pgdg120+1)
+-- Dumped from database version 16.4 (Debian 16.4-1.pgdg120+1)
+-- Dumped by pg_dump version 16.4 (Debian 16.4-1.pgdg120+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -33,6 +33,7 @@ CREATE TABLE public.articles (
     comments integer[],
     authors integer[] NOT NULL,
     evaluation integer DEFAULT 0 NOT NULL,
+    id_images integer[],
     CONSTRAINT articles_text_check CHECK ((text <> ''::text)),
     CONSTRAINT articles_title_check CHECK (((title)::text <> ''::text))
 );
@@ -102,6 +103,42 @@ ALTER SEQUENCE public.comments_id_comment_seq OWNED BY public.comments.id_commen
 
 
 --
+-- Name: images; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.images (
+    id_image integer NOT NULL,
+    name character varying NOT NULL,
+    content bytea NOT NULL,
+    id_user integer NOT NULL
+);
+
+
+ALTER TABLE public.images OWNER TO root;
+
+--
+-- Name: images_id_image_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.images_id_image_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.images_id_image_seq OWNER TO root;
+
+--
+-- Name: images_id_image_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.images_id_image_seq OWNED BY public.images.id_image;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: root
 --
 
@@ -144,6 +181,7 @@ CREATE TABLE public.users (
     password_hash character varying NOT NULL,
     email_verified boolean DEFAULT false NOT NULL,
     role character varying DEFAULT 'usual'::character varying NOT NULL,
+    avatar integer NOT NULL,
     CONSTRAINT email_must_be_valid CHECK (((email)::text ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'::text)),
     CONSTRAINT users_email_check CHECK (((email)::text <> ''::text)),
     CONSTRAINT users_name_check CHECK (((name)::text <> ''::text)),
@@ -226,6 +264,13 @@ ALTER TABLE ONLY public.comments ALTER COLUMN id_comment SET DEFAULT nextval('pu
 
 
 --
+-- Name: images id_image; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.images ALTER COLUMN id_image SET DEFAULT nextval('public.images_id_image_seq'::regclass);
+
+
+--
 -- Name: users id_user; Type: DEFAULT; Schema: public; Owner: root
 --
 
@@ -253,6 +298,14 @@ ALTER TABLE ONLY public.articles
 
 ALTER TABLE ONLY public.comments
     ADD CONSTRAINT comments_pkey PRIMARY KEY (id_comment);
+
+
+--
+-- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_pkey PRIMARY KEY (id_image);
 
 
 --
@@ -340,11 +393,27 @@ CREATE INDEX user_indx ON public.users USING btree (id_user);
 
 
 --
+-- Name: images images_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.users(id_user);
+
+
+--
 -- Name: sessions sessions_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.users(id_user);
+
+
+--
+-- Name: users users_avatar_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_avatar_fkey FOREIGN KEY (avatar) REFERENCES public.images(id_image);
 
 
 --
@@ -354,6 +423,15 @@ ALTER TABLE ONLY public.sessions
 ALTER TABLE ONLY public.verify_emails
     ADD CONSTRAINT verify_emails_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.users(id_user);
 
+
+--
+-- Name: my_pub; Type: PUBLICATION; Schema: -; Owner: root
+--
+
+CREATE PUBLICATION my_pub FOR ALL TABLES WITH (publish = 'insert, update, delete, truncate');
+
+
+ALTER PUBLICATION my_pub OWNER TO root;
 
 --
 -- PostgreSQL database dump complete

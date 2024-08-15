@@ -88,7 +88,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 
 const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
 DELETE FROM sessions
-WHERE expired_at > NOW()
+WHERE expired_at < NOW()
 `
 
 // DeleteExpiredSessions Удаляем все просроченные сессии

@@ -7,6 +7,7 @@ Table "articles" {
   "comments" "integer[]"
   "authors" "integer[]" [not null]
   "evaluation" integer [not null, default: 0]
+  "id_images" "integer[]"
 
   Indexes {
     id_article [type: btree, name: "article_indx"]
@@ -24,6 +25,13 @@ Table "comments" {
   Indexes {
     id_comment [type: btree, name: "comment_indx"]
   }
+}
+
+Table "images" {
+  "id_image" integer [pk, not null]
+  "name" "character varying" [not null]
+  "content" bytea [not null]
+  "id_user" integer [not null]
 }
 
 Table "schema_migrations" {
@@ -55,6 +63,7 @@ Table "users" {
   "password_hash" "character varying" [unique, not null]
   "email_verified" boolean [not null, default: false]
   "role" "character varying" [not null, default: `'usual'::charactervarying`]
+  "avatar" integer [not null]
 
   Indexes {
     id_user [type: btree, name: "user_indx"]
@@ -68,6 +77,10 @@ Table "verify_emails" {
   "expired_at" timestamp [not null, default: `now()+'00:01:00'::interval`]
 }
 
+Ref "images_id_user_fkey":"users"."id_user" < "images"."id_user"
+
 Ref "sessions_id_user_fkey":"users"."id_user" < "sessions"."id_user"
+
+Ref "users_avatar_fkey":"images"."id_image" < "users"."avatar"
 
 Ref "verify_emails_id_user_fkey":"users"."id_user" < "verify_emails"."id_user"

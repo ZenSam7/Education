@@ -104,7 +104,8 @@ SET
   text = CASE WHEN @text::text <> '' THEN @text::text ELSE text END,
   evaluation = CASE WHEN @evaluation::integer <> evaluation THEN @evaluation::integer ELSE evaluation END,
   comments = COALESCE(@comments::integer[], comments),
-  authors = CASE WHEN cardinality(@authors::integer[]) <> 0 THEN @authors ELSE authors END
+  authors = CASE WHEN cardinality(@authors::integer[]) <> 0 THEN @authors ELSE authors END,
+  images = CASE WHEN cardinality(@images::integer[]) <> 0 THEN @images ELSE images END
 WHERE id_article = @id_article::integer
 RETURNING *;
 

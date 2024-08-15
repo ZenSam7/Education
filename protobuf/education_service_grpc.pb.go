@@ -41,13 +41,18 @@ const (
 	Education_GetArticlesWithAttribute_FullMethodName           = "/protobuf.Education/GetArticlesWithAttribute"
 	Education_GetManySortedArticles_FullMethodName              = "/protobuf.Education/GetManySortedArticles"
 	Education_GetManySortedArticlesWithAttribute_FullMethodName = "/protobuf.Education/GetManySortedArticlesWithAttribute"
+	Education_GetImage_FullMethodName                           = "/protobuf.Education/GetImage"
+	Education_EditImage_FullMethodName                          = "/protobuf.Education/EditImage"
+	Education_DeleteImage_FullMethodName                        = "/protobuf.Education/DeleteImage"
+	Education_LoadImage_FullMethodName                          = "/protobuf.Education/LoadImage"
+	Education_RenameImage_FullMethodName                        = "/protobuf.Education/RenameImage"
 )
 
 // EducationClient is the client API for Education service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Описываем что-то типа интерфейса (типа как queries interface)
+// Описываем что-то типа интерфейса (типа как querier interface)
 type EducationClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
@@ -69,6 +74,11 @@ type EducationClient interface {
 	GetArticlesWithAttribute(ctx context.Context, in *GetArticlesWithAttributeRequest, opts ...grpc.CallOption) (*GetArticlesWithAttributeResponse, error)
 	GetManySortedArticles(ctx context.Context, in *GetManySortedArticlesRequest, opts ...grpc.CallOption) (*GetManySortedArticlesResponse, error)
 	GetManySortedArticlesWithAttribute(ctx context.Context, in *GetManySortedArticlesWithAttributeRequest, opts ...grpc.CallOption) (*GetManySortedArticlesWithAttributeResponse, error)
+	GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*GetImageResponse, error)
+	EditImage(ctx context.Context, in *EditImageRequest, opts ...grpc.CallOption) (*EditImageResponse, error)
+	DeleteImage(ctx context.Context, in *DeleteImageRequest, opts ...grpc.CallOption) (*DeleteImageResponse, error)
+	LoadImage(ctx context.Context, in *LoadImageRequest, opts ...grpc.CallOption) (*LoadImageResponse, error)
+	RenameImage(ctx context.Context, in *RenameImageRequest, opts ...grpc.CallOption) (*RenameImageResponse, error)
 }
 
 type educationClient struct {
@@ -279,11 +289,61 @@ func (c *educationClient) GetManySortedArticlesWithAttribute(ctx context.Context
 	return out, nil
 }
 
+func (c *educationClient) GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*GetImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetImageResponse)
+	err := c.cc.Invoke(ctx, Education_GetImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) EditImage(ctx context.Context, in *EditImageRequest, opts ...grpc.CallOption) (*EditImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EditImageResponse)
+	err := c.cc.Invoke(ctx, Education_EditImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) DeleteImage(ctx context.Context, in *DeleteImageRequest, opts ...grpc.CallOption) (*DeleteImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteImageResponse)
+	err := c.cc.Invoke(ctx, Education_DeleteImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) LoadImage(ctx context.Context, in *LoadImageRequest, opts ...grpc.CallOption) (*LoadImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoadImageResponse)
+	err := c.cc.Invoke(ctx, Education_LoadImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *educationClient) RenameImage(ctx context.Context, in *RenameImageRequest, opts ...grpc.CallOption) (*RenameImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RenameImageResponse)
+	err := c.cc.Invoke(ctx, Education_RenameImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EducationServer is the server API for Education service.
 // All implementations must embed UnimplementedEducationServer
 // for forward compatibility
 //
-// Описываем что-то типа интерфейса (типа как queries interface)
+// Описываем что-то типа интерфейса (типа как querier interface)
 type EducationServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
@@ -305,6 +365,11 @@ type EducationServer interface {
 	GetArticlesWithAttribute(context.Context, *GetArticlesWithAttributeRequest) (*GetArticlesWithAttributeResponse, error)
 	GetManySortedArticles(context.Context, *GetManySortedArticlesRequest) (*GetManySortedArticlesResponse, error)
 	GetManySortedArticlesWithAttribute(context.Context, *GetManySortedArticlesWithAttributeRequest) (*GetManySortedArticlesWithAttributeResponse, error)
+	GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error)
+	EditImage(context.Context, *EditImageRequest) (*EditImageResponse, error)
+	DeleteImage(context.Context, *DeleteImageRequest) (*DeleteImageResponse, error)
+	LoadImage(context.Context, *LoadImageRequest) (*LoadImageResponse, error)
+	RenameImage(context.Context, *RenameImageRequest) (*RenameImageResponse, error)
 	mustEmbedUnimplementedEducationServer()
 }
 
@@ -371,6 +436,21 @@ func (UnimplementedEducationServer) GetManySortedArticles(context.Context, *GetM
 }
 func (UnimplementedEducationServer) GetManySortedArticlesWithAttribute(context.Context, *GetManySortedArticlesWithAttributeRequest) (*GetManySortedArticlesWithAttributeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetManySortedArticlesWithAttribute not implemented")
+}
+func (UnimplementedEducationServer) GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetImage not implemented")
+}
+func (UnimplementedEducationServer) EditImage(context.Context, *EditImageRequest) (*EditImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditImage not implemented")
+}
+func (UnimplementedEducationServer) DeleteImage(context.Context, *DeleteImageRequest) (*DeleteImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteImage not implemented")
+}
+func (UnimplementedEducationServer) LoadImage(context.Context, *LoadImageRequest) (*LoadImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoadImage not implemented")
+}
+func (UnimplementedEducationServer) RenameImage(context.Context, *RenameImageRequest) (*RenameImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenameImage not implemented")
 }
 func (UnimplementedEducationServer) mustEmbedUnimplementedEducationServer() {}
 
@@ -745,6 +825,96 @@ func _Education_GetManySortedArticlesWithAttribute_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Education_GetImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).GetImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_GetImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).GetImage(ctx, req.(*GetImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_EditImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).EditImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_EditImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).EditImage(ctx, req.(*EditImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_DeleteImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).DeleteImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_DeleteImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).DeleteImage(ctx, req.(*DeleteImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_LoadImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoadImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).LoadImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_LoadImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).LoadImage(ctx, req.(*LoadImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Education_RenameImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenameImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EducationServer).RenameImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Education_RenameImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EducationServer).RenameImage(ctx, req.(*RenameImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Education_ServiceDesc is the grpc.ServiceDesc for Education service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -831,6 +1001,26 @@ var Education_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetManySortedArticlesWithAttribute",
 			Handler:    _Education_GetManySortedArticlesWithAttribute_Handler,
+		},
+		{
+			MethodName: "GetImage",
+			Handler:    _Education_GetImage_Handler,
+		},
+		{
+			MethodName: "EditImage",
+			Handler:    _Education_EditImage_Handler,
+		},
+		{
+			MethodName: "DeleteImage",
+			Handler:    _Education_DeleteImage_Handler,
+		},
+		{
+			MethodName: "LoadImage",
+			Handler:    _Education_LoadImage_Handler,
+		},
+		{
+			MethodName: "RenameImage",
+			Handler:    _Education_RenameImage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

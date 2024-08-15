@@ -29,7 +29,7 @@ WHERE id_session = @id_session::uuid;
 -- DeleteExpiredSessions Удаляем все просроченные сессии
 -- name: DeleteExpiredSessions :exec
 DELETE FROM sessions
-WHERE expired_at > NOW();
+WHERE expired_at < NOW();
 
 -- CountRowsSessions Считаем количество строк в таблице
 -- name: CountRowsSessions :one

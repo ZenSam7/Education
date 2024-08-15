@@ -149,6 +149,7 @@ func (server *Server) EditArticle(ctx context.Context, req *pb.EditArticleReques
 		Text:      req.GetText(),
 		Comments:  req.GetComments(),
 		Authors:   req.GetAuthors(),
+		Images:    req.GetImages(),
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "ошибка при изменении статьи: %s", err)

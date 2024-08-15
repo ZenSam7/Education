@@ -6,10 +6,11 @@ option go_package = "github.com/ZenSam7/Education/protobuf";
 import "user.proto";
 import "comment.proto";
 import "article.proto";
+import "image.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/option/annotations.proto";
 
-// Описываем что-то типа интерфейса (типа как queries interface)
+// Описываем что-то типа интерфейса (типа как querier interface)
 service Education {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
         option (google.api.http) = {
@@ -122,6 +123,36 @@ service Education {
         option (google.api.http) = {
           get: "/get_many_sorted_articles_with_attribute"
         };
+  };
+
+
+  rpc GetImage(GetImageRequest) returns (GetImageResponse) {
+    option (google.api.http) = {
+      get: "/get_image/{id_image}"
+    };
+  };
+  rpc EditImage(EditImageRequest) returns (EditImageResponse) {
+    option (google.api.http) = {
+      patch: "/edit_image"
+      body: "*"
+    };
+  }
+; rpc DeleteImage(DeleteImageRequest) returns (DeleteImageResponse) {
+    option (google.api.http) = {
+      delete: "/delete_image/{id_image}"
+    };
+  };
+  rpc LoadImage(LoadImageRequest) returns (LoadImageResponse) {
+    option (google.api.http) = {
+      post: "/load_image"
+      body: "*"
+    };
+  };
+  rpc RenameImage(RenameImageRequest) returns (RenameImageResponse) {
+    option (google.api.http) = {
+      patch: "/rename_image"
+      body: "*"
+    };
   };
 }
 

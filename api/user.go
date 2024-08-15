@@ -209,6 +209,7 @@ func (server *Server) EditUser(ctx context.Context, req *pb.EditUserRequest) (*p
 	arg := db.EditUserParams{
 		IDUser: accessPayload.IDUser,
 		Name:   req.GetName(),
+		Avatar: req.GetAvatar(),
 		// Разделяем пустое значение и значение которое вообще не указывали
 		// (Т.е. имеем возможность указать '' или 0 как валидный параметр (стереть значения), но не nil)
 		Description: pgtype.Text{String: req.GetDescription(), Valid: req.Description != nil},
@@ -275,7 +276,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, status.Errorf(codes.Unauthenticated, "неправильный пароль")
 	}
 
-	// Если с паролем со входом всё ок, то создаём новую сессию
+	// Если с паролем со входом всё ок, то создаём новую сессию с новыми токенами
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(
 		user.IDUser,
 		user.Role,

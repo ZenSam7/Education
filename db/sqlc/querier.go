@@ -39,6 +39,8 @@ type Querier interface {
 	DeleteExiredRequests(ctx context.Context) error
 	// DeleteExpiredSessions Удаляем все просроченные сессии
 	DeleteExpiredSessions(ctx context.Context) error
+	// DeleteImage Удаляем картинку
+	DeleteImage(ctx context.Context, idImage int32) (Image, error)
 	// DeleteSession Удаляем сессию по id
 	DeleteSession(ctx context.Context, idSession pgtype.UUID) (Session, error)
 	// DeleteUser Удаляем пользователя
@@ -49,6 +51,8 @@ type Querier interface {
 	EditArticle(ctx context.Context, arg EditArticleParams) (Article, error)
 	// EditComment Изменяем параметр(ы) пользователя
 	EditComment(ctx context.Context, arg EditCommentParams) (Comment, error)
+	// EditImage Заменяем картинку на новую
+	EditImage(ctx context.Context, arg EditImageParams) (Image, error)
 	// EditUser Изменяем параметр(ы) пользователя
 	EditUser(ctx context.Context, arg EditUserParams) (User, error)
 	// GetArticle Возвращаем статью по id
@@ -59,6 +63,8 @@ type Querier interface {
 	GetComment(ctx context.Context, idComment int32) (Comment, error)
 	// GetCommentsOfArticle Возвращаем комментарии к статье
 	GetCommentsOfArticle(ctx context.Context, arg GetCommentsOfArticleParams) ([]Comment, error)
+	// GetImage Возвращаем картинку
+	GetImage(ctx context.Context, idImage int32) (Image, error)
 	// GetManySortedArticles Возвращаем много отсортированных статей
 	GetManySortedArticles(ctx context.Context, arg GetManySortedArticlesParams) ([]Article, error)
 	// GetManySortedArticlesWithAttribute Возвращаем много статей взятых по признаку по
@@ -75,6 +81,10 @@ type Querier interface {
 	GetUserFromName(ctx context.Context, name string) (User, error)
 	// GetVerifyRequest Возвращаем запрос на верификацию
 	GetVerifyRequest(ctx context.Context, idUser int32) (VerifyEmail, error)
+	// LoadImage Загружаем изображение в бд
+	LoadImage(ctx context.Context, arg LoadImageParams) (Image, error)
+	// RenameImage Переименовываем картинку
+	RenameImage(ctx context.Context, arg RenameImageParams) (Image, error)
 	// SetEmailIsVerified Ставим состояние почты как подтверждённую для какого-то пользователя
 	SetEmailIsVerified(ctx context.Context, idUser int32) (User, error)
 }

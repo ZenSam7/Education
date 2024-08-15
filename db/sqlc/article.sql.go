@@ -24,7 +24,7 @@ func (q *Queries) CountRowsComment(ctx context.Context) (int64, error) {
 const createArticle = `-- name: CreateArticle :one
 INSERT INTO articles (title, text, authors)
 VALUES ($1, $2, $3)
-RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images
 `
 
 type CreateArticleParams struct {
@@ -46,6 +46,7 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 		&i.Comments,
 		&i.Authors,
 		&i.Evaluation,
+		&i.IDImages,
 	)
 	return i, err
 }
@@ -63,7 +64,7 @@ WITH deleted_comments AS ( -- Объединяем 2 запроса в 1
 )
 DELETE FROM articles
 WHERE id_article = $1::integer
-RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images
 `
 
 // DeleteArticle Удаляем статью и комментарии к ней
@@ -79,6 +80,7 @@ func (q *Queries) DeleteArticle(ctx context.Context, idArticle int32) (Article, 
 		&i.Comments,
 		&i.Authors,
 		&i.Evaluation,
+		&i.IDImages,
 	)
 	return i, err
 }
@@ -99,9 +101,10 @@ SET
   text = CASE WHEN $1::text <> '' THEN $1::text ELSE text END,
   evaluation = CASE WHEN $3::integer <> evaluation THEN $3::integer ELSE evaluation END,
   comments = COALESCE($4::integer[], comments),
-  authors = CASE WHEN cardinality($5::integer[]) <> 0 THEN $5 ELSE authors END
-WHERE id_article = $6::integer
-RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
+  authors = CASE WHEN cardinality($5::integer[]) <> 0 THEN $5 ELSE authors END,
+  images = CASE WHEN cardinality($6::integer[]) <> 0 THEN $6 ELSE images END
+WHERE id_article = $7::integer
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images
 `
 
 type EditArticleParams struct {
@@ -110,6 +113,7 @@ type EditArticleParams struct {
 	Evaluation int32   `json:"evaluation"`
 	Comments   []int32 `json:"comments"`
 	Authors    []int32 `json:"authors"`
+	Images     []int32 `json:"images"`
 	IDArticle  int32   `json:"id_article"`
 }
 
@@ -121,6 +125,7 @@ func (q *Queries) EditArticle(ctx context.Context, arg EditArticleParams) (Artic
 		arg.Evaluation,
 		arg.Comments,
 		arg.Authors,
+		arg.Images,
 		arg.IDArticle,
 	)
 	var i Article
@@ -133,12 +138,13 @@ func (q *Queries) EditArticle(ctx context.Context, arg EditArticleParams) (Artic
 		&i.Comments,
 		&i.Authors,
 		&i.Evaluation,
+		&i.IDImages,
 	)
 	return i, err
 }
 
 const getArticle = `-- name: GetArticle :one
-SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
+SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images FROM articles
 WHERE id_article = $1
 `
 
@@ -155,12 +161,13 @@ func (q *Queries) GetArticle(ctx context.Context, idArticle int32) (Article, err
 		&i.Comments,
 		&i.Authors,
 		&i.Evaluation,
+		&i.IDImages,
 	)
 	return i, err
 }
 
 const getArticlesWithAttribute = `-- name: GetArticlesWithAttribute :many
-SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
+SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images FROM articles
 WHERE
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
@@ -218,6 +225,7 @@ func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesW
 			&i.Comments,
 			&i.Authors,
 			&i.Evaluation,
+			&i.IDImages,
 		); err != nil {
 			return nil, err
 		}
@@ -230,7 +238,7 @@ func (q *Queries) GetArticlesWithAttribute(ctx context.Context, arg GetArticlesW
 }
 
 const getManySortedArticles = `-- name: GetManySortedArticles :many
-SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
+SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images FROM articles
 ORDER BY
         CASE WHEN $1::boolean THEN id_article::integer
              WHEN $2::boolean THEN evaluation::integer END
@@ -290,6 +298,7 @@ func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedAr
 			&i.Comments,
 			&i.Authors,
 			&i.Evaluation,
+			&i.IDImages,
 		); err != nil {
 			return nil, err
 		}
@@ -302,7 +311,7 @@ func (q *Queries) GetManySortedArticles(ctx context.Context, arg GetManySortedAr
 }
 
 const getManySortedArticlesWithAttribute = `-- name: GetManySortedArticlesWithAttribute :many
-SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation FROM articles
+SELECT id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images FROM articles
 WHERE
     -- Крч если через go передать в качестве текстового аргумента nil то он замениться на '',
     -- а '' != NULL поэтому она вставиться как пустая строка, хотя в go мы передали nil
@@ -390,6 +399,7 @@ func (q *Queries) GetManySortedArticlesWithAttribute(ctx context.Context, arg Ge
 			&i.Comments,
 			&i.Authors,
 			&i.Evaluation,
+			&i.IDImages,
 		); err != nil {
 			return nil, err
 		}

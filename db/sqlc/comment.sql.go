@@ -61,7 +61,7 @@ WITH deleted_comment_id AS ( -- TODO: переделать в транзакци
 UPDATE articles
 SET comments = array_remove(comments, $1::integer)
 WHERE $1::integer = ANY(comments)
-RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation
+RETURNING id_article, created_at, edited_at, title, text, comments, authors, evaluation, id_images
 `
 
 // DeleteComment Удаляем комментарий к статье
@@ -77,6 +77,7 @@ func (q *Queries) DeleteComment(ctx context.Context, idComment int32) (Article, 
 		&i.Comments,
 		&i.Authors,
 		&i.Evaluation,
+		&i.IDImages,
 	)
 	return i, err
 }

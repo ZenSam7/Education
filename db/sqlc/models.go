@@ -17,6 +17,7 @@ type Article struct {
 	Comments   []int32            `json:"comments"`
 	Authors    []int32            `json:"authors"`
 	Evaluation int32              `json:"evaluation"`
+	IDImages   []int32            `json:"id_images"`
 }
 
 type Comment struct {
@@ -26,6 +27,13 @@ type Comment struct {
 	Text       string             `json:"text"`
 	Author     int32              `json:"author"`
 	Evaluation int32              `json:"evaluation"`
+}
+
+type Image struct {
+	IDImage int32  `json:"id_image"`
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
+	IDUser  int32  `json:"id_user"`
 }
 
 type Session struct {
@@ -48,6 +56,7 @@ type User struct {
 	PasswordHash  string             `json:"password_hash"`
 	EmailVerified bool               `json:"email_verified"`
 	Role          string             `json:"role"`
+	Avatar        int32              `json:"avatar"`
 }
 
 type VerifyEmail struct {

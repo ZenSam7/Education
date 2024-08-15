@@ -244,6 +244,21 @@ func (mr *MockQuerierMockRecorder) DeleteExpiredSessions(ctx interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExpiredSessions", reflect.TypeOf((*MockQuerier)(nil).DeleteExpiredSessions), ctx)
 }
 
+// DeleteImage mocks base method.
+func (m *MockQuerier) DeleteImage(ctx context.Context, idImage int32) (db.Image, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteImage", ctx, idImage)
+	ret0, _ := ret[0].(db.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteImage indicates an expected call of DeleteImage.
+func (mr *MockQuerierMockRecorder) DeleteImage(ctx, idImage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImage", reflect.TypeOf((*MockQuerier)(nil).DeleteImage), ctx, idImage)
+}
+
 // DeleteSession mocks base method.
 func (m *MockQuerier) DeleteSession(ctx context.Context, idSession pgtype.UUID) (db.Session, error) {
 	m.ctrl.T.Helper()
@@ -319,6 +334,21 @@ func (mr *MockQuerierMockRecorder) EditComment(ctx, arg interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditComment", reflect.TypeOf((*MockQuerier)(nil).EditComment), ctx, arg)
 }
 
+// EditImage mocks base method.
+func (m *MockQuerier) EditImage(ctx context.Context, arg db.EditImageParams) (db.Image, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditImage", ctx, arg)
+	ret0, _ := ret[0].(db.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EditImage indicates an expected call of EditImage.
+func (mr *MockQuerierMockRecorder) EditImage(ctx, arg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditImage", reflect.TypeOf((*MockQuerier)(nil).EditImage), ctx, arg)
+}
+
 // EditUser mocks base method.
 func (m *MockQuerier) EditUser(ctx context.Context, arg db.EditUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
@@ -392,6 +422,21 @@ func (m *MockQuerier) GetCommentsOfArticle(ctx context.Context, arg db.GetCommen
 func (mr *MockQuerierMockRecorder) GetCommentsOfArticle(ctx, arg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsOfArticle", reflect.TypeOf((*MockQuerier)(nil).GetCommentsOfArticle), ctx, arg)
+}
+
+// GetImage mocks base method.
+func (m *MockQuerier) GetImage(ctx context.Context, idImage int32) (db.Image, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImage", ctx, idImage)
+	ret0, _ := ret[0].(db.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImage indicates an expected call of GetImage.
+func (mr *MockQuerierMockRecorder) GetImage(ctx, idImage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockQuerier)(nil).GetImage), ctx, idImage)
 }
 
 // GetManySortedArticles mocks base method.
@@ -497,6 +542,36 @@ func (m *MockQuerier) GetVerifyRequest(ctx context.Context, idUser int32) (db.Ve
 func (mr *MockQuerierMockRecorder) GetVerifyRequest(ctx, idUser interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVerifyRequest", reflect.TypeOf((*MockQuerier)(nil).GetVerifyRequest), ctx, idUser)
+}
+
+// LoadImage mocks base method.
+func (m *MockQuerier) LoadImage(ctx context.Context, arg db.LoadImageParams) (db.Image, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoadImage", ctx, arg)
+	ret0, _ := ret[0].(db.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LoadImage indicates an expected call of LoadImage.
+func (mr *MockQuerierMockRecorder) LoadImage(ctx, arg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadImage", reflect.TypeOf((*MockQuerier)(nil).LoadImage), ctx, arg)
+}
+
+// RenameImage mocks base method.
+func (m *MockQuerier) RenameImage(ctx context.Context, arg db.RenameImageParams) (db.Image, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RenameImage", ctx, arg)
+	ret0, _ := ret[0].(db.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RenameImage indicates an expected call of RenameImage.
+func (mr *MockQuerierMockRecorder) RenameImage(ctx, arg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameImage", reflect.TypeOf((*MockQuerier)(nil).RenameImage), ctx, arg)
 }
 
 // SetEmailIsVerified mocks base method.

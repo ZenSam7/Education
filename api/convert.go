@@ -40,3 +40,12 @@ func convArticle(article db.Article) *pb.Article {
 		EditedAt:   timestamppb.New(article.EditedAt.Time),
 	}
 }
+
+func convImage(image db.Image) *pb.Image {
+	return &pb.Image{
+		IdImage: image.IDImage,
+		Name:    image.Name,
+		Content: image.Content,
+		IdUser:  image.IDImage,
+	}
+}
