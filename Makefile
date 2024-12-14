@@ -3,11 +3,13 @@ include .env
 POSTGRES_URL = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/education?sslmode=${DB_SSL_MODE}"
 
 # Создаём новый контейнер с бд
-db: volume net
+db: volume
+	find . -type f -name "*.sh" -exec dos2unix {} \;
 	docker run --name db \
 		-p 5432:5432 \
 		--net education_net \
 		--env-file .env \
+		-e PGPASSWORD=root \
 		-v db_data \
 		-v ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh \
 		-d postgres:16 \
@@ -15,7 +17,7 @@ db: volume net
 		-c max_wal_senders=2 \
 		-c max_replication_slots=2
 
-replic: volume net
+replic: volume
 	docker run --name db_repl  \
 		--network education_net \
 		--env-file .env \

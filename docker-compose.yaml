@@ -38,6 +38,12 @@ services:
       - /bin/bash
       - -c
       - |
+        until pg_isready -h db -p 5432 -U root; do
+          echo "Ждём главную бд...";
+          sleep 1;
+        done;
+        pg_basebackup -h db -D /var/lib/postgresql/data -U root -Fp -Xs -P
+        
         # Создание резервной копии
         pg_basebackup -h db -D /var/lib/postgresql/data -U root -Fp -Xs -P
         

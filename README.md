@@ -34,11 +34,11 @@
 docker compose up
 ```
 
-Или можно выполнить команду на ubuntu:
+Или можно выполнить команду на ubuntu (не рекомендую, может всё сломаться):
 ```shell
 make from_scratch
 ```
-Если выдаёт ошибку `protoc-gen-go-grpc: program not found or is not executable`, то запустите сначала это, а потом ещё раз команду выше:
+Если выдаёт ошибку `--go-grpc_out: protoc-gen-go-grpc: Plugin failed with status code 1.`, то запустите сначала это, а потом ещё раз команду выше:
 ```shell
 export GOPATH=$HOME/go
 PATH=$PATH:$GOPATH/bin
