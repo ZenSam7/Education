@@ -122,5 +122,7 @@ clean:
 	docker volume rm db_data db_repl redis || true
 	docker network rm education_net || true
 
+from_scratch: mock sqlc proto clean all
+
 .PHONY: db createdb dropdb migrateup migrateup1 migratedown migratedown1 makemigrate db_doc all clean
-.PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume generate
+.PHONY: connect refreshdb sqlc test RESET RESTART server net proto redis mock volume generate from_scratch

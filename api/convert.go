@@ -14,6 +14,7 @@ func convUser(user db.User) *pb.User {
 		Email:       user.Email,
 		Karma:       user.Karma,
 		CreatedAt:   timestamppb.New(user.CreatedAt.Time),
+		Avatar:      user.Avatar,
 	}
 }
 
