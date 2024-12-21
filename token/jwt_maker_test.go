@@ -9,8 +9,7 @@ import (
 )
 
 func TestNewJWTMaker(t *testing.T) {
-	maker, err := NewJWTMaker(tools.GetRandomString(minSecretKeySize)[:minSecretKeySize])
-	require.NoError(t, err)
+	maker := NewJWTMaker(tools.GetRandomString(minSecretKeySize)[:minSecretKeySize])
 
 	randomIDUser := tools.GetRandomInt()
 	duration := time.Minute
@@ -32,8 +31,7 @@ func TestNewJWTMaker(t *testing.T) {
 }
 
 func TestExpiredJWTToken(t *testing.T) {
-	maker, err := NewJWTMaker(tools.GetRandomString(minSecretKeySize))
-	require.NoError(t, err)
+	maker := NewJWTMaker(tools.GetRandomString(minSecretKeySize))
 
 	token, payload, err := maker.CreateToken(tools.GetRandomInt(), tools.UsualRole, -time.Minute)
 	require.NoError(t, err)
@@ -47,8 +45,7 @@ func TestExpiredJWTToken(t *testing.T) {
 }
 
 func TestJWTTokenInvalidAlg(t *testing.T) {
-	maker, err := NewJWTMaker(tools.GetRandomString(minSecretKeySize))
-	require.NoError(t, err)
+	maker := NewJWTMaker(tools.GetRandomString(minSecretKeySize))
 
 	payload, err := NewPayload(tools.GetRandomInt(), tools.UsualRole, time.Minute)
 	require.NoError(t, err)

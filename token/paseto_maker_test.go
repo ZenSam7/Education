@@ -10,8 +10,7 @@ import (
 // Тесты точно такие же как для JWTMaker, но только тут Pasetomaker
 
 func TestNewPasetoMaker(t *testing.T) {
-	maker, err := NewPasetoMaker(tools.GetRandomString(minSecretKeySize)[:minSecretKeySize])
-	require.NoError(t, err)
+	maker := NewPasetoMaker(tools.GetRandomString(minSecretKeySize)[:minSecretKeySize])
 
 	randomIDUser := tools.GetRandomInt()
 	duration := time.Minute
@@ -33,8 +32,7 @@ func TestNewPasetoMaker(t *testing.T) {
 }
 
 func TestExpiredPasetoToken(t *testing.T) {
-	maker, err := NewPasetoMaker(tools.GetRandomString(minSecretKeySize)[:32]) // Строго 32!
-	require.NoError(t, err)
+	maker := NewPasetoMaker(tools.GetRandomString(minSecretKeySize)[:32]) // Строго 32!
 
 	token, payload, err := maker.CreateToken(tools.GetRandomInt(), tools.UsualRole, -time.Minute)
 	require.NoError(t, err)

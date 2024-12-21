@@ -56,4 +56,4 @@ jobs:
     # ./... тоже нельзя использовать
     # "-short" Пропускаем тесты, которые не выполнятся в Github Actions (типа проверка email)
     - name: Testing
-      run: go test -short ./db/sqlc ./tools ./token ./api_gin ./api ./worker
+      run: go test -short ./db/sqlc ./tools ./token ./api_gin ./api

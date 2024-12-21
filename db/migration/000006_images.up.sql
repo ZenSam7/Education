@@ -7,5 +7,4 @@ CREATE TABLE "images" (
 );
 
 ALTER TABLE "articles" ADD COLUMN "id_images" integer[];
-ALTER TABLE "users" ADD COLUMN "avatar" integer NOT NULL DEFAULT 1;
-ALTER TABLE "users" ADD FOREIGN KEY (avatar) REFERENCES images(id_image);
+ALTER TABLE "users" ADD COLUMN "avatar" integer NOT NULL DEFAULT 0;
